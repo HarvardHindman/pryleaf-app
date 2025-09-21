@@ -7,7 +7,8 @@ import AppLayout from '@/components/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 import TickerSearch from '@/components/TickerSearch';
 
@@ -23,6 +24,7 @@ interface PortfolioStock {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   // Pie chart hover state
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
   const [portfolioStocks, setPortfolioStocks] = useState<PortfolioStock[]>([
@@ -194,7 +196,58 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <div className="p-6">
+      {!user ? (
+        // Welcome section for non-authenticated users
+        <div className="container mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">
+              Welcome to Pryleaf
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Professional Financial Analysis Platform with Community Chat
+            </p>
+            
+            <div className="grid md:grid-cols-3 gap-8 mb-12">
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Portfolio Tracking</h3>
+                  <p className="text-gray-600 text-sm">Track your investments with real-time data and interactive charts</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Community Chat</h3>
+                  <p className="text-gray-600 text-sm">Connect with other investors and share insights</p>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <TrendingUp className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Market Analysis</h3>
+                  <p className="text-gray-600 text-sm">Get real-time market data and advanced analytics</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="space-x-4">
+              <Button asChild size="lg">
+                <a href="/register">
+                  Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                </a>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <a href="/login">Sign In</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Existing dashboard content for authenticated users
+        <div className="p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
           <p className="text-gray-600">Track your investments and market performance</p>
@@ -503,6 +556,7 @@ export default function Home() {
           )}
         </div>
       </div>
+      )}
     </AppLayout>
   );
 }

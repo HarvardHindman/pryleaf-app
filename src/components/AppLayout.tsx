@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Home, 
@@ -11,10 +11,13 @@ import {
   User, 
   ChevronDown,
   Menu,
-  X
+  X,
+  LogOut,
+  MessageCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -22,9 +25,30 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Get current path for navigation highlighting
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home, current: true },
+    { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
+    { name: 'Chat', href: '/chat', icon: MessageCircle, current: currentPath === '/chat' },
   ];
   const headerNav = [
     { name: 'Markets', href: '/markets', icon: TrendingUp },
@@ -178,9 +202,58 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <a href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
                 <Settings className="h-5 w-5" />
               </a>
-              <button className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Account">
-                <User className="h-5 w-5" />
-              </button>
+              
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button 
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center space-x-2 p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Account"
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="hidden sm:inline text-sm">{user.email?.split('@')[0]}</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                  
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="py-1">
+                        <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                          {user.email}
+                        </div>
+                        <a 
+                          href="/profile" 
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Profile
+                        </a>
+                        <button 
+                          onClick={signOut}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <LogOut className="inline h-4 w-4 mr-2" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <a 
+                    href="/login" 
+                    className="px-3 py-1 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  >
+                    Sign in
+                  </a>
+                  <a 
+                    href="/register" 
+                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Sign up
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </header>

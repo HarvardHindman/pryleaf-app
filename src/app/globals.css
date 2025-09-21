@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "stream-chat-react/dist/css/v2/index.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -166,4 +167,28 @@
   .metric-grid {
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
   }
+}
+
+/* Custom Message UI - Left-aligned for all messages */
+.custom-message-ui {
+  display: flex;
+  flex-direction: row;
+  text-align: left;
+  padding: 8px 16px;
+  margin-bottom: 4px;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.custom-message-ui .str-chat__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.custom-message-ui .str-chat__message-text {
+  flex: 1;
+  margin-left: 0;
+  text-align: left;
 }
