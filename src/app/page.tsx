@@ -476,19 +476,23 @@ export default function Home() {
                   const color = colors[index % colors.length];
                   if (percentage < 0.1) return null;
                   const isHovered = hoveredPieIndex === index;
+                  const isAnyHovered = hoveredPieIndex !== null;
+                  const greyed = isAnyHovered && !isHovered;
                   return (
                     <div
                       key={stock.symbol}
                       className={`flex items-center space-x-2 bg-gray-50 rounded px-2 py-1 shadow-sm transition-all duration-150 ${isHovered ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
                       style={{
                         fontWeight: isHovered ? 700 : 500,
-                        color: isHovered ? '#2563eb' : undefined,
+                        color: greyed ? '#a3a3a3' : isHovered ? '#2563eb' : undefined,
+                        opacity: greyed ? 0.5 : 1,
                         boxShadow: isHovered ? '0 2px 8px rgba(37,99,235,0.10)' : undefined,
+                        cursor: 'pointer',
                       }}
                       onMouseEnter={() => setHoveredPieIndex(index)}
                       onMouseLeave={() => setHoveredPieIndex(null)}
                     >
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></span>
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: greyed ? '#e5e7eb' : color }}></span>
                       <span className="text-xs font-medium">{stock.symbol}</span>
                       <span className="text-xs text-gray-400">{percentage.toFixed(1)}%</span>
                     </div>

@@ -25,9 +25,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: true },
-    { name: 'Markets', href: '/markets', icon: TrendingUp, current: false },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3, current: false },
-    { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: false },
+  ];
+  const headerNav = [
+    { name: 'Markets', href: '/markets', icon: TrendingUp },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    { name: 'Watchlist', href: '/watchlist', icon: Bookmark },
   ];
 
   return (
@@ -71,20 +73,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             ))}
           </nav>
 
-          {/* Bottom Section - Settings & User */}
-          <div className="flex-shrink-0 p-2 space-y-2">
-            <a
-              href="/settings"
-              className="group flex flex-col items-center px-2 py-3 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-            >
-              <Settings className="flex-shrink-0 h-5 w-5 mb-1 text-gray-400 group-hover:text-gray-500" />
-              <span className="text-center">Settings</span>
-            </a>
-            <button className="group flex flex-col items-center w-full px-2 py-3 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-              <User className="flex-shrink-0 h-5 w-5 mb-1 text-gray-400 group-hover:text-gray-500" />
-              <span className="text-center">Account</span>
-            </button>
-          </div>
+          {/* Bottom Section - Settings & User (removed, now in header) */}
         </div>
       </div>
 
@@ -149,7 +138,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top header with search */}
+        {/* Top header with nav, search, and settings/account */}
         <header className="bg-gray-50 px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Mobile menu button */}
@@ -164,13 +153,35 @@ export default function AppLayout({ children }: AppLayoutProps) {
               )}
             </button>
 
+            {/* Header nav (Markets, Analytics, Watchlist) */}
+            <nav className="flex items-center space-x-2 mr-4">
+              {headerNav.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center px-2 py-1 text-xs text-gray-600 hover:text-blue-600 transition-colors"
+                  title={item.name}
+                >
+                  <item.icon className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">{item.name}</span>
+                </a>
+              ))}
+            </nav>
+
             {/* Search bar - seamless design */}
             <div className="flex-1 max-w-lg">
               <TickerSearch />
             </div>
 
-            {/* Empty space for balance on mobile */}
-            <div className="w-10 md:hidden"></div>
+            {/* Settings & Account icons */}
+            <div className="flex items-center space-x-2 ml-4">
+              <a href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
+                <Settings className="h-5 w-5" />
+              </a>
+              <button className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Account">
+                <User className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </header>
 
