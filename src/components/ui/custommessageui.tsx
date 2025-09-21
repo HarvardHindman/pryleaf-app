@@ -85,7 +85,7 @@ const CustomMessageUi = () => {
   };
 
   return (
-    <div className="flex gap-3 p-4 hover:bg-gray-50 transition-colors group" data-message-id={message.id}>
+    <div className="flex gap-3 px-4 py-2 hover:bg-gray-50 transition-colors group" data-message-id={message.id}>
       <div className="flex-1 min-w-0">
         {/* Show quoted message with minimal, faint design */}
         {(message as any).quoted_message && (
