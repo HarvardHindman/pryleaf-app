@@ -66,22 +66,34 @@ export default function CustomMessageInput() {
     <div className="relative">
       {/* Quoted Message Preview */}
       {quotedMessage && (
-        <div className="mx-4 mb-2 border-l-2 border-gray-300 pl-3 py-2">
+        <div className="mx-4 mb-2 border-l-2 pl-3 py-2" style={{ borderColor: 'var(--clr-surface-a30)' }}>
           <div className="flex justify-between items-start">
             <div className="flex-1 opacity-70">
-              <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+              <div className="flex items-center gap-1 text-xs mb-1" style={{ color: 'var(--clr-primary-a40)' }}>
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
                 <span>Replying to {quotedMessage.user?.name || 'Unknown User'}</span>
               </div>
-              <div className="text-xs text-gray-500 truncate">
+              <div className="text-xs truncate" style={{ color: 'var(--clr-primary-a40)' }}>
                 {quotedMessage.text || 'Message'}
               </div>
             </div>
             <button
               onClick={clearQuotedMessage}
-              className="ml-2 p-1 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
+              className="ml-2 p-1 rounded transition-colors"
+              style={{ 
+                color: 'var(--clr-primary-a30)',
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+                e.currentTarget.style.color = 'var(--clr-primary-a40)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--clr-primary-a30)';
+              }}
             >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -94,11 +106,34 @@ export default function CustomMessageInput() {
       {/* Modern Input Bar */}
       <div className="px-4 pb-4">
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-end bg-gray-100 rounded-xl border border-gray-200 focus-within:border-blue-300 focus-within:ring-1 focus-within:ring-blue-300 transition-all">
+          <div 
+            className="flex items-end rounded-xl border transition-all"
+            style={{ 
+              backgroundColor: 'var(--clr-surface-a10)',
+              borderColor: 'var(--clr-surface-a30)'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = 'var(--clr-info-a20)';
+              e.currentTarget.style.boxShadow = '0 0 0 1px var(--clr-info-a20)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = 'var(--clr-surface-a30)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
             {/* Plus Button - Inside Left */}
             <button
               type="button"
-              className="flex-shrink-0 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-l-xl transition-colors"
+              className="flex-shrink-0 p-3 rounded-l-xl transition-colors"
+              style={{ color: 'var(--clr-primary-a40)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--clr-primary-a50)';
+                e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--clr-primary-a40)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -110,7 +145,10 @@ export default function CustomMessageInput() {
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Type a message..."
-              className="flex-1 resize-none bg-transparent border-0 outline-none px-2 py-3 text-gray-900 placeholder-gray-500 min-h-[44px] max-h-[120px]"
+              className="flex-1 resize-none bg-transparent border-0 outline-none px-2 py-3 min-h-[44px] max-h-[120px] theme-input"
+              style={{ 
+                color: 'var(--clr-primary-a50)'
+              }}
               rows={1}
             />
 
@@ -119,14 +157,29 @@ export default function CustomMessageInput() {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="flex-shrink-0 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-r-xl transition-colors"
+                className="flex-shrink-0 p-3 rounded-r-xl transition-colors"
+                style={{ color: 'var(--clr-primary-a40)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--clr-primary-a50)';
+                  e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--clr-primary-a40)';
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 <Smile className="w-5 h-5" />
               </button>
 
               {/* Simple Emoji Picker */}
               {showEmojiPicker && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10">
+                <div 
+                  className="absolute bottom-full right-0 mb-2 rounded-lg shadow-lg p-3 z-10"
+                  style={{ 
+                    backgroundColor: 'var(--clr-surface-a0)',
+                    border: '1px solid var(--clr-surface-a30)'
+                  }}
+                >
                   <div className="grid grid-cols-5 gap-2">
                     {commonEmojis.map((emoji, index) => (
                       <button
@@ -136,7 +189,13 @@ export default function CustomMessageInput() {
                           setInputValue(prev => prev + emoji);
                           setShowEmojiPicker(false);
                         }}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded text-lg"
+                        className="w-8 h-8 flex items-center justify-center rounded text-lg transition-colors"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                        }}
                       >
                         {emoji}
                       </button>

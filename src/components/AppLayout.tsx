@@ -13,11 +13,14 @@ import {
   Menu,
   X,
   LogOut,
-  MessageCircle
+  MessageCircle,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -27,6 +30,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu when clicking outside
@@ -57,10 +61,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
   ];
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <div 
+      className="h-screen flex overflow-hidden"
+      style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+    >
       {/* Sidebar */}
       <div className="hidden md:flex md:w-32 md:flex-col">
-        <div className="flex flex-col h-full bg-white border-r border-gray-200">
+        <div 
+          className="flex flex-col h-full border-r"
+          style={{ 
+            backgroundColor: 'var(--clr-surface-a0)',
+            borderColor: 'var(--clr-surface-a30)'
+          }}
+        >
           {/* Logo Section */}
           <div className="flex-shrink-0 px-3 py-6">
             <div className="flex flex-col items-center">
@@ -70,7 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   alt="Pryleaf" 
                   className="h-16 w-auto group-hover:opacity-80 transition-opacity mb-2"
                 />
-                <span className="text-xs font-bold text-gray-600 group-hover:text-gray-900 transition-colors text-center">
+                <span className="text-xs font-bold group-hover:opacity-80 transition-opacity text-center" style={{ color: 'var(--clr-primary-a40)' }}>
                   Pryleaf
                 </span>
               </a>
@@ -85,13 +98,30 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 href={item.href}
                 className={`group flex flex-col items-center px-2 py-3 text-xs font-medium rounded-lg transition-colors ${
                   item.current
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'border'
+                    : ''
                 }`}
+                style={{
+                  backgroundColor: item.current ? 'var(--clr-info-a0)' : 'transparent',
+                  color: item.current ? 'var(--clr-info-a20)' : 'var(--clr-primary-a40)',
+                  borderColor: item.current ? 'var(--clr-info-a10)' : 'transparent'
+                }}
+                onMouseEnter={(e) => {
+                  if (!item.current) {
+                    e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+                    e.currentTarget.style.color = 'var(--clr-primary-a50)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!item.current) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--clr-primary-a40)';
+                  }
+                }}
               >
                 <item.icon className={`flex-shrink-0 h-5 w-5 mb-1 ${
-                  item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                }`} />
+                  item.current ? '' : 'group-hover:opacity-80'
+                }`} style={{ color: 'currentColor' }} />
                 <span className="text-center">{item.name}</span>
               </a>
             ))}
@@ -163,7 +193,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         {/* Top header with nav, search, and settings/account */}
-        <header className="bg-gray-50 px-6 py-4">
+        <header 
+          className="px-6 py-4"
+          style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+        >
           <div className="flex items-center justify-between">
             {/* Mobile menu button */}
             <button
@@ -199,6 +232,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Settings & Account icons */}
             <div className="flex items-center space-x-2 ml-4">
+              {/* Quick Theme Toggle */}
+              <button 
+                onClick={toggleTheme}
+                className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" 
+                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              
               <a href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
                 <Settings className="h-5 w-5" />
               </a>
@@ -259,7 +301,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main 
+          className="flex-1 overflow-y-auto"
+          style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+        >
           {children}
         </main>
       </div>

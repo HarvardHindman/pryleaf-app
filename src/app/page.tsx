@@ -200,35 +200,35 @@ export default function Home() {
         // Welcome section for non-authenticated users
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl font-bold text-[var(--clr-primary-a50)] mb-6">
               Welcome to Pryleaf
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
+            <p className="text-xl text-[var(--clr-primary-a30)] mb-8">
               Professional Financial Analysis Platform with Community Chat
             </p>
             
             <div className="grid md:grid-cols-3 gap-8 mb-12">
               <Card>
                 <CardContent className="p-6 text-center">
-                  <BarChart3 className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <BarChart3 className="h-12 w-12 text-[var(--clr-info-a40)] mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Portfolio Tracking</h3>
-                  <p className="text-gray-600 text-sm">Track your investments with real-time data and interactive charts</p>
+                  <p className="text-[var(--clr-primary-a30)] text-sm">Track your investments with real-time data and interactive charts</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6 text-center">
-                  <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <Users className="h-12 w-12 text-[var(--clr-success-a40)] mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Community Chat</h3>
-                  <p className="text-gray-600 text-sm">Connect with other investors and share insights</p>
+                  <p className="text-[var(--clr-primary-a30)] text-sm">Connect with other investors and share insights</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardContent className="p-6 text-center">
-                  <TrendingUp className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <TrendingUp className="h-12 w-12 text-[var(--clr-info-a35)] mx-auto mb-4" />
                   <h3 className="font-semibold mb-2">Market Analysis</h3>
-                  <p className="text-gray-600 text-sm">Get real-time market data and advanced analytics</p>
+                  <p className="text-[var(--clr-primary-a30)] text-sm">Get real-time market data and advanced analytics</p>
                 </CardContent>
               </Card>
             </div>
@@ -249,13 +249,13 @@ export default function Home() {
         // Existing dashboard content for authenticated users
         <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Track your investments and market performance</p>
+          <h1 className="text-3xl font-bold text-[var(--clr-primary-a50)] mb-2">Dashboard</h1>
+          <p className="text-[var(--clr-primary-a30)]">Track your investments and market performance</p>
         </div>
 
         {/* Market Overview - Row of Cards */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Market Overview</h2>
+          <h2 className="text-xl font-semibold text-[var(--clr-primary-a50)] mb-4">Market Overview</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
             {marketData.map((index) => {
               const isPositive = index.change >= 0;
@@ -267,17 +267,17 @@ export default function Home() {
               };
               
               return (
-                <div key={index.symbol} className="bg-white border rounded-lg hover:shadow-md transition-shadow px-2 py-1">
+                <div key={index.symbol} className="bg-[var(--clr-surface-a5)] border border-[var(--clr-surface-a15)] rounded-lg hover:shadow-md transition-shadow px-2 py-1">
                   <div>
-                    <h3 className="font-semibold text-gray-900 text-xs mb-1 truncate">{index.name}</h3>
+                    <h3 className="font-semibold text-[var(--clr-primary-a50)] text-xs mb-1 truncate">{index.name}</h3>
                     
                     <div className="flex items-center space-x-2">
-                      <div className="text-sm font-bold text-gray-900">
+                      <div className="text-sm font-bold text-[var(--clr-primary-a50)]">
                         {formatPrice(index.price)}
                       </div>
                       
                       <div className={`flex items-center space-x-1 text-xs ${
-                        isPositive ? 'text-green-600' : 'text-red-600'
+                        isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
                       }`}>
                         {isPositive ? (
                           <TrendingUp className="h-2 w-2" />
@@ -300,10 +300,10 @@ export default function Home() {
         </div>
 
         {/* Portfolio Section - Financial Terminal Style */}
-        <div className="bg-white border rounded-lg">
-          <div className="border-b border-gray-200 px-4 py-3">
+        <div className="bg-[var(--clr-surface-a5)] border border-[var(--clr-surface-a15)] rounded-lg">
+          <div className="border-b border-[var(--clr-surface-a20)] px-4 py-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <h2 className="text-lg font-semibold text-[var(--clr-primary-a50)] flex items-center">
                 <Briefcase className="h-5 w-5 mr-2" />
                 PORTFOLIO
               </h2>
@@ -321,24 +321,24 @@ export default function Home() {
           </div>
 
           {/* Portfolio Summary - Financial Terminal Style */}
-          <div className="grid grid-cols-3 gap-0 border-b border-gray-200">
-            <div className="px-4 py-2 border-r border-gray-200">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Value</div>
-              <div className="text-lg font-bold text-gray-900">
+          <div className="grid grid-cols-3 gap-0 border-b border-[var(--clr-surface-a20)]">
+            <div className="px-4 py-2 border-r border-[var(--clr-surface-a20)]">
+              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Total Value</div>
+              <div className="text-lg font-bold text-[var(--clr-primary-a50)]">
                 {formatCurrency(getTotalPortfolioValue())}
               </div>
             </div>
             
-            <div className="px-4 py-2 border-r border-gray-200">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Daily P&L</div>
-              <div className={`text-lg font-bold ${getTotalPortfolioChange() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="px-4 py-2 border-r border-[var(--clr-surface-a20)]">
+              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Daily P&L</div>
+              <div className={`text-lg font-bold ${getTotalPortfolioChange() >= 0 ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'}`}>
                 {formatCurrencyChange(getTotalPortfolioChange())}
               </div>
             </div>
             
             <div className="px-4 py-2">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Positions</div>
-              <div className="text-lg font-bold text-gray-900">
+              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Positions</div>
+              <div className="text-lg font-bold text-[var(--clr-primary-a50)]">
                 {portfolioStocks.length}
               </div>
             </div>
@@ -347,7 +347,7 @@ export default function Home() {
           {/* Portfolio Holdings - Financial Terminal Style */}
           <div>
             {/* Header Row */}
-            <div className="grid grid-cols-9 gap-4 px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <div className="grid grid-cols-9 gap-4 px-4 py-2 bg-[var(--clr-surface-a10)] border-b border-[var(--clr-surface-a20)] text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">
               <div>Symbol</div>
               <div className="text-center">Shares</div>
               <div className="text-right">Avg Cost</div>
@@ -361,8 +361,8 @@ export default function Home() {
             
             {portfolioStocks.length === 0 ? (
               <div className="px-4 py-8 text-center">
-                <p className="text-gray-500 mb-4">No positions in portfolio</p>
-                <p className="text-gray-400 text-sm">Use the search bar above to add your first position</p>
+                <p className="text-[var(--clr-primary-a25)] mb-4">No positions in portfolio</p>
+                <p className="text-[var(--clr-primary-a20)] text-sm">Use the search bar above to add your first position</p>
               </div>
             ) : (
               <div>
@@ -372,11 +372,11 @@ export default function Home() {
                   const portfolioPercentage = getPortfolioPercentage(stock);
                   
                   return (
-                    <div key={stock.symbol} className="grid grid-cols-9 gap-4 px-4 py-2 hover:bg-gray-50 border-b border-gray-100 transition-colors">
+                    <div key={stock.symbol} className="grid grid-cols-9 gap-4 px-4 py-2 hover:bg-[var(--clr-surface-a10)] border-b border-[var(--clr-surface-a15)] transition-colors">
                       {/* Symbol */}
                       <div>
-                        <div className="font-semibold text-gray-900 text-sm">{stock.symbol}</div>
-                        <div className="text-xs text-gray-500 truncate">{stock.name}</div>
+                        <div className="font-semibold text-[var(--clr-primary-a50)] text-sm">{stock.symbol}</div>
+                        <div className="text-xs text-[var(--clr-primary-a25)] truncate">{stock.name}</div>
                       </div>
                       
                       {/* Shares - Always Editable Input */}
@@ -385,7 +385,7 @@ export default function Home() {
                           type="number"
                           value={stock.shares || 0}
                           onChange={(e) => handleSharesChange(stock.symbol, parseInt(e.target.value) || 0)}
-                          className="w-16 h-6 text-xs text-center p-1 border border-gray-300 rounded"
+                          className="w-16 h-6 text-xs text-center p-1 border border-[var(--clr-surface-a25)] rounded"
                         />
                       </div>
                       
@@ -396,36 +396,36 @@ export default function Home() {
                           step="0.01"
                           value={stock.costBasis || 0}
                           onChange={(e) => handleCostBasisChange(stock.symbol, parseFloat(e.target.value) || 0)}
-                          className="w-20 h-6 text-xs text-right p-1 border border-gray-300 rounded"
+                          className="w-20 h-6 text-xs text-right p-1 border border-[var(--clr-surface-a25)] rounded"
                         />
                       </div>
                       
                       {/* Market Value */}
                       <div className="text-right">
-                        <div className="font-medium text-gray-900 text-sm">{formatCurrency(totalValue)}</div>
+                        <div className="font-medium text-[var(--clr-primary-a50)] text-sm">{formatCurrency(totalValue)}</div>
                       </div>
                       
                       {/* Portfolio Percentage */}
                       <div className="text-right">
-                        <div className="font-medium text-gray-600 text-sm">
+                        <div className="font-medium text-[var(--clr-primary-a30)] text-sm">
                           {portfolioPercentage.toFixed(1)}%
                         </div>
                       </div>
                       
                       {/* Last Price */}
                       <div className="text-right">
-                        <div className="font-medium text-gray-900 text-sm">{formatCurrency(stock.price)}</div>
+                        <div className="font-medium text-[var(--clr-primary-a50)] text-sm">{formatCurrency(stock.price)}</div>
                       </div>
                       
                       {/* Change */}
                       <div className="text-right">
                         <div className={`font-medium text-sm ${
-                          isPositive ? 'text-green-600' : 'text-red-600'
+                          isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
                         }`}>
                           {formatCurrencyChange(stock.change)}
                         </div>
                         <div className={`text-xs ${
-                          isPositive ? 'text-green-600' : 'text-red-600'
+                          isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
                         }`}>
                           {isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%
                         </div>
@@ -441,12 +441,12 @@ export default function Home() {
                           return (
                             <>
                               <div className={`font-medium text-sm ${
-                                isProfitable ? 'text-green-600' : 'text-red-600'
+                                isProfitable ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
                               }`}>
                                 {formatCurrencyChange(profit)}
                               </div>
                               <div className={`text-xs ${
-                                isProfitable ? 'text-green-600' : 'text-red-600'
+                                isProfitable ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
                               }`}>
                                 {isProfitable ? '+' : ''}{profitPercentage.toFixed(2)}%
                               </div>
@@ -461,7 +461,7 @@ export default function Home() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveStock(stock.symbol)}
-                          className="text-gray-400 hover:text-red-600 text-xs p-1"
+                          className="text-[var(--clr-primary-a20)] hover:text-[var(--clr-danger-a45)] text-xs p-1"
                         >
                           ×
                         </Button>
@@ -477,9 +477,9 @@ export default function Home() {
           {/* Portfolio Allocation Pie Chart (restored) */}
           {portfolioStocks.length > 0 && (
             <div className="flex flex-col items-center mb-8">
-              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">Portfolio Allocation</h3>
+              <h3 className="text-sm font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide mb-4">Portfolio Allocation</h3>
               <div className="relative group">
-                <svg width="320" height="320" viewBox="0 0 320 320" className="transform -rotate-90 drop-shadow-lg rounded-full border-4 border-white bg-white cursor-pointer">
+                <svg width="320" height="320" viewBox="0 0 320 320" className="transform -rotate-90 drop-shadow-lg rounded-full border-4 border-[var(--clr-surface-a5)] bg-[var(--clr-surface-a5)] cursor-pointer">
                   {portfolioStocks.map((stock, index) => {
                     const percentage = getPortfolioPercentage(stock);
                     const totalPercentageBefore = portfolioStocks.slice(0, index).reduce((sum, s) => sum + getPortfolioPercentage(s), 0);
@@ -517,8 +517,8 @@ export default function Home() {
                   })}
                 </svg>
                 {/* Center circle for donut effect */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white rounded-full shadow-inner border-2 border-gray-100 flex items-center justify-center pointer-events-none">
-                  <span className="text-xs text-gray-500 font-semibold">{portfolioStocks.length} Assets</span>
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-[var(--clr-surface-a5)] rounded-full shadow-inner border-2 border-[var(--clr-surface-a15)] flex items-center justify-center pointer-events-none">
+                  <span className="text-xs text-[var(--clr-primary-a25)] font-semibold">{portfolioStocks.length} Assets</span>
                 </div>
               </div>
               {/* Modern Legend with highlight */}
@@ -534,10 +534,10 @@ export default function Home() {
                   return (
                     <div
                       key={stock.symbol}
-                      className={`flex items-center space-x-2 bg-gray-50 rounded px-2 py-1 shadow-sm transition-all duration-150 ${isHovered ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+                      className={`flex items-center space-x-2 bg-[var(--clr-surface-a10)] rounded px-2 py-1 shadow-sm transition-all duration-150 ${isHovered ? 'ring-2 ring-[var(--clr-info-a40)] bg-[var(--clr-info-a10)]' : ''}`}
                       style={{
                         fontWeight: isHovered ? 700 : 500,
-                        color: greyed ? '#a3a3a3' : isHovered ? '#2563eb' : undefined,
+                        color: greyed ? 'var(--clr-primary-a15)' : isHovered ? 'var(--clr-info-a45)' : undefined,
                         opacity: greyed ? 0.5 : 1,
                         boxShadow: isHovered ? '0 2px 8px rgba(37,99,235,0.10)' : undefined,
                         cursor: 'pointer',
@@ -545,9 +545,9 @@ export default function Home() {
                       onMouseEnter={() => setHoveredPieIndex(index)}
                       onMouseLeave={() => setHoveredPieIndex(null)}
                     >
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: greyed ? '#e5e7eb' : color }}></span>
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: greyed ? 'var(--clr-surface-a25)' : color }}></span>
                       <span className="text-xs font-medium">{stock.symbol}</span>
-                      <span className="text-xs text-gray-400">{percentage.toFixed(1)}%</span>
+                      <span className="text-xs text-[var(--clr-primary-a20)]">{percentage.toFixed(1)}%</span>
                     </div>
                   );
                 })}

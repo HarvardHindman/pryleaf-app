@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StreamChatProvider } from "@/contexts/StreamChatContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,11 +37,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <StreamChatProvider>
-            {children}
-          </StreamChatProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <StreamChatProvider>
+              {children}
+            </StreamChatProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

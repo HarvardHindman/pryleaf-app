@@ -111,8 +111,8 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
       <AppLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading ticker data...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--clr-info-a40)] mx-auto mb-4"></div>
+            <p className="text-[var(--clr-primary-a30)]">Loading ticker data...</p>
           </div>
         </div>
       </AppLayout>
@@ -124,12 +124,12 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
       <AppLayout>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center max-w-md">
-            <div className="bg-red-50 border border-red-200 p-6 rounded-lg mb-6">
-              <p className="text-red-800 font-semibold">Error: {error}</p>
+            <div className="bg-[var(--clr-danger-a10)] border border-[var(--clr-danger-a20)] p-6 rounded-lg mb-6">
+              <p className="text-[var(--clr-danger-a50)] font-semibold">Error: {error}</p>
             </div>
             <a 
               href="/" 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--clr-surface-a30)] hover:bg-[var(--clr-surface-a35)] text-[var(--clr-primary-a45)] rounded-lg transition-colors"
             >
               ← Back to Dashboard
             </a>
@@ -150,14 +150,14 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           {/* Company Header */}
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-[var(--clr-primary-a50)]">
                 {data.companyName}
               </h1>
-              <Badge variant="secondary" className="text-sm bg-gray-100 text-gray-700">
+              <Badge variant="secondary" className="text-sm bg-[var(--clr-surface-a10)] text-[var(--clr-primary-a40)]">
                 {data.ticker}
               </Badge>
               {data.sector && (
-                <Badge variant="outline" className="text-xs text-gray-500 border-gray-300">
+                <Badge variant="outline" className="text-xs text-[var(--clr-primary-a30)] border-[var(--clr-surface-a25)]">
                   {data.sector}
                 </Badge>
               )}
@@ -165,13 +165,13 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
             
             <div className="flex items-center gap-8 flex-wrap">
               <div className="flex items-center gap-3">
-                <span className="text-3xl md:text-4xl font-bold text-gray-900">
+                <span className="text-3xl md:text-4xl font-bold text-[var(--clr-primary-a50)]">
                   {formatCurrency(data.currentPrice, data.currency)}
                 </span>
                 <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ${
                   isPositiveChange 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
+                    ? 'bg-[var(--clr-success-a10)] text-[var(--clr-success-a50)] border border-[var(--clr-success-a20)]' 
+                    : 'bg-[var(--clr-danger-a10)] text-[var(--clr-danger-a50)] border border-[var(--clr-danger-a20)]'
                 }`}>
                   {isPositiveChange ? (
                     <TrendingUp className="h-5 w-5" />
@@ -185,7 +185,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                 </div>
               </div>
               
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-[var(--clr-primary-a30)]">
                 {data.exchange} • {data.exchangeTimezoneName}
               </div>
             </div>
@@ -196,35 +196,35 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
             {/* Key Statistics Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-gray-900">
-                  <Building2 className="h-5 w-5 text-blue-500" />
+                <CardTitle className="flex items-center gap-2 text-[var(--clr-primary-a50)]">
+                  <Building2 className="h-5 w-5 text-[var(--clr-info-a40)]" />
                   Key Statistics
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Market Cap</span>
-                  <span className="font-semibold text-gray-900">{formatLargeNumber(data.marketCap)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Market Cap</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatLargeNumber(data.marketCap)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">P/E Ratio</span>
-                  <span className="font-semibold text-gray-900">{data.peRatio?.toFixed(2) || 'N/A'}</span>
+                  <span className="text-[var(--clr-primary-a30)]">P/E Ratio</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{data.peRatio?.toFixed(2) || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">EPS (TTM)</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(data.eps, data.currency)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">EPS (TTM)</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatCurrency(data.eps, data.currency)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Dividend Yield</span>
-                  <span className="font-semibold text-gray-900">{formatPercentage(data.dividendYield)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Dividend Yield</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatPercentage(data.dividendYield)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Volume</span>
-                  <span className="font-semibold text-gray-900">{formatLargeNumber(data.volume)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Volume</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatLargeNumber(data.volume)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Avg Volume</span>
-                  <span className="font-semibold text-gray-900">{formatLargeNumber(data.averageVolume)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Avg Volume</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatLargeNumber(data.averageVolume)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -232,37 +232,37 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
             {/* 52-Week Range Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-gray-900">52-Week Range</CardTitle>
+                <CardTitle className="text-[var(--clr-primary-a50)]">52-Week Range</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">52W High</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="text-[var(--clr-primary-a30)]">52W High</span>
+                  <span className="font-semibold text-[var(--clr-success-a45)]">
                     {formatCurrency(data.fiftyTwoWeekHigh, data.currency)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">52W Low</span>
-                  <span className="font-semibold text-red-600">
+                  <span className="text-[var(--clr-primary-a30)]">52W Low</span>
+                  <span className="font-semibold text-[var(--clr-danger-a45)]">
                     {formatCurrency(data.fiftyTwoWeekLow, data.currency)}
                   </span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Current Position</span>
-                    <span className="text-gray-600">
+                    <span className="text-[var(--clr-primary-a25)]">Current Position</span>
+                    <span className="text-[var(--clr-primary-a30)]">
                       {((data.currentPrice - data.fiftyTwoWeekLow) / (data.fiftyTwoWeekHigh - data.fiftyTwoWeekLow) * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-[var(--clr-surface-a20)] rounded-full h-2">
                     <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                      className="bg-[var(--clr-info-a40)] h-2 rounded-full transition-all duration-500" 
                       style={{
                         width: `${((data.currentPrice - data.fiftyTwoWeekLow) / (data.fiftyTwoWeekHigh - data.fiftyTwoWeekLow)) * 100}%`
                       }}
                     ></div>
                   </div>
-                  <div className="flex justify-between text-xs text-gray-500">
+                  <div className="flex justify-between text-xs text-[var(--clr-primary-a25)]">
                     <span>Low</span>
                     <span>High</span>
                   </div>
@@ -273,24 +273,24 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
             {/* Financial Metrics Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-gray-900">Financial Metrics</CardTitle>
+                <CardTitle className="text-[var(--clr-primary-a50)]">Financial Metrics</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Revenue (TTM)</span>
-                  <span className="font-semibold text-gray-900">{formatLargeNumber(data.totalRevenue)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Revenue (TTM)</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatLargeNumber(data.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Gross Margin</span>
-                  <span className="font-semibold text-gray-900">{formatPercentage(data.grossMargins)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Gross Margin</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatPercentage(data.grossMargins)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Operating Margin</span>
-                  <span className="font-semibold text-gray-900">{formatPercentage(data.operatingMargins)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Operating Margin</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatPercentage(data.operatingMargins)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Profit Margin</span>
-                  <span className="font-semibold text-gray-900">{formatPercentage(data.profitMargins)}</span>
+                  <span className="text-[var(--clr-primary-a30)]">Profit Margin</span>
+                  <span className="font-semibold text-[var(--clr-primary-a50)]">{formatPercentage(data.profitMargins)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -299,8 +299,8 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           {/* Company Profile */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <Globe className="h-5 w-5 text-purple-500" />
+              <CardTitle className="flex items-center gap-2 text-[var(--clr-primary-a50)]">
+                <Globe className="h-5 w-5 text-[var(--clr-info-a35)]" />
                 Company Profile
               </CardTitle>
             </CardHeader>
@@ -308,8 +308,8 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">Business Description</h4>
-                    <p className="text-gray-700 text-sm leading-relaxed">
+                    <h4 className="font-semibold text-[var(--clr-primary-a50)] mb-3">Business Description</h4>
+                    <p className="text-[var(--clr-primary-a35)] text-sm leading-relaxed">
                       {data.businessSummary || 'No business description available.'}
                     </p>
                   </div>
@@ -317,28 +317,28 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                 
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Sector</span>
-                    <span className="font-semibold text-gray-900">{data.sector || 'N/A'}</span>
+                    <span className="text-[var(--clr-primary-a30)]">Sector</span>
+                    <span className="font-semibold text-[var(--clr-primary-a50)]">{data.sector || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Industry</span>
-                    <span className="font-semibold text-gray-900">{data.industry || 'N/A'}</span>
+                    <span className="text-[var(--clr-primary-a30)]">Industry</span>
+                    <span className="font-semibold text-[var(--clr-primary-a50)]">{data.industry || 'N/A'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Employees</span>
-                    <span className="font-semibold text-gray-900 flex items-center gap-1">
+                    <span className="text-[var(--clr-primary-a30)]">Employees</span>
+                    <span className="font-semibold text-[var(--clr-primary-a50)] flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       {data.employees ? formatLargeNumber(data.employees) : 'N/A'}
                     </span>
                   </div>
                   {data.website && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Website</span>
+                      <span className="text-[var(--clr-primary-a30)]">Website</span>
                       <a 
                         href={data.website.startsWith('http') ? data.website : `https://${data.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+                        className="font-semibold text-[var(--clr-info-a40)] hover:text-[var(--clr-info-a45)] flex items-center gap-1 transition-colors"
                       >
                         Visit Site
                         <ExternalLink className="h-3 w-3" />
@@ -351,7 +351,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           </Card>
 
           {/* Footer */}
-          <div className="text-center text-sm text-gray-500 border-t border-gray-200 pt-6">
+          <div className="text-center text-sm text-[var(--clr-primary-a25)] border-t border-[var(--clr-surface-a20)] pt-6">
             Data last updated: {new Date(data.lastUpdated).toLocaleString()} • 
             Powered by Yahoo Finance
           </div>

@@ -112,7 +112,7 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
     <div className="w-full max-w-2xl mx-auto" ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative w-full">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--clr-primary-a30)] h-4 w-4" />
           <Input
             type="text"
             placeholder="Search stocks (e.g., AAPL, TSLA, GOOGL)..."
@@ -120,19 +120,19 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => query && setShowResults(true)}
-            className="pl-10 pr-20 py-2 text-sm w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md"
+            className="pl-10 pr-20 py-2 text-sm w-full border-[var(--clr-surface-a30)] focus:border-[var(--clr-info-a40)] focus:ring-[var(--clr-info-a40)] rounded-md"
           />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-100 text-gray-500 text-xs font-semibold px-3 py-1 rounded-md border border-gray-200 select-none pointer-events-none">
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--clr-surface-a10)] text-[var(--clr-primary-a30)] text-xs font-semibold px-3 py-1 rounded-md border border-[var(--clr-surface-a20)] select-none pointer-events-none">
             Enter
           </span>
         </div>
 
         {/* Search Results Dropdown */}
         {showResults && (
-          <Card className="absolute top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto z-50 shadow-lg bg-white border border-gray-200">
+          <Card className="absolute top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto z-50 shadow-lg bg-[var(--clr-surface-a5)] border border-[var(--clr-surface-a20)]">
             {isLoading ? (
-              <div className="p-4 text-center text-gray-500">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mx-auto mb-2"></div>
+              <div className="p-4 text-center text-[var(--clr-primary-a30)]">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--clr-info-a40)] mx-auto mb-2"></div>
                 Searching...
               </div>
             ) : results.length > 0 ? (
@@ -140,21 +140,21 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
                 {results.map((result, index) => (
                   <div
                     key={`${result.symbol}-${result.exchange}`}
-                    className={`px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      index === selectedIndex ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                    className={`px-4 py-3 cursor-pointer hover:bg-[var(--clr-surface-a10)] transition-colors ${
+                      index === selectedIndex ? 'bg-[var(--clr-info-a10)] border-l-2 border-[var(--clr-info-a40)]' : ''
                     }`}
                     onClick={() => navigateToTicker(result.symbol)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-[var(--clr-primary-a50)]">
                           {result.symbol}
                         </div>
-                        <div className="text-sm text-gray-600 truncate">
+                        <div className="text-sm text-[var(--clr-primary-a30)] truncate">
                           {result.name}
                         </div>
                       </div>
-                      <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                      <div className="text-xs text-[var(--clr-primary-a25)] bg-[var(--clr-surface-a10)] px-2 py-1 rounded">
                         {result.exchange}
                       </div>
                     </div>
@@ -162,7 +162,7 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
                 ))}
               </div>
             ) : query.length > 0 ? (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center text-[var(--clr-primary-a30)]">
                 No results found for "{query}"
               </div>
             ) : null}

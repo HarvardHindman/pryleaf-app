@@ -52,10 +52,16 @@ export default function GeneralChat() {
 
   if (loading || channelLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
+          <div 
+            className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
+            style={{ borderColor: 'var(--clr-info-a40)' }}
+          ></div>
+          <p style={{ color: 'var(--clr-primary-a30)' }}>Loading chat...</p>
         </div>
       </div>
     );
@@ -63,13 +69,34 @@ export default function GeneralChat() {
 
   if (!user) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+      >
         <div className="text-center">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Please sign in to join the chat</p>
+          <Users 
+            className="h-12 w-12 mx-auto mb-4" 
+            style={{ color: 'var(--clr-primary-a20)' }}
+          />
+          <p 
+            className="mb-4"
+            style={{ color: 'var(--clr-primary-a30)' }}
+          >
+            Please sign in to join the chat
+          </p>
           <a 
             href="/login" 
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 rounded-md transition-colors"
+            style={{
+              backgroundColor: 'var(--clr-info-a40)',
+              color: 'var(--clr-surface-a5)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--clr-info-a45)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--clr-info-a40)';
+            }}
           >
             Sign In
           </a>
@@ -80,15 +107,36 @@ export default function GeneralChat() {
 
   if (!client || !channel) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50">
+      <div 
+        className="h-full flex items-center justify-center"
+        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+      >
         <div className="text-center">
-          <p className="text-gray-600 mb-2">Failed to load chat.</p>
-          <p className="text-sm text-gray-500 mb-4">
+          <p 
+            className="mb-2"
+            style={{ color: 'var(--clr-primary-a30)' }}
+          >
+            Failed to load chat.
+          </p>
+          <p 
+            className="text-sm mb-4"
+            style={{ color: 'var(--clr-primary-a25)' }}
+          >
             {!client ? 'Chat client not connected' : 'Channel not available'}
           </p>
           <button 
             onClick={() => window.location.reload()}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 rounded-md transition-colors"
+            style={{
+              backgroundColor: 'var(--clr-info-a40)',
+              color: 'var(--clr-surface-a5)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--clr-info-a45)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--clr-info-a40)';
+            }}
           >
             Refresh Page
           </button>
@@ -98,7 +146,10 @@ export default function GeneralChat() {
   }
 
   return (
-    <div className="h-full custom-chat">
+    <div 
+      className="h-full custom-chat"
+      style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+    >
       <Chat client={client} theme="str-chat__theme-light">
         <Channel 
           channel={channel} 

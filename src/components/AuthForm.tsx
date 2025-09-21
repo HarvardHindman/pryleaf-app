@@ -54,16 +54,22 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+    <div 
+      className="min-h-screen flex items-center justify-center p-6"
+      style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+    >
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <User className="h-12 w-12 text-blue-600" />
+            <User 
+              className="h-12 w-12" 
+              style={{ color: 'var(--clr-info-a20)' }}
+            />
           </div>
           <CardTitle className="text-2xl font-bold">
             {mode === "login" ? "Welcome Back" : "Create Account"}
           </CardTitle>
-          <p className="text-gray-600">
+          <p style={{ color: 'var(--clr-primary-a40)' }}>
             {mode === "login" 
               ? "Sign in to your Pryleaf account" 
               : "Join Pryleaf to start chatting and tracking investments"
@@ -74,9 +80,17 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Email</label>
+              <label 
+                className="text-sm font-medium"
+                style={{ color: 'var(--clr-primary-a50)' }}
+              >
+                Email
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
+                  style={{ color: 'var(--clr-primary-a30)' }}
+                />
                 <Input
                   type="email"
                   placeholder="Enter your email"
@@ -89,9 +103,17 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Password</label>
+              <label 
+                className="text-sm font-medium"
+                style={{ color: 'var(--clr-primary-a50)' }}
+              >
+                Password
+              </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock 
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
+                  style={{ color: 'var(--clr-primary-a30)' }}
+                />
                 <Input
                   type="password"
                   placeholder="Enter your password"
@@ -104,13 +126,27 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
             </div>
             
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+              <div 
+                className="border px-4 py-3 rounded-md text-sm"
+                style={{
+                  backgroundColor: 'var(--clr-danger-a0)',
+                  borderColor: 'var(--clr-danger-a10)',
+                  color: 'var(--clr-danger-a20)'
+                }}
+              >
                 {error}
               </div>
             )}
             
             {success && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm">
+              <div 
+                className="border px-4 py-3 rounded-md text-sm"
+                style={{
+                  backgroundColor: 'var(--clr-success-a0)',
+                  borderColor: 'var(--clr-success-a10)',
+                  color: 'var(--clr-success-a20)'
+                }}
+              >
                 {success}
               </div>
             )}
@@ -132,18 +168,29 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
           </form>
           
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p 
+              className="text-sm"
+              style={{ color: 'var(--clr-primary-a40)' }}
+            >
               {mode === "login" ? (
                 <>
                   Don't have an account?{" "}
-                  <a href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                  <a 
+                    href="/register" 
+                    className="font-medium hover:opacity-80 transition-opacity"
+                    style={{ color: 'var(--clr-info-a20)' }}
+                  >
                     Sign up
                   </a>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                  <a href="/login" className="text-blue-600 hover:text-blue-500 font-medium">
+                  <a 
+                    href="/login" 
+                    className="font-medium hover:opacity-80 transition-opacity"
+                    style={{ color: 'var(--clr-info-a20)' }}
+                  >
                     Sign in
                   </a>
                 </>
