@@ -1,0 +1,158 @@
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Modern Semantic Color System */
+  /* Text Colors - High contrast hierarchy */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  /* Surface Colors - Subtle hierarchy with proper contrast */
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-elevated: var(--surface-elevated);
+
+  /* Border Colors - Subtle to prominent */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  /* Interactive Colors */
+  --color-interactive-primary: var(--interactive-primary);
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-active: var(--interactive-active);
+
+  /* Status Colors - Semantic meaning */
+  --color-success-background: var(--success-background);
+  --color-success-text: var(--success-text);
+  --color-success-border: var(--success-border);
+
+  --color-warning-background: var(--warning-background);
+  --color-warning-text: var(--warning-text);
+  --color-warning-border: var(--warning-border);
+
+  --color-danger-background: var(--danger-background);
+  --color-danger-text: var(--danger-text);
+  --color-danger-border: var(--danger-border);
+
+  --color-info-background: var(--info-background);
+  --color-info-text: var(--info-text);
+  --color-info-border: var(--info-border);
+
+  /* Shadows and Elevation */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+
+  /* Legacy colors for compatibility */
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Modern Semantic Color System - Light Theme */
+
+  /* Base Colors */
+  --background: #fafafa;
+  --foreground: #1a1a1a;
+
+  /* Text Colors - High contrast hierarchy */
+  --text-primary: #1a1a1a;        /* Main text, high contrast */
+  --text-secondary: #4a4a4a;      /* Secondary text, readable */
+  --text-muted: #6b7280;          /* Muted text, less prominent */
+  --text-subtle: #9ca3af;        /* Subtle text, least prominent */
+
+  /* Surface Colors - Subtle hierarchy with proper contrast */
+  --surface-primary: #ffffff;      /* Main background, cards */
+  --surface-secondary: #f9fafb;   /* Secondary backgrounds */
+  --surface-tertiary: #f3f4f6;    /* Tertiary, subtle differences */
+  --surface-elevated: #ffffff;    /* Elevated surfaces like modals */
+
+  /* Border Colors - Subtle to prominent */
+  --border-subtle: #f3f4f6;       /* Very subtle, almost invisible */
+  --border-default: #e5e7eb;      /* Default border, balanced */
+  --border-strong: #d1d5db;       /* Stronger border for emphasis */
+
+  /* Interactive Colors */
+  --interactive-primary: #3b82f6;  /* Primary actions, links */
+  --interactive-hover: #2563eb;    /* Hover state */
+  --interactive-active: #1d4ed8;   /* Active/pressed state */
+
+  /* Status Colors - Semantic meaning */
+  --success-background: #ecfdf5;    /* Success backgrounds */
+  --success-text: #065f46;         /* Success text */
+  --success-border: #a7f3d0;       /* Success borders */
+
+  --warning-background: #fffbeb;    /* Warning backgrounds */
+  --warning-text: #92400e;         /* Warning text */
+  --warning-border: #fcd34d;       /* Warning borders */
+
+  --danger-background: #fef2f2;     /* Danger backgrounds */
+  --danger-text: #991b1b;          /* Danger text */
+  --danger-border: #fca5a5;        /* Danger borders */
+
+  --info-background: #eff6ff;       /* Info backgrounds */
+  --info-text: #1e40af;            /* Info text */
+  --info-border: #93c5fd;          /* Info borders */
+
+  /* Shadows and Elevation - Subtle depth */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Legacy mappings for backward compatibility */
+  --background: var(--surface-secondary);
+  --foreground: var(--text-primary);
+  --card: var(--surface-primary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-primary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--interactive-primary);
+  --primary-foreground: var(--surface-primary);
+  --secondary: var(--surface-secondary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-tertiary);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-tertiary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger-text);
+  --border: var(--border-default);
+  --input: var(--surface-primary);
+  --ring: var(--interactive-primary);
+
+  /* Additional semantic mappings */
+  --ring: var(--interactive-primary);
+  --input: var(--surface-primary);
+  --destructive: var(--danger-text);
+  --accent-foreground: var(--text-primary);
+  --accent: var(--surface-tertiary);
+}

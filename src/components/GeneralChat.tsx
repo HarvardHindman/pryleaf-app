@@ -5,6 +5,7 @@ import { Chat, Channel, MessageList, Thread, Window } from "stream-chat-react";
 import type { Channel as StreamChannel } from "stream-chat";
 import { useStreamChat } from "@/contexts/StreamChatContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Users } from "lucide-react";
 import CustomMessageUi from "@/components/ui/custommessageui";
 import CustomMessageInput from "@/components/ui/CustomMessageInput";
@@ -13,6 +14,7 @@ import CustomMessageInput from "@/components/ui/CustomMessageInput";
 export default function GeneralChat() {
   const { client, loading } = useStreamChat();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [channel, setChannel] = useState<StreamChannel | null>(null);
   const [channelLoading, setChannelLoading] = useState(true);
 
@@ -52,16 +54,16 @@ export default function GeneralChat() {
 
   if (loading || channelLoading) {
     return (
-      <div 
+      <div
         className="h-full flex items-center justify-center"
-        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+        style={{ backgroundColor: 'var(--surface-secondary)' }}
       >
         <div className="text-center">
-          <div 
+          <div
             className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
-            style={{ borderColor: 'var(--clr-info-a40)' }}
+            style={{ borderColor: 'var(--interactive-primary)' }}
           ></div>
-          <p style={{ color: 'var(--clr-primary-a30)' }}>Loading chat...</p>
+          <p style={{ color: 'var(--text-muted)' }}>Loading chat...</p>
         </div>
       </div>
     );
@@ -69,33 +71,33 @@ export default function GeneralChat() {
 
   if (!user) {
     return (
-      <div 
+      <div
         className="h-full flex items-center justify-center"
-        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+        style={{ backgroundColor: 'var(--surface-secondary)' }}
       >
         <div className="text-center">
-          <Users 
-            className="h-12 w-12 mx-auto mb-4" 
-            style={{ color: 'var(--clr-primary-a20)' }}
+          <Users
+            className="h-12 w-12 mx-auto mb-4"
+            style={{ color: 'var(--text-muted)' }}
           />
-          <p 
+          <p
             className="mb-4"
-            style={{ color: 'var(--clr-primary-a30)' }}
+            style={{ color: 'var(--text-muted)' }}
           >
             Please sign in to join the chat
           </p>
-          <a 
-            href="/login" 
+          <a
+            href="/login"
             className="inline-flex items-center px-4 py-2 rounded-md transition-colors"
             style={{
-              backgroundColor: 'var(--clr-info-a40)',
-              color: 'var(--clr-surface-a5)'
+              backgroundColor: 'var(--interactive-primary)',
+              color: 'var(--surface-primary)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--clr-info-a45)';
+              e.currentTarget.style.backgroundColor = 'var(--interactive-hover)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--clr-info-a40)';
+              e.currentTarget.style.backgroundColor = 'var(--interactive-primary)';
             }}
           >
             Sign In
@@ -107,35 +109,35 @@ export default function GeneralChat() {
 
   if (!client || !channel) {
     return (
-      <div 
+      <div
         className="h-full flex items-center justify-center"
-        style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+        style={{ backgroundColor: 'var(--surface-secondary)' }}
       >
         <div className="text-center">
-          <p 
+          <p
             className="mb-2"
-            style={{ color: 'var(--clr-primary-a30)' }}
+            style={{ color: 'var(--text-muted)' }}
           >
             Failed to load chat.
           </p>
-          <p 
+          <p
             className="text-sm mb-4"
-            style={{ color: 'var(--clr-primary-a25)' }}
+            style={{ color: 'var(--text-subtle)' }}
           >
             {!client ? 'Chat client not connected' : 'Channel not available'}
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center px-4 py-2 rounded-md transition-colors"
             style={{
-              backgroundColor: 'var(--clr-info-a40)',
-              color: 'var(--clr-surface-a5)'
+              backgroundColor: 'var(--interactive-primary)',
+              color: 'var(--surface-primary)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--clr-info-a45)';
+              e.currentTarget.style.backgroundColor = 'var(--interactive-hover)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--clr-info-a40)';
+              e.currentTarget.style.backgroundColor = 'var(--interactive-primary)';
             }}
           >
             Refresh Page
@@ -146,13 +148,13 @@ export default function GeneralChat() {
   }
 
   return (
-    <div 
+    <div
       className="h-full custom-chat"
-      style={{ backgroundColor: 'var(--clr-surface-a5)' }}
+      style={{ backgroundColor: 'var(--surface-secondary)' }}
     >
-      <Chat client={client} theme="str-chat__theme-light">
-        <Channel 
-          channel={channel} 
+      <Chat client={client} theme="str-chat__theme-light" className={theme === 'dark' ? 'dark' : ''}>
+        <Channel
+          channel={channel}
           Message={CustomMessageUi}
           QuotedMessage={EmptyQuotedMessage}
         >

@@ -13,9 +13,21 @@ import {
   Menu,
   X,
   LogOut,
-  MessageCircle,
+  MessageSquare,
   Sun,
-  Moon
+  Moon,
+  Plus,
+  Hash,
+  Users,
+  Compass,
+  Zap,
+  Activity,
+  PieChart,
+  LineChart,
+  DollarSign,
+  Globe,
+  Building2,
+  Server
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
@@ -51,83 +63,125 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
-    { name: 'Chat', href: '/chat', icon: MessageCircle, current: currentPath === '/chat' },
+    { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
+    { name: 'Markets', href: '/markets', icon: TrendingUp, current: currentPath === '/markets' },
+    { name: 'Portfolio', href: '/portfolio', icon: DollarSign, current: currentPath === '/portfolio' },
+    { name: 'Analytics', href: '/analytics', icon: LineChart, current: currentPath === '/analytics' },
+    { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
+    { name: 'Chat', href: '/chat', icon: MessageSquare, current: currentPath === '/chat' },
   ];
   const headerNav = [
-    { name: 'Markets', href: '/markets', icon: TrendingUp },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Watchlist', href: '/watchlist', icon: Bookmark },
+    { name: 'News', href: '/news', icon: Globe },
+    { name: 'Research', href: '/research', icon: Building2 },
+    { name: 'Tools', href: '/tools', icon: Settings },
   ];
 
   return (
-    <div 
+    <div
       className="h-screen flex overflow-hidden"
-      style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+      style={{ backgroundColor: 'var(--surface-secondary)' }}
     >
       {/* Sidebar */}
-      <div className="hidden md:flex md:w-32 md:flex-col">
-        <div 
+      <div className="hidden md:flex md:w-40 md:flex-col">
+        <div
           className="flex flex-col h-full border-r"
-          style={{ 
-            backgroundColor: 'var(--clr-surface-a0)',
-            borderColor: 'var(--clr-surface-a30)'
+          style={{
+            backgroundColor: 'var(--surface-primary)',
+            borderColor: 'var(--border-default)'
           }}
         >
           {/* Logo Section */}
-          <div className="flex-shrink-0 px-3 py-6">
-            <div className="flex flex-col items-center">
-              <a href="/" className="flex flex-col items-center group">
+          <div className="flex-shrink-0 px-3 py-4">
+            <div className="flex items-center">
+              <a href="/" className="flex items-center group">
                 <img 
                   src="/pryleaf.PNG" 
                   alt="Pryleaf" 
-                  className="h-16 w-auto group-hover:opacity-80 transition-opacity mb-2"
+                  className="h-7 w-auto group-hover:opacity-80 transition-opacity mr-2"
                 />
-                <span className="text-xs font-bold group-hover:opacity-80 transition-opacity text-center" style={{ color: 'var(--clr-primary-a40)' }}>
+                <span className="text-base font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--clr-primary-a40)' }}>
                   Pryleaf
                 </span>
               </a>
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-4 space-y-3 overflow-y-auto">
+          {/* Main Navigation - Investment Tools */}
+          <nav className="flex-1 px-2 py-2 space-y-1">
             {navigation.map((item) => (
               <a
                 key={item.name}
                 href={item.href}
-                className={`group flex flex-col items-center px-2 py-3 text-xs font-medium rounded-lg transition-colors ${
+                className={`flex items-center px-2 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
                   item.current
-                    ? 'border'
-                    : ''
+                    ? 'shadow-sm'
+                    : 'hover:shadow-sm'
                 }`}
                 style={{
-                  backgroundColor: item.current ? 'var(--clr-info-a0)' : 'transparent',
-                  color: item.current ? 'var(--clr-info-a20)' : 'var(--clr-primary-a40)',
-                  borderColor: item.current ? 'var(--clr-info-a10)' : 'transparent'
+                  backgroundColor: item.current ? 'var(--info-background)' : 'transparent',
+                  color: item.current ? 'var(--info-text)' : 'var(--text-muted)',
+                  border: item.current ? '1px solid var(--info-border)' : '1px solid transparent'
                 }}
                 onMouseEnter={(e) => {
                   if (!item.current) {
-                    e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
-                    e.currentTarget.style.color = 'var(--clr-primary-a50)';
+                    e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!item.current) {
                     e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = 'var(--clr-primary-a40)';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                    e.currentTarget.style.borderColor = 'transparent';
                   }
                 }}
               >
-                <item.icon className={`flex-shrink-0 h-5 w-5 mb-1 ${
-                  item.current ? '' : 'group-hover:opacity-80'
-                }`} style={{ color: 'currentColor' }} />
-                <span className="text-center">{item.name}</span>
+                <item.icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
               </a>
             ))}
           </nav>
 
-          {/* Bottom Section - Settings & User (removed, now in header) */}
+          {/* Server Selection - Bottom Section */}
+          <div className="flex-shrink-0 px-2 py-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+            <div className="space-y-2">
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                Server
+              </div>
+              
+              {/* Current Server */}
+              <div className="flex items-center px-2 py-1.5 rounded-md text-sm" style={{
+                backgroundColor: 'var(--info-background)',
+                color: 'var(--info-text)',
+                border: '1px solid var(--info-border)'
+              }}>
+                <Server className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Pryleaf</span>
+              </div>
+
+              {/* Add Server */}
+              <button 
+                className="flex items-center w-full px-2 py-1.5 rounded-md text-sm transition-all duration-200 border border-dashed hover:border-solid"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-muted)',
+                  borderColor: 'var(--border-subtle)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">Join Server</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -151,24 +205,41 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
             
             {/* Mobile navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-3 overflow-y-auto">
+            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
               {navigation.map((item) => (
                 <a
                   key={item.name}
                   href={item.href}
-                  className={`group flex flex-col items-center px-3 py-4 text-sm font-medium rounded-lg ${
+                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
                     item.current
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`flex-shrink-0 h-6 w-6 mb-2 ${
+                  <item.icon className={`flex-shrink-0 h-5 w-5 mr-3 ${
                     item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                   }`} />
-                  <span className="text-center">{item.name}</span>
+                  <span>{item.name}</span>
                 </a>
               ))}
+              
+              {/* Mobile Server Section */}
+              <div className="pt-4 mt-4 border-t border-gray-200">
+                <div className="px-3 mb-2">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Community Server
+                  </h3>
+                </div>
+                <div className="flex items-center px-3 py-2 text-sm text-gray-600">
+                  <Server className="h-4 w-4 mr-3 text-gray-400" />
+                  <span>Pryleaf Community</span>
+                </div>
+                <button className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
+                  <Plus className="h-4 w-4 mr-3 text-gray-400" />
+                  <span>Join Server</span>
+                </button>
+              </div>
             </nav>
 
             {/* Mobile bottom section */}
@@ -193,9 +264,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         {/* Top header with nav, search, and settings/account */}
-        <header 
+        <header
           className="px-6 py-4"
-          style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+          style={{ backgroundColor: 'var(--surface-secondary)' }}
         >
           <div className="flex items-center justify-between">
             {/* Mobile menu button */}
@@ -258,20 +329,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   </button>
                   
                   {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="absolute right-0 mt-2 w-48 bg-[var(--surface-primary)] rounded-md shadow-lg border border-[var(--border-default)] z-50">
                       <div className="py-1">
-                        <div className="px-4 py-2 text-sm text-gray-700 border-b">
+                        <div className="px-4 py-2 text-sm text-[var(--text-primary)] border-b border-[var(--border-subtle)]">
                           {user.email}
                         </div>
-                        <a 
-                          href="/profile" 
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        <a
+                          href="/profile"
+                          className="block px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
                         >
                           Profile
                         </a>
-                        <button 
+                        <button
                           onClick={signOut}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
                         >
                           <LogOut className="inline h-4 w-4 mr-2" />
                           Sign out
@@ -282,15 +353,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <a 
-                    href="/login" 
-                    className="px-3 py-1 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                  <a
+                    href="/login"
+                    className="px-3 py-1 text-sm text-[var(--text-secondary)] hover:text-[var(--interactive-primary)] transition-colors"
                   >
                     Sign in
                   </a>
-                  <a 
-                    href="/register" 
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  <a
+                    href="/register"
+                    className="px-3 py-1 text-sm bg-[var(--interactive-primary)] text-[var(--surface-primary)] rounded-md hover:bg-[var(--interactive-hover)] transition-colors"
                   >
                     Sign up
                   </a>
@@ -301,11 +372,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main 
-          className="flex-1 overflow-y-auto"
-          style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+        <main
+          className="flex-1 overflow-y-auto scrollbar-hidden"
+          style={{
+            backgroundColor: 'var(--surface-secondary)',
+            scrollbarWidth: 'none', /* Firefox */
+            msOverflowStyle: 'none' /* Internet Explorer 10+ */
+          }}
         >
           {children}
+          {/* Hide scrollbars for WebKit browsers */}
+          <style jsx>{`
+            main::-webkit-scrollbar {
+              display: none; /* Safari and Chrome */
+            }
+          `}</style>
         </main>
       </div>
     </div>

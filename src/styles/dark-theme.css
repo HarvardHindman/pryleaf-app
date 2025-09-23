@@ -1,0 +1,73 @@
+.dark {
+  /* Modern Semantic Color System - Dark Theme */
+
+  /* Base Colors */
+  --background: #111827;
+  --foreground: #f9fafb;
+
+  /* Text Colors - High contrast hierarchy */
+  --text-primary: #f9fafb;         /* Main text, high contrast */
+  --text-secondary: #e5e7eb;       /* Secondary text, readable */
+  --text-muted: #9ca3af;           /* Muted text, less prominent */
+  --text-subtle: #6b7280;         /* Subtle text, least prominent */
+
+  /* Surface Colors - Subtle hierarchy with proper contrast */
+  --surface-primary: #1f2937;      /* Main background, cards */
+  --surface-secondary: #111827;    /* Secondary backgrounds */
+  --surface-tertiary: #374151;     /* Tertiary, subtle differences */
+  --surface-elevated: #1f2937;     /* Elevated surfaces like modals */
+
+  /* Border Colors - Subtle to prominent */
+  --border-subtle: #374151;        /* Very subtle, almost invisible */
+  --border-default: #4b5563;       /* Default border, balanced */
+  --border-strong: #6b7280;        /* Stronger border for emphasis */
+
+  /* Interactive Colors */
+  --interactive-primary: #60a5fa;  /* Primary actions, links */
+  --interactive-hover: #3b82f6;    /* Hover state */
+  --interactive-active: #2563eb;   /* Active/pressed state */
+
+  /* Status Colors - Semantic meaning */
+  --success-background: #064e3b;    /* Success backgrounds */
+  --success-text: #34d399;         /* Success text */
+  --success-border: #065f46;       /* Success borders */
+
+  --warning-background: #78350f;    /* Warning backgrounds */
+  --warning-text: #fbbf24;         /* Warning text */
+  --warning-border: #92400e;       /* Warning borders */
+
+  --danger-background: #7f1d1d;     /* Danger backgrounds */
+  --danger-text: #f87171;          /* Danger text */
+  --danger-border: #991b1b;        /* Danger borders */
+
+  --info-background: #1e3a8a;       /* Info backgrounds */
+  --info-text: #60a5fa;            /* Info text */
+  --info-border: #1d4ed8;          /* Info borders */
+
+  /* Shadows and Elevation - Enhanced for dark mode */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+
+  /* Legacy mappings for backward compatibility */
+  --background: var(--surface-secondary);
+  --foreground: var(--text-primary);
+  --card: var(--surface-primary);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-primary);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--interactive-primary);
+  --primary-foreground: var(--surface-primary);
+  --secondary: var(--surface-tertiary);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-tertiary);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-tertiary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger-text);
+  --border: var(--border-default);
+  --input: var(--surface-primary);
+  --ring: var(--interactive-primary);
+}

@@ -90,7 +90,7 @@ const CustomMessageUi = () => {
       data-message-id={message.id}
       style={{ backgroundColor: 'transparent' }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+        e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
@@ -100,7 +100,7 @@ const CustomMessageUi = () => {
         {/* Show quoted message with minimal, faint design */}
         {(message as any).quoted_message && (
           <div className="mb-1 opacity-60">
-            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--clr-primary-a30)' }}>
+            <div className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
@@ -108,7 +108,7 @@ const CustomMessageUi = () => {
                 {(message as any).quoted_message.user?.name || (message as any).quoted_message.user?.id}
               </span>
             </div>
-            <div className="text-xs truncate ml-4 max-w-md" style={{ color: 'var(--clr-primary-a30)' }}>
+            <div className="text-xs truncate ml-4 max-w-md" style={{ color: 'var(--text-muted)' }}>
               {(message as any).quoted_message.text}
             </div>
           </div>
@@ -116,10 +116,10 @@ const CustomMessageUi = () => {
 
         {/* Time and Username Header */}
         <div className="flex items-baseline gap-2 mb-1">
-          <span className="text-xs font-medium" style={{ color: 'var(--clr-primary-a40)' }}>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
             {formatTime(message.created_at || new Date())}
           </span>
-          <span className="text-sm font-semibold" style={{ color: 'var(--clr-primary-a50)' }}>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
             {message.user?.name || message.user?.id || 'Unknown User'}
           </span>
         </div>
@@ -144,9 +144,9 @@ const CustomMessageUi = () => {
           onClick={handleReactionClick}
           className="p-2 rounded-md transition-colors"
           title="Add Reaction"
-          style={{ color: 'var(--clr-primary-a40)' }}
+          style={{ color: 'var(--text-muted)' }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+            e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -162,9 +162,9 @@ const CustomMessageUi = () => {
           onClick={handleReply}
           className="p-2 rounded-md transition-colors"
           title="Reply"
-          style={{ color: 'var(--clr-primary-a40)' }}
+          style={{ color: 'var(--text-muted)' }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+            e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.backgroundColor = 'transparent';
@@ -181,9 +181,9 @@ const CustomMessageUi = () => {
             onClick={handleDropdownToggle}
             className="p-2 rounded-md transition-colors"
             title="More Options"
-            style={{ color: 'var(--clr-primary-a40)' }}
+            style={{ color: 'var(--text-muted)' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--clr-surface-a20)';
+              e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = 'transparent';
@@ -196,19 +196,19 @@ const CustomMessageUi = () => {
           
           {/* Dropdown Menu */}
           {showDropdown && (
-            <div 
+            <div
               className="absolute right-0 top-full mt-1 rounded-md shadow-lg py-1 z-10 min-w-[120px]"
-              style={{ 
-                backgroundColor: 'var(--clr-surface-a0)',
-                border: '1px solid var(--clr-surface-a30)'
+              style={{
+                backgroundColor: 'var(--surface-primary)',
+                border: '1px solid var(--border-default)'
               }}
             >
               <button
                 onClick={handleCopy}
                 className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
-                style={{ color: 'var(--clr-primary-a50)' }}
+                style={{ color: 'var(--text-primary)' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+                  e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
@@ -225,9 +225,9 @@ const CustomMessageUi = () => {
                   <button
                     onClick={handleEdit}
                     className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
-                    style={{ color: 'var(--clr-primary-a50)' }}
+                    style={{ color: 'var(--text-primary)' }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+                      e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
@@ -242,9 +242,9 @@ const CustomMessageUi = () => {
                   <button
                     onClick={handleDelete}
                     className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
-                    style={{ color: 'var(--clr-danger-a20)' }}
+                    style={{ color: 'var(--danger-text)' }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--clr-danger-a0)';
+                      e.currentTarget.style.backgroundColor = 'var(--danger-background)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.backgroundColor = 'transparent';
@@ -258,14 +258,14 @@ const CustomMessageUi = () => {
                 </>
               )}
               
-              <hr style={{ margin: '4px 0', borderColor: 'var(--clr-surface-a30)' }} />
-              
+              <hr style={{ margin: '4px 0', borderColor: 'var(--border-subtle)' }} />
+
               <button
                 onClick={handleFlag}
                 className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors"
-                style={{ color: 'var(--clr-primary-a50)' }}
+                style={{ color: 'var(--text-primary)' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--clr-surface-a10)';
+                  e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';

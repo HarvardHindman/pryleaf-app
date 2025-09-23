@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import yahooFinance from 'yahoo-finance2';
 import AppLayout from '@/components/AppLayout';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePortfolio } from '@/hooks/usePortfolio';
 
 import TickerSearch from '@/components/TickerSearch';
 
@@ -25,42 +26,48 @@ interface PortfolioStock {
 
 export default function Home() {
   const { user } = useAuth();
+  const { 
+    portfolioStocks, 
+    portfolio, 
+    loading: portfolioLoading, 
+    error: portfolioError, 
+    addHolding, 
+    removeHolding,
+    updateHolding,
+    findHoldingBySymbol,
+    portfolioMetrics 
+  } = usePortfolio();
+  
   // Pie chart hover state
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
-  const [portfolioStocks, setPortfolioStocks] = useState<PortfolioStock[]>([
-    // Mock data for demonstration
-    {
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      price: 175.43,
-      change: 2.15,
-      changePercent: 1.24,
-      shares: 10,
-      costBasis: 150.00,
-      addedAt: '2024-01-15'
-    },
-    {
-      symbol: 'MSFT',
-      name: 'Microsoft Corporation',
-      price: 378.85,
-      change: -1.45,
-      changePercent: -0.38,
-      shares: 5,
-      costBasis: 320.00,
-      addedAt: '2024-01-10'
-    },
-    {
-      symbol: 'GOOGL',
-      name: 'Alphabet Inc.',
-      price: 142.56,
-      change: 0.89,
-      changePercent: 0.63,
-      shares: 7,
-      costBasis: 130.00,
-      addedAt: '2024-01-08'
-    }
-  ]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Local state for input values to avoid API calls on every keystroke
+  const [localInputs, setLocalInputs] = useState<Record<string, { shares: string; costBasis: string }>>({});
+  const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+
+  // Initialize local inputs when portfolio data loads
+  useEffect(() => {
+    if (portfolioStocks.length > 0) {
+      const newLocalInputs: Record<string, { shares: string; costBasis: string }> = {};
+      portfolioStocks.forEach(stock => {
+        newLocalInputs[stock.symbol] = {
+          shares: stock.shares?.toString() || '0',
+          costBasis: stock.costBasis?.toString() || '0'
+        };
+      });
+      setLocalInputs(newLocalInputs);
+    }
+  }, [portfolioStocks]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimeouts.current).forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+      });
+    };
+  }, []);
 
   // Fetch real price data for portfolio tickers (must be after state declarations)
   useEffect(() => {
@@ -106,33 +113,46 @@ export default function Home() {
   const handleAddStock = async (symbolArg?: string) => {
     const symbol = symbolArg ? symbolArg.trim().toUpperCase() : searchQuery.trim().toUpperCase();
     if (!symbol) return;
-    // In a real app, this would search for the stock and add it
-    // For now, we'll just show the UI flow
-    const randomPrice = Math.random() * 200 + 50;
-    const newStock: PortfolioStock = {
-      symbol,
-      name: `${symbol} Company`,
-      price: randomPrice,
-      change: (Math.random() - 0.5) * 10,
-      changePercent: (Math.random() - 0.5) * 5,
-      shares: 1,
-      costBasis: randomPrice, // Set cost basis to current price
-      addedAt: new Date().toISOString().split('T')[0]
-    };
-    setPortfolioStocks([...portfolioStocks, newStock]);
-    setSearchQuery('');
+    
+    try {
+      // Try to get current market price for the symbol
+      let currentPrice = Math.random() * 200 + 50; // Fallback random price
+      try {
+        const quote = await yahooFinance.quote(symbol);
+        currentPrice = quote.regularMarketPrice || currentPrice;
+      } catch (e) {
+        console.warn(`Could not fetch price for ${symbol}, using fallback`);
+      }
+
+      const success = await addHolding(
+        symbol,
+        1, // Default to 1 share
+        currentPrice, // Use current price as cost basis
+        `${symbol} Company` // Default company name
+      );
+
+      if (success) {
+        setSearchQuery('');
+      }
+    } catch (error) {
+      console.error('Failed to add stock:', error);
+    }
   };
 
-  const handleRemoveStock = (symbol: string) => {
-    setPortfolioStocks(portfolioStocks.filter(stock => stock.symbol !== symbol));
+  const handleRemoveStock = async (symbol: string) => {
+    const holding = findHoldingBySymbol(symbol);
+    if (holding) {
+      await removeHolding(holding.id);
+    }
   };
 
   const calculateTotalValue = (stock: PortfolioStock) => {
-    return (stock.shares || 0) * stock.price;
+    const shares = parseFloat(localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0') || 0;
+    return shares * stock.price;
   };
 
   const getTotalPortfolioValue = () => {
-    return portfolioStocks.reduce((total, stock) => total + calculateTotalValue(stock), 0);
+    return portfolioMetrics?.totalValue || 0;
   };
 
   const getTotalPortfolioChange = () => {
@@ -145,34 +165,80 @@ export default function Home() {
     return (calculateTotalValue(stock) / totalValue) * 100;
   };
 
-  const handleSharesChange = (symbol: string, newShares: number) => {
-    setPortfolioStocks(portfolioStocks.map(stock => 
-      stock.symbol === symbol 
-        ? { ...stock, shares: Math.max(0, newShares) }
-        : stock
-    ));
+  // Debounced function to update holding after user stops typing
+  const debouncedUpdateHolding = useCallback(async (symbol: string, shares: number, costBasis: number) => {
+    const holding = findHoldingBySymbol(symbol);
+    if (holding) {
+      try {
+        await updateHolding(holding.id, shares, costBasis);
+      } catch (error) {
+        console.error('Failed to update holding:', error);
+        // Optionally show a toast notification here
+      }
+    }
+  }, [findHoldingBySymbol, updateHolding]);
+
+  const handleSharesChange = (symbol: string, newShares: string) => {
+    // Update local state immediately for responsive UI
+    setLocalInputs(prev => ({
+      ...prev,
+      [symbol]: {
+        ...prev[symbol],
+        shares: newShares
+      }
+    }));
+
+    // Clear existing timeout for this symbol
+    if (debounceTimeouts.current[symbol]) {
+      clearTimeout(debounceTimeouts.current[symbol]);
+    }
+
+    // Set new timeout for API call
+    debounceTimeouts.current[symbol] = setTimeout(() => {
+      const shares = parseFloat(newShares) || 0;
+      const costBasis = parseFloat(localInputs[symbol]?.costBasis || '0') || 0;
+      debouncedUpdateHolding(symbol, shares, costBasis);
+    }, 1000); // 1 second delay
   };
 
-  const handleCostBasisChange = (symbol: string, newCostBasis: number) => {
-    setPortfolioStocks(portfolioStocks.map(stock => 
-      stock.symbol === symbol 
-        ? { ...stock, costBasis: Math.max(0, newCostBasis) }
-        : stock
-    ));
+  const handleCostBasisChange = (symbol: string, newCostBasis: string) => {
+    // Update local state immediately for responsive UI
+    setLocalInputs(prev => ({
+      ...prev,
+      [symbol]: {
+        ...prev[symbol],
+        costBasis: newCostBasis
+      }
+    }));
+
+    // Clear existing timeout for this symbol
+    if (debounceTimeouts.current[symbol]) {
+      clearTimeout(debounceTimeouts.current[symbol]);
+    }
+
+    // Set new timeout for API call
+    debounceTimeouts.current[symbol] = setTimeout(() => {
+      const shares = parseFloat(localInputs[symbol]?.shares || '0') || 0;
+      const costBasis = parseFloat(newCostBasis) || 0;
+      debouncedUpdateHolding(symbol, shares, costBasis);
+    }, 1000); // 1 second delay
   };
 
   const calculatePnL = (stock: PortfolioStock) => {
-    if (!stock.costBasis || !stock.shares) return 0;
-    return (stock.price - stock.costBasis) * stock.shares;
+    const shares = parseFloat(localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0') || 0;
+    const costBasis = parseFloat(localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0') || 0;
+    if (!costBasis || !shares) return 0;
+    return (stock.price - costBasis) * shares;
   };
 
   const calculatePnLPercentage = (stock: PortfolioStock) => {
-    if (!stock.costBasis) return 0;
-    return ((stock.price - stock.costBasis) / stock.costBasis) * 100;
+    const costBasis = parseFloat(localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0') || 0;
+    if (!costBasis) return 0;
+    return ((stock.price - costBasis) / costBasis) * 100;
   };
 
   const getTotalPnL = () => {
-    return portfolioStocks.reduce((total, stock) => total + calculatePnL(stock), 0);
+    return portfolioMetrics?.totalGainLoss || 0;
   };
 
   const formatCurrency = (price: number) => {
@@ -200,37 +266,31 @@ export default function Home() {
         // Welcome section for non-authenticated users
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold text-[var(--clr-primary-a50)] mb-6">
+            <h1 className="text-display text-text-primary mb-6">
               Welcome to Pryleaf
             </h1>
-            <p className="text-xl text-[var(--clr-primary-a30)] mb-8">
+            <p className="text-xl text-text-secondary mb-8">
               Professional Financial Analysis Platform with Community Chat
             </p>
             
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <BarChart3 className="h-12 w-12 text-[var(--clr-info-a40)] mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Portfolio Tracking</h3>
-                  <p className="text-[var(--clr-primary-a30)] text-sm">Track your investments with real-time data and interactive charts</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <Users className="h-12 w-12 text-[var(--clr-success-a40)] mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Community Chat</h3>
-                  <p className="text-[var(--clr-primary-a30)] text-sm">Connect with other investors and share insights</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <TrendingUp className="h-12 w-12 text-[var(--clr-info-a35)] mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Market Analysis</h3>
-                  <p className="text-[var(--clr-primary-a30)] text-sm">Get real-time market data and advanced analytics</p>
-                </CardContent>
-              </Card>
+            <div className="dashboard-grid mb-12">
+              <div className="card-elevated p-6 text-center">
+                <BarChart3 className="h-12 w-12 text-info-text mx-auto mb-4" />
+                <h3 className="text-heading mb-2">Portfolio Tracking</h3>
+                <p className="text-caption">Track your investments with real-time data and interactive charts</p>
+              </div>
+
+              <div className="card-elevated p-6 text-center">
+                <Users className="h-12 w-12 text-success-text mx-auto mb-4" />
+                <h3 className="text-heading mb-2">Community Chat</h3>
+                <p className="text-caption">Connect with other investors and share insights</p>
+              </div>
+
+              <div className="card-elevated p-6 text-center">
+                <TrendingUp className="h-12 w-12 text-info-text mx-auto mb-4" />
+                <h3 className="text-heading mb-2">Market Analysis</h3>
+                <p className="text-caption">Get real-time market data and advanced analytics</p>
+              </div>
             </div>
             
             <div className="space-x-4">
@@ -249,14 +309,14 @@ export default function Home() {
         // Existing dashboard content for authenticated users
         <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[var(--clr-primary-a50)] mb-2">Dashboard</h1>
-          <p className="text-[var(--clr-primary-a30)]">Track your investments and market performance</p>
+          <h1 className="text-heading text-text-primary mb-2">Dashboard</h1>
+          <p className="text-caption">Track your investments and market performance</p>
         </div>
 
         {/* Market Overview - Row of Cards */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-[var(--clr-primary-a50)] mb-4">Market Overview</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+          <h2 className="text-heading text-text-primary mb-4">Market Overview</h2>
+          <div className="dashboard-grid">
             {marketData.map((index) => {
               const isPositive = index.change >= 0;
               const formatPrice = (price: number) => {
@@ -265,19 +325,19 @@ export default function Home() {
                   maximumFractionDigits: 2
                 }).format(price);
               };
-              
+
               return (
-                <div key={index.symbol} className="bg-[var(--clr-surface-a5)] border border-[var(--clr-surface-a15)] rounded-lg hover:shadow-md transition-shadow px-2 py-1">
+                <div key={index.symbol} className="market-card">
                   <div>
-                    <h3 className="font-semibold text-[var(--clr-primary-a50)] text-xs mb-1 truncate">{index.name}</h3>
-                    
+                    <h3 className="text-body text-text-primary text-xs mb-1 truncate font-semibold">{index.name}</h3>
+
                     <div className="flex items-center space-x-2">
-                      <div className="text-sm font-bold text-[var(--clr-primary-a50)]">
+                      <div className="text-sm font-bold text-text-primary">
                         {formatPrice(index.price)}
                       </div>
-                      
+
                       <div className={`flex items-center space-x-1 text-xs ${
-                        isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
+                        isPositive ? 'text-success-text' : 'text-danger-text'
                       }`}>
                         {isPositive ? (
                           <TrendingUp className="h-2 w-2" />
@@ -300,10 +360,10 @@ export default function Home() {
         </div>
 
         {/* Portfolio Section - Financial Terminal Style */}
-        <div className="bg-[var(--clr-surface-a5)] border border-[var(--clr-surface-a15)] rounded-lg">
-          <div className="border-b border-[var(--clr-surface-a20)] px-4 py-3">
+        <div className="terminal-section">
+          <div className="terminal-header px-4 py-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[var(--clr-primary-a50)] flex items-center">
+              <h2 className="text-heading text-text-primary flex items-center">
                 <Briefcase className="h-5 w-5 mr-2" />
                 PORTFOLIO
               </h2>
@@ -321,24 +381,24 @@ export default function Home() {
           </div>
 
           {/* Portfolio Summary - Financial Terminal Style */}
-          <div className="grid grid-cols-3 gap-0 border-b border-[var(--clr-surface-a20)]">
-            <div className="px-4 py-2 border-r border-[var(--clr-surface-a20)]">
-              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Total Value</div>
-              <div className="text-lg font-bold text-[var(--clr-primary-a50)]">
+          <div className="grid grid-cols-3 gap-0 border-b border-border-subtle">
+            <div className="px-4 py-2 border-r border-border-subtle">
+              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Total Value</div>
+              <div className="text-lg font-bold text-text-primary">
                 {formatCurrency(getTotalPortfolioValue())}
               </div>
             </div>
-            
-            <div className="px-4 py-2 border-r border-[var(--clr-surface-a20)]">
-              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Daily P&L</div>
-              <div className={`text-lg font-bold ${getTotalPortfolioChange() >= 0 ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'}`}>
+
+            <div className="px-4 py-2 border-r border-border-subtle">
+              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Daily P&L</div>
+              <div className={`text-lg font-bold ${getTotalPortfolioChange() >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
                 {formatCurrencyChange(getTotalPortfolioChange())}
               </div>
             </div>
-            
+
             <div className="px-4 py-2">
-              <div className="text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">Positions</div>
-              <div className="text-lg font-bold text-[var(--clr-primary-a50)]">
+              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Positions</div>
+              <div className="text-lg font-bold text-text-primary">
                 {portfolioStocks.length}
               </div>
             </div>
@@ -347,22 +407,32 @@ export default function Home() {
           {/* Portfolio Holdings - Financial Terminal Style */}
           <div>
             {/* Header Row */}
-            <div className="grid grid-cols-9 gap-4 px-4 py-2 bg-[var(--clr-surface-a10)] border-b border-[var(--clr-surface-a20)] text-xs font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide">
-              <div>Symbol</div>
-              <div className="text-center">Shares</div>
-              <div className="text-right">Avg Cost</div>
-              <div className="text-right">Market Value</div>
-              <div className="text-right">% Portfolio</div>
-              <div className="text-right">Last Price</div>
-              <div className="text-right">Change</div>
-              <div className="text-right">Profit</div>
-              <div></div>
+            <div className="terminal-row bg-surface-secondary border-b border-border-subtle text-xs font-medium text-text-subtle uppercase tracking-wide">
+              <div className="flex items-center">Symbol</div>
+              <div className="flex items-center">Shares</div>
+              <div className="flex items-center">Avg Cost</div>
+              <div className="flex items-center">Market Value</div>
+              <div className="flex items-center">% Portfolio</div>
+              <div className="flex items-center">Last Price</div>
+              <div className="flex items-center">Change</div>
+              <div className="flex items-center">Profit</div>
+              <div className="flex items-center">Actions</div>
             </div>
             
-            {portfolioStocks.length === 0 ? (
+            {portfolioLoading ? (
               <div className="px-4 py-8 text-center">
-                <p className="text-[var(--clr-primary-a25)] mb-4">No positions in portfolio</p>
-                <p className="text-[var(--clr-primary-a20)] text-sm">Use the search bar above to add your first position</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p className="text-text-muted">Loading portfolio...</p>
+              </div>
+            ) : portfolioError ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-red-500 mb-4">Error loading portfolio</p>
+                <p className="text-text-muted text-sm">{portfolioError}</p>
+              </div>
+            ) : portfolioStocks.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                <p className="text-text-subtle mb-4">No positions in portfolio</p>
+                <p className="text-text-muted text-sm">Use the search bar above to add your first position</p>
               </div>
             ) : (
               <div>
@@ -370,98 +440,105 @@ export default function Home() {
                   const isPositive = stock.change >= 0;
                   const totalValue = calculateTotalValue(stock);
                   const portfolioPercentage = getPortfolioPercentage(stock);
-                  
+
                   return (
-                    <div key={stock.symbol} className="grid grid-cols-9 gap-4 px-4 py-2 hover:bg-[var(--clr-surface-a10)] border-b border-[var(--clr-surface-a15)] transition-colors">
+                    <div key={stock.symbol} className="terminal-row border-b border-border-subtle">
                       {/* Symbol */}
-                      <div>
-                        <div className="font-semibold text-[var(--clr-primary-a50)] text-sm">{stock.symbol}</div>
-                        <div className="text-xs text-[var(--clr-primary-a25)] truncate">{stock.name}</div>
+                      <div className="flex items-center">
+                        <div>
+                          <div className="font-semibold text-text-primary text-sm">{stock.symbol}</div>
+                          <div className="text-xs text-text-subtle truncate">{stock.name}</div>
+                        </div>
                       </div>
-                      
+
                       {/* Shares - Always Editable Input */}
-                      <div className="text-center">
+                      <div className="flex items-center">
                         <Input
                           type="number"
-                          value={stock.shares || 0}
-                          onChange={(e) => handleSharesChange(stock.symbol, parseInt(e.target.value) || 0)}
-                          className="w-16 h-6 text-xs text-center p-1 border border-[var(--clr-surface-a25)] rounded"
+                          value={localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0'}
+                          onChange={(e) => handleSharesChange(stock.symbol, e.target.value)}
+                          className="portfolio-input w-12"
                         />
                       </div>
-                      
+
                       {/* Average Cost Basis - Always Editable Input */}
-                      <div className="text-right">
+                      <div className="flex items-center">
                         <Input
                           type="number"
                           step="0.01"
-                          value={stock.costBasis || 0}
-                          onChange={(e) => handleCostBasisChange(stock.symbol, parseFloat(e.target.value) || 0)}
-                          className="w-20 h-6 text-xs text-right p-1 border border-[var(--clr-surface-a25)] rounded"
+                          value={localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0'}
+                          onChange={(e) => handleCostBasisChange(stock.symbol, e.target.value)}
+                          className="portfolio-input w-14"
                         />
                       </div>
-                      
+
                       {/* Market Value */}
-                      <div className="text-right">
-                        <div className="font-medium text-[var(--clr-primary-a50)] text-sm">{formatCurrency(totalValue)}</div>
+                      <div className="flex items-center">
+                        <div className="font-medium text-text-primary text-sm">{formatCurrency(totalValue)}</div>
                       </div>
-                      
+
                       {/* Portfolio Percentage */}
-                      <div className="text-right">
-                        <div className="font-medium text-[var(--clr-primary-a30)] text-sm">
+                      <div className="flex items-center">
+                        <div className="font-medium text-text-secondary text-sm">
                           {portfolioPercentage.toFixed(1)}%
                         </div>
                       </div>
-                      
+
                       {/* Last Price */}
-                      <div className="text-right">
-                        <div className="font-medium text-[var(--clr-primary-a50)] text-sm">{formatCurrency(stock.price)}</div>
+                      <div className="flex items-center">
+                        <div className="font-medium text-text-primary text-sm">{formatCurrency(stock.price)}</div>
                       </div>
-                      
+
                       {/* Change */}
-                      <div className="text-right">
-                        <div className={`font-medium text-sm ${
-                          isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
-                        }`}>
-                          {formatCurrencyChange(stock.change)}
-                        </div>
-                        <div className={`text-xs ${
-                          isPositive ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
-                        }`}>
-                          {isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%
+                      <div className="flex items-center">
+                        <div>
+                          <div className={`font-medium text-sm ${
+                            isPositive ? 'text-success-text' : 'text-danger-text'
+                          }`}>
+                            {formatCurrencyChange(stock.change)}
+                          </div>
+                          <div className={`text-xs ${
+                            isPositive ? 'text-success-text' : 'text-danger-text'
+                          }`}>
+                            {isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%
+                          </div>
                         </div>
                       </div>
-                      
+
                       {/* Profit - Dollar gain/loss based on cost basis */}
-                      <div className="text-right">
-                        {(() => {
-                          const profit = calculatePnL(stock);
-                          const profitPercentage = calculatePnLPercentage(stock);
-                          const isProfitable = profit >= 0;
-                          
-                          return (
-                            <>
-                              <div className={`font-medium text-sm ${
-                                isProfitable ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
-                              }`}>
-                                {formatCurrencyChange(profit)}
-                              </div>
-                              <div className={`text-xs ${
-                                isProfitable ? 'text-[var(--clr-success-a45)]' : 'text-[var(--clr-danger-a45)]'
-                              }`}>
-                                {isProfitable ? '+' : ''}{profitPercentage.toFixed(2)}%
-                              </div>
-                            </>
-                          );
-                        })()}
+                      <div className="flex items-center">
+                        <div>
+                          {(() => {
+                            const profit = calculatePnL(stock);
+                            const profitPercentage = calculatePnLPercentage(stock);
+                            const isProfitable = profit >= 0;
+
+                            return (
+                              <>
+                                <div className={`font-medium text-sm ${
+                                  isProfitable ? 'text-success-text' : 'text-danger-text'
+                                }`}>
+                                  {formatCurrencyChange(profit)}
+                                </div>
+                                <div className={`text-xs ${
+                                  isProfitable ? 'text-success-text' : 'text-danger-text'
+                                }`}>
+                                  {isProfitable ? '+' : ''}{profitPercentage.toFixed(2)}%
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
-                      
+
                       {/* Actions */}
-                      <div className="text-right">
+                      <div className="flex items-center">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveStock(stock.symbol)}
-                          className="text-[var(--clr-primary-a20)] hover:text-[var(--clr-danger-a45)] text-xs p-1"
+                          className="text-text-muted hover:text-danger-text text-xs p-1"
+                          disabled={portfolioLoading}
                         >
                           ×
                         </Button>
@@ -477,37 +554,147 @@ export default function Home() {
           {/* Portfolio Allocation Pie Chart (restored) */}
           {portfolioStocks.length > 0 && (
             <div className="flex flex-col items-center mb-8">
-              <h3 className="text-sm font-medium text-[var(--clr-primary-a25)] uppercase tracking-wide mb-4">Portfolio Allocation</h3>
+              <h3 className="text-sm font-medium text-text-subtle uppercase tracking-wide mb-4">Portfolio Allocation</h3>
               <div className="relative group">
-                <svg width="320" height="320" viewBox="0 0 320 320" className="transform -rotate-90 drop-shadow-lg rounded-full border-4 border-[var(--clr-surface-a5)] bg-[var(--clr-surface-a5)] cursor-pointer">
+                <svg width="300" height="300" viewBox="0 0 300 300" className="cursor-pointer transition-all duration-200">
+                  {/* Background circle for donut effect */}
+                  <circle
+                    cx="150"
+                    cy="150"
+                    r="70"
+                    fill="var(--surface-primary)"
+                    stroke={hoveredPieIndex !== null ? "var(--interactive-primary)" : "var(--border-default)"}
+                    strokeWidth="1"
+                    style={{
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  />
+
+                  {/* Center text */}
+                  <text
+                    x="150"
+                    y="145"
+                    textAnchor="middle"
+                    fontSize="12"
+                    fontWeight="500"
+                    fill="var(--text-subtle)"
+                    style={{
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  >
+                    {portfolioStocks.length}
+                  </text>
+                  <text
+                    x="150"
+                    y="160"
+                    textAnchor="middle"
+                    fontSize="11"
+                    fontWeight="400"
+                    fill="var(--text-subtle)"
+                    style={{
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    }}
+                  >
+                    Assets
+                  </text>
+
+                  {/* Render all segments for fills first */}
                   {portfolioStocks.map((stock, index) => {
                     const percentage = getPortfolioPercentage(stock);
                     const totalPercentageBefore = portfolioStocks.slice(0, index).reduce((sum, s) => sum + getPortfolioPercentage(s), 0);
+
+                    if (percentage < 0.1) return null;
+
+                    // Special handling for single stock (100% of portfolio)
+                    const isSingleStock = portfolioStocks.length === 1;
+                    
                     const startAngle = (totalPercentageBefore / 100) * 360;
-                    const endAngle = ((totalPercentageBefore + percentage) / 100) * 360;
+                    const endAngle = isSingleStock ? 360 : ((totalPercentageBefore + percentage) / 100) * 360;
+
+                    // Industry standard donut chart dimensions
+                    const centerX = 150;
+                    const centerY = 150;
+                    const outerRadius = 120;
+                    const innerRadius = 70;
+
+                    // Convert angles to radians
                     const startAngleRad = (startAngle * Math.PI) / 180;
                     const endAngleRad = (endAngle * Math.PI) / 180;
-                    const x1 = 160 + 140 * Math.cos(startAngleRad);
-                    const y1 = 160 + 140 * Math.sin(startAngleRad);
-                    const x2 = 160 + 140 * Math.cos(endAngleRad);
-                    const y2 = 160 + 140 * Math.sin(endAngleRad);
+
+                    // Calculate path points
+                    const x1 = centerX + outerRadius * Math.cos(startAngleRad);
+                    const y1 = centerY + outerRadius * Math.sin(startAngleRad);
+                    const x2 = centerX + outerRadius * Math.cos(endAngleRad);
+                    const y2 = centerY + outerRadius * Math.sin(endAngleRad);
+
+                    const innerX1 = centerX + innerRadius * Math.cos(endAngleRad);
+                    const innerY1 = centerY + innerRadius * Math.sin(endAngleRad);
+                    const innerX2 = centerX + innerRadius * Math.cos(startAngleRad);
+                    const innerY2 = centerY + innerRadius * Math.sin(startAngleRad);
+
                     const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
                     const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#84CC16'];
                     const color = colors[index % colors.length];
-                    if (percentage < 0.1) return null;
                     const isHovered = hoveredPieIndex === index;
+
+                    // For single stock, render as two semicircles to avoid SVG path issues
+                    if (isSingleStock) {
+                      return (
+                        <g key={`fill-${stock.symbol}`}>
+                          {/* First semicircle */}
+                          <path
+                            d={`M ${centerX + outerRadius} ${centerY}
+                               A ${outerRadius} ${outerRadius} 0 0 1 ${centerX - outerRadius} ${centerY}
+                               L ${centerX - innerRadius} ${centerY}
+                               A ${innerRadius} ${innerRadius} 0 0 0 ${centerX + innerRadius} ${centerY}
+                               Z`}
+                            fill={color}
+                            stroke="rgba(255,255,255,0.2)"
+                            strokeWidth="0.5"
+                            style={{
+                              transform: isHovered ? 'scale(1.015)' : 'scale(1)',
+                              transformOrigin: `${centerX}px ${centerY}px`,
+                              transition: 'all 0.15s ease-out',
+                              cursor: 'pointer',
+                            }}
+                          />
+                          {/* Second semicircle */}
+                          <path
+                            d={`M ${centerX - outerRadius} ${centerY}
+                               A ${outerRadius} ${outerRadius} 0 0 1 ${centerX + outerRadius} ${centerY}
+                               L ${centerX + innerRadius} ${centerY}
+                               A ${innerRadius} ${innerRadius} 0 0 0 ${centerX - innerRadius} ${centerY}
+                               Z`}
+                            fill={color}
+                            stroke="rgba(255,255,255,0.2)"
+                            strokeWidth="0.5"
+                            style={{
+                              transform: isHovered ? 'scale(1.015)' : 'scale(1)',
+                              transformOrigin: `${centerX}px ${centerY}px`,
+                              transition: 'all 0.15s ease-out',
+                              cursor: 'pointer',
+                            }}
+                          />
+                        </g>
+                      );
+                    }
+
                     return (
                       <path
-                        key={stock.symbol}
-                        d={`M 160 160 L ${x1} ${y1} A 140 140 0 ${largeArcFlag} 1 ${x2} ${y2} Z`}
+                        key={`fill-${stock.symbol}`}
+                        d={`M ${x1} ${y1}
+                           A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}
+                           L ${innerX1} ${innerY1}
+                           A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerX2} ${innerY2}
+                           Z`}
                         fill={color}
-                        stroke="#fff"
-                        strokeWidth="3"
+                        stroke={isHovered ? "#ffffff" : "rgba(255,255,255,0.2)"}
+                        strokeWidth={isHovered ? "2" : "0.5"}
                         style={{
-                          filter: isHovered ? 'drop-shadow(0 4px 16px rgba(0,0,0,0.18))' : 'drop-shadow(0 2px 6px rgba(0,0,0,0.10))',
-                          transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-                          transformOrigin: '160px 160px',
-                          transition: 'transform 0.18s cubic-bezier(.4,2,.6,1), filter 0.18s',
+                          filter: isHovered ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.15)) brightness(1.05)' : 'none',
+                          transform: isHovered ? 'scale(1.02) translateZ(0)' : 'scale(1) translateZ(0)',
+                          transformOrigin: `${centerX}px ${centerY}px`,
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                           cursor: 'pointer',
                         }}
                         onMouseEnter={() => setHoveredPieIndex(index)}
@@ -515,11 +702,66 @@ export default function Home() {
                       />
                     );
                   })}
+
+                  {/* Render only hovered segment border on top */}
+                  {portfolioStocks.map((stock, index) => {
+                    const percentage = getPortfolioPercentage(stock);
+                    const totalPercentageBefore = portfolioStocks.slice(0, index).reduce((sum, s) => sum + getPortfolioPercentage(s), 0);
+
+                    if (percentage < 0.1) return null;
+
+                    const startAngle = (totalPercentageBefore / 100) * 360;
+                    const endAngle = ((totalPercentageBefore + percentage) / 100) * 360;
+
+                    // Industry standard donut chart dimensions
+                    const centerX = 150;
+                    const centerY = 150;
+                    const outerRadius = 120;
+                    const innerRadius = 70;
+
+                    // Convert angles to radians
+                    const startAngleRad = (startAngle * Math.PI) / 180;
+                    const endAngleRad = (endAngle * Math.PI) / 180;
+
+                    // Calculate path points
+                    const x1 = centerX + outerRadius * Math.cos(startAngleRad);
+                    const y1 = centerY + outerRadius * Math.sin(startAngleRad);
+                    const x2 = centerX + outerRadius * Math.cos(endAngleRad);
+                    const y2 = centerY + outerRadius * Math.sin(endAngleRad);
+
+                    const innerX1 = centerX + innerRadius * Math.cos(endAngleRad);
+                    const innerY1 = centerY + innerRadius * Math.sin(endAngleRad);
+                    const innerX2 = centerX + innerRadius * Math.cos(startAngleRad);
+                    const innerY2 = centerY + innerRadius * Math.sin(startAngleRad);
+
+                    const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+                    const isHovered = hoveredPieIndex === index;
+
+                    if (!isHovered) return null;
+
+                    return (
+                      <path
+                        key={`border-${stock.symbol}`}
+                        d={`M ${x1} ${y1}
+                           A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}
+                           L ${innerX1} ${innerY1}
+                           A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerX2} ${innerY2}
+                           Z`}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        style={{
+                          transform: 'scale(1.015)',
+                          transformOrigin: `${centerX}px ${centerY}px`,
+                          transition: 'all 0.15s ease-out',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    );
+                  })}
                 </svg>
-                {/* Center circle for donut effect */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-[var(--clr-surface-a5)] rounded-full shadow-inner border-2 border-[var(--clr-surface-a15)] flex items-center justify-center pointer-events-none">
-                  <span className="text-xs text-[var(--clr-primary-a25)] font-semibold">{portfolioStocks.length} Assets</span>
-                </div>
               </div>
               {/* Modern Legend with highlight */}
               <div className="flex flex-wrap justify-center mt-4 gap-2">
@@ -534,20 +776,19 @@ export default function Home() {
                   return (
                     <div
                       key={stock.symbol}
-                      className={`flex items-center space-x-2 bg-[var(--clr-surface-a10)] rounded px-2 py-1 shadow-sm transition-all duration-150 ${isHovered ? 'ring-2 ring-[var(--clr-info-a40)] bg-[var(--clr-info-a10)]' : ''}`}
+                      className="flex items-center space-x-2 bg-[var(--surface-tertiary)] rounded px-2 py-1 shadow-sm transition-all duration-150"
                       style={{
-                        fontWeight: isHovered ? 700 : 500,
-                        color: greyed ? 'var(--clr-primary-a15)' : isHovered ? 'var(--clr-info-a45)' : undefined,
+                        fontWeight: 500,
+                        color: greyed ? 'var(--text-subtle)' : isHovered ? 'var(--info-text)' : undefined,
                         opacity: greyed ? 0.5 : 1,
-                        boxShadow: isHovered ? '0 2px 8px rgba(37,99,235,0.10)' : undefined,
                         cursor: 'pointer',
                       }}
                       onMouseEnter={() => setHoveredPieIndex(index)}
                       onMouseLeave={() => setHoveredPieIndex(null)}
                     >
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: greyed ? 'var(--clr-surface-a25)' : color }}></span>
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: greyed ? 'var(--border-subtle)' : color }}></span>
                       <span className="text-xs font-medium">{stock.symbol}</span>
-                      <span className="text-xs text-[var(--clr-primary-a20)]">{percentage.toFixed(1)}%</span>
+                      <span className="text-xs text-[var(--text-muted)]">{percentage.toFixed(1)}%</span>
                     </div>
                   );
                 })}

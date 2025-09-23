@@ -114,22 +114,6 @@ export default function ChatPage() {
                     Public
                   </span>
                 </h1>
-                <p 
-                  className="text-sm"
-                  style={{ color: 'var(--clr-primary-a40)' }}
-                >
-                  Connect with the Pryleaf investment community
-                </p>
-              </div>
-              <div 
-                className="flex items-center space-x-2"
-                style={{ color: 'var(--clr-success-a20)' }}
-              >
-                <div 
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: 'var(--clr-success-a20)' }}
-                ></div>
-                <span className="text-sm font-medium">Online</span>
               </div>
             </div>
           </div>
