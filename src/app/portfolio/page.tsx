@@ -1,6 +1,6 @@
 'use client';
 
-import AppLayout from '@/components/AppLayout';
+// AppLayout is now handled at the root level
 import PortfolioManager from '@/components/PortfolioManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Briefcase, BarChart3, PieChart } from 'lucide-react';
@@ -30,21 +30,18 @@ export default function Portfolio() {
 
   if (!user) {
     return (
-      <AppLayout>
-        <div className="max-w-4xl mx-auto py-8">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-text-muted">Please log in to view your portfolio.</p>
-            </CardContent>
-          </Card>
-        </div>
-      </AppLayout>
+      <div className="max-w-4xl mx-auto py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-text-muted">Please log in to view your portfolio.</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -230,6 +227,5 @@ export default function Portfolio() {
           </Card>
         )}
       </div>
-    </AppLayout>
   );
 }

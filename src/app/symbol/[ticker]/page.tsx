@@ -1,7 +1,8 @@
 "use client";
 
-import AppLayout from '@/components/AppLayout';
+// AppLayout is now handled at the root level
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -108,34 +109,30 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
   if (loading) {
     return (
-      <AppLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--clr-info-a40)] mx-auto mb-4"></div>
-            <p className="text-[var(--clr-primary-a30)]">Loading ticker data...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--clr-info-a40)] mx-auto mb-4"></div>
+          <p className="text-[var(--clr-primary-a30)]">Loading ticker data...</p>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <AppLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <div className="bg-[var(--clr-danger-a10)] border border-[var(--clr-danger-a20)] p-6 rounded-lg mb-6">
-              <p className="text-[var(--clr-danger-a50)] font-semibold">Error: {error}</p>
-            </div>
-            <a 
-              href="/" 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--clr-surface-a30)] hover:bg-[var(--clr-surface-a35)] text-[var(--clr-primary-a45)] rounded-lg transition-colors"
-            >
-              ← Back to Dashboard
-            </a>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="bg-[var(--clr-danger-a10)] border border-[var(--clr-danger-a20)] p-6 rounded-lg mb-6">
+            <p className="text-[var(--clr-danger-a50)] font-semibold">Error: {error}</p>
           </div>
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--clr-surface-a30)] hover:bg-[var(--clr-surface-a35)] text-[var(--clr-primary-a45)] rounded-lg transition-colors"
+          >
+            ← Back to Dashboard
+          </Link>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
@@ -144,7 +141,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   const isPositiveChange = data.dailyChange >= 0;
 
   return (
-    <AppLayout>
+    <>
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Company Header */}
@@ -357,6 +354,6 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           </div>
         </div>
       </div>
-    </AppLayout>
+    </>
   );
 }

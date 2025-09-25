@@ -1,10 +1,9 @@
-import AppLayout from "@/components/AppLayout";
+// Server component for better SEO and performance
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function SettingsPage() {
   return (
-    <AppLayout>
-      <div className="h-full p-6">
+    <div className="h-full p-6">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -184,6 +183,5 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 }

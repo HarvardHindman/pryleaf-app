@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit3, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Edit3, Trash2 } from 'lucide-react';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import type { Holding } from '@/lib/database.types';
 
 interface AddHoldingFormProps {
-  onAdd: (symbol: string, shares: number, averageCost?: number, companyName?: string, useCurrentPrice?: boolean) => Promise<boolean>;
+  onAdd: (symbol: string, shares: number, averageCost: number, companyName?: string) => Promise<boolean>;
   loading?: boolean;
 }
 
@@ -18,61 +18,17 @@ function AddHoldingForm({ onAdd, loading }: AddHoldingFormProps) {
   const [shares, setShares] = useState('');
   const [averageCost, setAverageCost] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [useCurrentPrice, setUseCurrentPrice] = useState(true);
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [priceLoading, setPriceLoading] = useState(false);
-
-  // Fetch current price when symbol changes
-  const fetchCurrentPrice = async (symbolValue: string) => {
-    if (!symbolValue || symbolValue.length < 1) {
-      setCurrentPrice(null);
-      return;
-    }
-
-    setPriceLoading(true);
-    try {
-      const response = await fetch(`/api/ticker/${symbolValue}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.currentPrice) {
-          setCurrentPrice(data.currentPrice);
-          if (useCurrentPrice) {
-            setAverageCost(data.currentPrice.toFixed(2));
-          }
-          if (!companyName && data.companyName) {
-            setCompanyName(data.companyName);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch current price:', error);
-    } finally {
-      setPriceLoading(false);
-    }
-  };
-
-  // Debounced price fetch
-  React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (symbol) {
-        fetchCurrentPrice(symbol);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [symbol]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!symbol || !shares) return;
+    if (!symbol || !shares || !averageCost) return;
     
     const success = await onAdd(
       symbol.trim().toUpperCase(),
       parseFloat(shares),
-      useCurrentPrice ? undefined : parseFloat(averageCost),
-      companyName.trim() || undefined,
-      useCurrentPrice
+      parseFloat(averageCost),
+      companyName.trim() || undefined
     );
     
     if (success) {
@@ -80,7 +36,6 @@ function AddHoldingForm({ onAdd, loading }: AddHoldingFormProps) {
       setShares('');
       setAverageCost('');
       setCompanyName('');
-      setCurrentPrice(null);
     }
   };
 
@@ -99,26 +54,14 @@ function AddHoldingForm({ onAdd, loading }: AddHoldingFormProps) {
               <label className="block text-sm font-medium text-text-default mb-1">
                 Symbol *
               </label>
-              <div className="relative">
-                <Input
-                  type="text"
-                  value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  placeholder="e.g. AAPL"
-                  required
-                  disabled={loading}
-                />
-                {priceLoading && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  </div>
-                )}
-              </div>
-              {currentPrice && (
-                <p className="text-sm text-green-600 mt-1">
-                  Current Price: ${currentPrice.toFixed(2)}
-                </p>
-              )}
+              <Input
+                type="text"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                placeholder="e.g. AAPL"
+                required
+                disabled={loading}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-text-default mb-1">
@@ -133,7 +76,7 @@ function AddHoldingForm({ onAdd, loading }: AddHoldingFormProps) {
               />
             </div>
           </div>
-
+          
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-default mb-1">
@@ -162,34 +105,15 @@ function AddHoldingForm({ onAdd, loading }: AddHoldingFormProps) {
                 onChange={(e) => setAverageCost(e.target.value)}
                 placeholder="e.g. 150.00"
                 required
-                disabled={loading || useCurrentPrice}
+                disabled={loading}
               />
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="useCurrentPrice"
-              checked={useCurrentPrice}
-              onChange={(e) => {
-                setUseCurrentPrice(e.target.checked);
-                if (e.target.checked && currentPrice) {
-                  setAverageCost(currentPrice.toFixed(2));
-                }
-              }}
-              className="rounded border-gray-300"
-              disabled={loading}
-            />
-            <label htmlFor="useCurrentPrice" className="text-sm font-medium text-text-default">
-              Use current market price as average cost
-            </label>
           </div>
           
           <Button 
             type="submit" 
             className="w-full"
-            disabled={loading || !symbol || !shares || (!useCurrentPrice && !averageCost)}
+            disabled={loading || !symbol || !shares || !averageCost}
           >
             {loading ? 'Adding...' : 'Add Holding'}
           </Button>
@@ -296,22 +220,10 @@ export default function PortfolioManager() {
     error, 
     addHolding, 
     updateHolding, 
-    removeHolding,
-    fetchPortfolio
+    removeHolding 
   } = usePortfolio();
   
   const [editingHolding, setEditingHolding] = useState<string | null>(null);
-  const [optimisticUpdates, setOptimisticUpdates] = useState<Set<string>>(new Set());
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await fetchPortfolio(true); // Force refresh
-    } finally {
-      setRefreshing(false);
-    }
-  };
 
   const handleRemoveHolding = async (holdingId: string) => {
     if (confirm('Are you sure you want to remove this holding?')) {
@@ -333,19 +245,6 @@ export default function PortfolioManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Portfolio</h2>
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          variant="outline"
-          size="sm"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
-      </div>
-      
       <AddHoldingForm onAdd={addHolding} loading={loading} />
       
       {portfolio && portfolio.holdings.length > 0 && (

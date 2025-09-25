@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import yahooFinance from 'yahoo-finance2';
-import AppLayout from '@/components/AppLayout';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -261,7 +261,7 @@ export default function Home() {
   };
 
   return (
-    <AppLayout>
+    <>
       {!user ? (
         // Welcome section for non-authenticated users
         <div className="container mx-auto px-6 py-12">
@@ -295,12 +295,12 @@ export default function Home() {
             
             <div className="space-x-4">
               <Button asChild size="lg">
-                <a href="/register">
+                <Link href="/register">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                </a>
+                </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <a href="/login">Sign In</a>
+                <Link href="/login">Sign In</Link>
               </Button>
             </div>
           </div>
@@ -798,6 +798,6 @@ export default function Home() {
         </div>
       </div>
       )}
-    </AppLayout>
+    </>
   );
 }

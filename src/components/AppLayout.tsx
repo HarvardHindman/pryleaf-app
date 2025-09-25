@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Search, 
   Home, 
@@ -60,7 +62,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }, []);
 
   // Get current path for navigation highlighting
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const currentPath = usePathname();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
@@ -93,7 +95,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Logo Section */}
           <div className="flex-shrink-0 px-3 py-4">
             <div className="flex items-center">
-              <a href="/" className="flex items-center group">
+              <Link href="/" className="flex items-center group">
                 <img 
                   src="/pryleaf.PNG" 
                   alt="Pryleaf" 
@@ -102,14 +104,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <span className="text-base font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--clr-primary-a40)' }}>
                   Pryleaf
                 </span>
-              </a>
+              </Link>
             </div>
           </div>
 
           {/* Main Navigation - Investment Tools */}
           <nav className="flex-1 px-2 py-2 space-y-1">
             {navigation.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
                 className={`flex items-center px-2 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
@@ -139,7 +141,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               >
                 <item.icon className="h-4 w-4 mr-2 flex-shrink-0" />
                 <span className="truncate">{item.name}</span>
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -207,7 +209,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Mobile navigation */}
             <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
@@ -221,7 +223,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
                   }`} />
                   <span>{item.name}</span>
-                </a>
+                </Link>
               ))}
               
               {/* Mobile Server Section */}
@@ -244,14 +246,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Mobile bottom section */}
             <div className="flex-shrink-0 p-4 space-y-2">
-              <a
+              <Link
                 href="/settings"
                 className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 onClick={() => setSidebarOpen(false)}
               >
                 <Settings className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
                 Settings
-              </a>
+              </Link>
               <button className="group flex items-center w-full px-3 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900">
                 <User className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
                 <span className="flex-1 text-left">Account</span>
@@ -284,7 +286,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Header nav (Markets, Analytics, Watchlist) */}
             <nav className="flex items-center space-x-2 mr-4">
               {headerNav.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="flex items-center px-2 py-1 text-xs text-gray-600 hover:text-blue-600 transition-colors"
@@ -292,7 +294,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 >
                   <item.icon className="h-4 w-4 mr-1" />
                   <span className="hidden sm:inline">{item.name}</span>
-                </a>
+                </Link>
               ))}
             </nav>
 
@@ -312,9 +314,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               
-              <a href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
+              <Link href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
                 <Settings className="h-5 w-5" />
-              </a>
+              </Link>
               
               {user ? (
                 <div className="relative" ref={userMenuRef}>
@@ -334,12 +336,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         <div className="px-4 py-2 text-sm text-[var(--text-primary)] border-b border-[var(--border-subtle)]">
                           {user.email}
                         </div>
-                        <a
+                        <Link
                           href="/profile"
                           className="block px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
                         >
                           Profile
-                        </a>
+                        </Link>
                         <button
                           onClick={signOut}
                           className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
@@ -353,18 +355,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <a
+                  <Link
                     href="/login"
                     className="px-3 py-1 text-sm text-[var(--text-secondary)] hover:text-[var(--interactive-primary)] transition-colors"
                   >
                     Sign in
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/register"
                     className="px-3 py-1 text-sm bg-[var(--interactive-primary)] text-[var(--surface-primary)] rounded-md hover:bg-[var(--interactive-hover)] transition-colors"
                   >
                     Sign up
-                  </a>
+                  </Link>
                 </div>
               )}
             </div>

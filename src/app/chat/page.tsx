@@ -1,6 +1,7 @@
 'use client';
 
-import AppLayout from "@/components/AppLayout";
+// AppLayout is now handled at the root level
+import Link from 'next/link';
 import GeneralChat from "@/components/GeneralChat";
 
 export default function ChatPage() {
@@ -13,8 +14,7 @@ export default function ChatPage() {
   ];
 
   return (
-    <AppLayout>
-      <div className="h-full flex">
+    <div className="h-full flex">
         {/* Left Sidebar - Chat Rooms */}
         <div 
           className="w-60 border-r flex flex-col"
@@ -53,7 +53,7 @@ export default function ChatPage() {
               </div>
               <div className="space-y-1">
                 {chatRooms.map((room) => (
-                  <a
+                  <Link
                     key={room.name}
                     href={`/chat/${room.name}`}
                     className="flex items-center px-2 py-2 rounded text-sm transition-colors"
@@ -79,7 +79,7 @@ export default function ChatPage() {
                     <div className="flex-1 min-w-0">
                       <div className="truncate">{room.name}</div>
                     </div>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -162,6 +162,5 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 }
