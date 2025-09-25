@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { PortfolioService } from '@/lib/portfolioService';
+import yahooFinance from 'yahoo-finance2';
+
+// Cache for price data (in production, use Redis)
+const priceCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,15 +49,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { symbol, shares, averageCost, companyName } = await request.json();
+    const { symbol, shares, averageCost, companyName, useCurrentPrice } = await request.json();
     
     // Validate input
-    if (!symbol || !shares || !averageCost) {
+    if (!symbol || !shares) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (shares <= 0 || averageCost <= 0) {
-      return NextResponse.json({ error: 'Shares and cost must be positive' }, { status: 400 });
+    if (shares <= 0) {
+      return NextResponse.json({ error: 'Shares must be positive' }, { status: 400 });
+    }
+
+    let finalAverageCost = averageCost;
+    let finalCompanyName = companyName;
+
+    // If useCurrentPrice is true or averageCost is not provided, fetch current price
+    if (useCurrentPrice || !averageCost) {
+      const symbolKey = symbol.toUpperCase().trim();
+      const now = Date.now();
+      
+      // Check cache first
+      let quote = priceCache.get(symbolKey);
+      if (!quote || now - quote.timestamp > CACHE_TTL) {
+        try {
+          const freshQuote = await yahooFinance.quote(symbolKey);
+          quote = { data: freshQuote, timestamp: now };
+          priceCache.set(symbolKey, quote);
+        } catch (priceError) {
+          console.error('Price fetch error:', priceError);
+          return NextResponse.json({ 
+            error: `Could not fetch current price for ${symbol}. Please provide a manual price.` 
+          }, { status: 400 });
+        }
+      }
+      
+      if (quote?.data?.regularMarketPrice) {
+        finalAverageCost = quote.data.regularMarketPrice;
+        // Use company name from quote if not provided
+        if (!finalCompanyName) {
+          finalCompanyName = quote.data.displayName || quote.data.longName || quote.data.shortName;
+        }
+      } else {
+        return NextResponse.json({ 
+          error: `Could not fetch current price for ${symbol}. Please provide a manual price.` 
+        }, { status: 400 });
+      }
+    }
+
+    if (finalAverageCost <= 0) {
+      return NextResponse.json({ error: 'Average cost must be positive' }, { status: 400 });
     }
     
     // Get or create default portfolio
@@ -67,8 +112,8 @@ export async function POST(request: NextRequest) {
       portfolio.id, 
       symbol.toUpperCase().trim(), 
       Number(shares), 
-      Number(averageCost), 
-      companyName?.trim()
+      Number(finalAverageCost), 
+      finalCompanyName?.trim()
     );
     
     return NextResponse.json({ holding });

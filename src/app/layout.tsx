@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StreamChatProvider } from "@/contexts/StreamChatContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { PortfolioCacheProvider } from "@/contexts/PortfolioCacheContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,9 +40,11 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <StreamChatProvider>
-              {children}
-            </StreamChatProvider>
+            <PortfolioCacheProvider>
+              <StreamChatProvider>
+                {children}
+              </StreamChatProvider>
+            </PortfolioCacheProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
