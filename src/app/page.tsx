@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import yahooFinance from 'yahoo-finance2';
+// Price updates are now handled by the optimistic portfolio hook
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,73 +31,22 @@ export default function Home() {
     portfolio, 
     loading: portfolioLoading, 
     error: portfolioError, 
+    isUpdating,
     addHolding, 
     removeHolding,
     updateHolding,
     findHoldingBySymbol,
-    portfolioMetrics 
+    portfolioMetrics,
+    hasPendingActions 
   } = usePortfolio();
   
   // Pie chart hover state
   const [hoveredPieIndex, setHoveredPieIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Local state for input values to avoid API calls on every keystroke
-  const [localInputs, setLocalInputs] = useState<Record<string, { shares: string; costBasis: string }>>({});
-  const debounceTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
 
-  // Initialize local inputs when portfolio data loads
-  useEffect(() => {
-    if (portfolioStocks.length > 0) {
-      const newLocalInputs: Record<string, { shares: string; costBasis: string }> = {};
-      portfolioStocks.forEach(stock => {
-        newLocalInputs[stock.symbol] = {
-          shares: stock.shares?.toString() || '0',
-          costBasis: stock.costBasis?.toString() || '0'
-        };
-      });
-      setLocalInputs(newLocalInputs);
-    }
-  }, [portfolioStocks]);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(debounceTimeouts.current).forEach(timeout => {
-        if (timeout) clearTimeout(timeout);
-      });
-    };
-  }, []);
-
-  // Fetch real price data for portfolio tickers (must be after state declarations)
-  useEffect(() => {
-    async function fetchPrices() {
-      if (portfolioStocks.length === 0) return;
-      try {
-        const symbols = portfolioStocks.map((s: PortfolioStock) => s.symbol);
-        const results = await Promise.all(symbols.map((symbol: string) =>
-          yahooFinance.quote(symbol)
-        ));
-        setPortfolioStocks((prev: PortfolioStock[]) => prev.map((stock, i) => {
-          const quote = results[i];
-          if (!quote || !quote.regularMarketPrice) return stock;
-          return {
-            ...stock,
-            price: quote.regularMarketPrice,
-            change: quote.regularMarketChange || 0,
-            changePercent: quote.regularMarketChangePercent || 0,
-            name: quote.shortName || stock.name,
-          };
-        }));
-      } catch (e) {
-        // Ignore errors for now
-      }
-    }
-    fetchPrices();
-    // Optionally, refresh every 60 seconds
-    const interval = setInterval(fetchPrices, 60000);
-    return () => clearInterval(interval);
-  }, [portfolioStocks.length]);
+  // Note: Real-time price updates would be handled by the portfolio service
+  // For now, we use static prices from the portfolio data
 
   const marketData = [
     { symbol: '^IXIC', name: 'NASDAQ Composite', price: 22631.477, change: 160.75, changePercent: 0.72 },
@@ -115,19 +64,13 @@ export default function Home() {
     if (!symbol) return;
     
     try {
-      // Try to get current market price for the symbol
-      let currentPrice = Math.random() * 200 + 50; // Fallback random price
-      try {
-        const quote = await yahooFinance.quote(symbol);
-        currentPrice = quote.regularMarketPrice || currentPrice;
-      } catch (e) {
-        console.warn(`Could not fetch price for ${symbol}, using fallback`);
-      }
-
+      // Use a default price for new holdings (users can update cost basis later)
+      const defaultPrice = 100; // Default price of $100
+      
       const success = await addHolding(
         symbol,
         1, // Default to 1 share
-        currentPrice, // Use current price as cost basis
+        defaultPrice, // Use default price as cost basis
         `${symbol} Company` // Default company name
       );
 
@@ -147,7 +90,7 @@ export default function Home() {
   };
 
   const calculateTotalValue = (stock: PortfolioStock) => {
-    const shares = parseFloat(localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0') || 0;
+    const shares = stock.shares || 0;
     return shares * stock.price;
   };
 
@@ -165,74 +108,32 @@ export default function Home() {
     return (calculateTotalValue(stock) / totalValue) * 100;
   };
 
-  // Debounced function to update holding after user stops typing
-  const debouncedUpdateHolding = useCallback(async (symbol: string, shares: number, costBasis: number) => {
+  // Optimistic update handlers - immediate UI updates
+  const handleSharesChange = async (symbol: string, newShares: string) => {
+    const shares = parseFloat(newShares) || 0;
     const holding = findHoldingBySymbol(symbol);
     if (holding) {
-      try {
-        await updateHolding(holding.id, shares, costBasis);
-      } catch (error) {
-        console.error('Failed to update holding:', error);
-        // Optionally show a toast notification here
-      }
+      await updateHolding(holding.id, shares, holding.average_cost);
     }
-  }, [findHoldingBySymbol, updateHolding]);
-
-  const handleSharesChange = (symbol: string, newShares: string) => {
-    // Update local state immediately for responsive UI
-    setLocalInputs(prev => ({
-      ...prev,
-      [symbol]: {
-        ...prev[symbol],
-        shares: newShares
-      }
-    }));
-
-    // Clear existing timeout for this symbol
-    if (debounceTimeouts.current[symbol]) {
-      clearTimeout(debounceTimeouts.current[symbol]);
-    }
-
-    // Set new timeout for API call
-    debounceTimeouts.current[symbol] = setTimeout(() => {
-      const shares = parseFloat(newShares) || 0;
-      const costBasis = parseFloat(localInputs[symbol]?.costBasis || '0') || 0;
-      debouncedUpdateHolding(symbol, shares, costBasis);
-    }, 1000); // 1 second delay
   };
 
-  const handleCostBasisChange = (symbol: string, newCostBasis: string) => {
-    // Update local state immediately for responsive UI
-    setLocalInputs(prev => ({
-      ...prev,
-      [symbol]: {
-        ...prev[symbol],
-        costBasis: newCostBasis
-      }
-    }));
-
-    // Clear existing timeout for this symbol
-    if (debounceTimeouts.current[symbol]) {
-      clearTimeout(debounceTimeouts.current[symbol]);
+  const handleCostBasisChange = async (symbol: string, newCostBasis: string) => {
+    const costBasis = parseFloat(newCostBasis) || 0;
+    const holding = findHoldingBySymbol(symbol);
+    if (holding) {
+      await updateHolding(holding.id, holding.shares, costBasis);
     }
-
-    // Set new timeout for API call
-    debounceTimeouts.current[symbol] = setTimeout(() => {
-      const shares = parseFloat(localInputs[symbol]?.shares || '0') || 0;
-      const costBasis = parseFloat(newCostBasis) || 0;
-      debouncedUpdateHolding(symbol, shares, costBasis);
-    }, 1000); // 1 second delay
   };
 
   const calculatePnL = (stock: PortfolioStock) => {
-    const shares = parseFloat(localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0') || 0;
-    const costBasis = parseFloat(localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0') || 0;
+    const shares = stock.shares || 0;
+    const costBasis = stock.costBasis || 0;
     if (!costBasis || !shares) return 0;
     return (stock.price - costBasis) * shares;
   };
 
   const calculatePnLPercentage = (stock: PortfolioStock) => {
-    const costBasis = parseFloat(localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0') || 0;
+    const costBasis = stock.costBasis || 0;
     if (!costBasis) return 0;
     return ((stock.price - costBasis) / costBasis) * 100;
   };
@@ -382,10 +283,13 @@ export default function Home() {
 
           {/* Portfolio Summary - Financial Terminal Style */}
           <div className="grid grid-cols-3 gap-0 border-b border-border-subtle">
-            <div className="px-4 py-2 border-r border-border-subtle">
+            <div className="px-4 py-2 border-r border-border-subtle relative">
               <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Total Value</div>
-              <div className="text-lg font-bold text-text-primary">
+              <div className="text-lg font-bold text-text-primary flex items-center">
                 {formatCurrency(getTotalPortfolioValue())}
+                {isUpdating && hasPendingActions() && (
+                  <div className="ml-2 w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                )}
               </div>
             </div>
 
@@ -451,25 +355,37 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Shares - Always Editable Input */}
-                      <div className="flex items-center">
+                      {/* Shares - Always Editable Input with optimistic updates */}
+                      <div className="flex items-center relative">
                         <Input
                           type="number"
-                          value={localInputs[stock.symbol]?.shares || stock.shares?.toString() || '0'}
+                          value={stock.shares?.toString() || '0'}
                           onChange={(e) => handleSharesChange(stock.symbol, e.target.value)}
                           className="portfolio-input w-12"
+                          disabled={isUpdating}
                         />
+                        {isUpdating && hasPendingActions() && (
+                          <div className="absolute right-1 top-1">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                          </div>
+                        )}
                       </div>
 
-                      {/* Average Cost Basis - Always Editable Input */}
-                      <div className="flex items-center">
+                      {/* Average Cost Basis - Always Editable Input with optimistic updates */}
+                      <div className="flex items-center relative">
                         <Input
                           type="number"
                           step="0.01"
-                          value={localInputs[stock.symbol]?.costBasis || stock.costBasis?.toString() || '0'}
+                          value={stock.costBasis?.toString() || '0'}
                           onChange={(e) => handleCostBasisChange(stock.symbol, e.target.value)}
                           className="portfolio-input w-14"
+                          disabled={isUpdating}
                         />
+                        {isUpdating && hasPendingActions() && (
+                          <div className="absolute right-1 top-1">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Market Value */}
@@ -538,7 +454,7 @@ export default function Home() {
                           size="sm"
                           onClick={() => handleRemoveStock(stock.symbol)}
                           className="text-text-muted hover:text-danger-text text-xs p-1"
-                          disabled={portfolioLoading}
+                          disabled={portfolioLoading || isUpdating}
                         >
                           ×
                         </Button>
