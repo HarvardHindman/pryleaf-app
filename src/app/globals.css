@@ -6,6 +6,7 @@
 @import "../styles/light-theme.css";
 @import "../styles/dark-theme.css";
 @import "../styles/chat.css";
+@import "../styles/community.css";
 
 @custom-variant dark (&:is(.dark *));
 

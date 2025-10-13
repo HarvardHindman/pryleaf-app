@@ -1,55 +1,61 @@
 .dark {
-  /* Modern Semantic Color System - Dark Theme */
+  /* Modern Dark Theme - 2025 Edition */
+  /* Rich, sophisticated palette with vibrant accents */
 
-  /* Base Colors */
-  --background: #111827;
-  --foreground: #f9fafb;
+  /* Base Colors - Deep, rich backgrounds */
+  --background: #09090b;
+  --foreground: #fafafa;
 
-  /* Text Colors - High contrast hierarchy */
-  --text-primary: #f9fafb;         /* Main text, high contrast */
-  --text-secondary: #e5e7eb;       /* Secondary text, readable */
-  --text-muted: #9ca3af;           /* Muted text, less prominent */
-  --text-subtle: #6b7280;         /* Subtle text, least prominent */
+  /* Text Colors - Refined hierarchy with better readability */
+  --text-primary: #fafafa;         /* Main text, crisp white */
+  --text-secondary: #e4e4e7;       /* Secondary text, soft white */
+  --text-muted: #a1a1aa;           /* Muted text, zinc-400 */
+  --text-subtle: #71717a;          /* Subtle text, zinc-500 */
 
-  /* Surface Colors - Subtle hierarchy with proper contrast */
-  --surface-primary: #1f2937;      /* Main background, cards */
-  --surface-secondary: #111827;    /* Secondary backgrounds */
-  --surface-tertiary: #374151;     /* Tertiary, subtle differences */
-  --surface-elevated: #1f2937;     /* Elevated surfaces like modals */
+  /* Surface Colors - Layered zinc palette */
+  --surface-primary: #18181b;      /* Cards, elevated content - zinc-900 */
+  --surface-secondary: #09090b;    /* Main background - zinc-950 */
+  --surface-tertiary: #27272a;     /* Hover states, tertiary - zinc-800 */
+  --surface-elevated: #27272a;     /* Modals, popovers - zinc-800 */
 
-  /* Border Colors - Subtle to prominent */
-  --border-subtle: #374151;        /* Very subtle, almost invisible */
-  --border-default: #4b5563;       /* Default border, balanced */
-  --border-strong: #6b7280;        /* Stronger border for emphasis */
+  /* Border Colors - Subtle zinc tones */
+  --border-subtle: #27272a;        /* Very subtle - zinc-800 */
+  --border-default: #3f3f46;       /* Default border - zinc-700 */
+  --border-strong: #52525b;        /* Emphasis border - zinc-600 */
 
-  /* Interactive Colors */
-  --interactive-primary: #60a5fa;  /* Primary actions, links */
-  --interactive-hover: #3b82f6;    /* Hover state */
-  --interactive-active: #2563eb;   /* Active/pressed state */
+  /* Interactive Colors - Dark Emerald (sophisticated green) */
+  --interactive-primary: #10b981;  /* Primary actions - emerald-500 */
+  --interactive-hover: #059669;    /* Hover state - emerald-600 */
+  --interactive-active: #047857;   /* Active state - emerald-700 */
 
-  /* Status Colors - Semantic meaning */
-  --success-background: #064e3b;    /* Success backgrounds */
-  --success-text: #34d399;         /* Success text */
-  --success-border: #065f46;       /* Success borders */
+  /* Status Colors - Modern, vibrant palette */
+  --success-background: #052e16;    /* Emerald-950 background */
+  --success-text: #10b981;         /* Emerald-500 text */
+  --success-border: #064e3b;       /* Emerald-900 border */
 
-  --warning-background: #78350f;    /* Warning backgrounds */
-  --warning-text: #fbbf24;         /* Warning text */
-  --warning-border: #92400e;       /* Warning borders */
+  --warning-background: #451a03;    /* Amber-950 background */
+  --warning-text: #f59e0b;         /* Amber-500 text */
+  --warning-border: #78350f;       /* Amber-900 border */
 
-  --danger-background: #7f1d1d;     /* Danger backgrounds */
-  --danger-text: #f87171;          /* Danger text */
-  --danger-border: #991b1b;        /* Danger borders */
+  --danger-background: #450a0a;     /* Rose-950 background */
+  --danger-text: #fb7185;          /* Rose-400 text */
+  --danger-border: #881337;        /* Rose-900 border */
 
-  --info-background: #1e3a8a;       /* Info backgrounds */
-  --info-text: #60a5fa;            /* Info text */
-  --info-border: #1d4ed8;          /* Info borders */
+  --info-background: #083344;       /* Cyan-950 background */
+  --info-text: #22d3ee;            /* Cyan-400 text */
+  --info-border: #164e63;          /* Cyan-900 border */
 
-  /* Shadows and Elevation - Enhanced for dark mode */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  /* Shadows and Elevation - Deeper shadows for depth */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.6), 0 1px 2px -1px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+
+  /* Glow effects for interactive elements */
+  --glow-primary: 0 0 20px rgba(16, 185, 129, 0.25);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-danger: 0 0 20px rgba(251, 113, 133, 0.3);
 
   /* Legacy mappings for backward compatibility */
   --background: var(--surface-secondary);
@@ -59,7 +65,7 @@
   --popover: var(--surface-primary);
   --popover-foreground: var(--text-primary);
   --primary: var(--interactive-primary);
-  --primary-foreground: var(--surface-primary);
+  --primary-foreground: #09090b;
   --secondary: var(--surface-tertiary);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-tertiary);

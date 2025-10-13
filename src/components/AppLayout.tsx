@@ -29,12 +29,15 @@ import {
   DollarSign,
   Globe,
   Building2,
-  Server
+  Server,
+  Video,
+  Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import CommunityNavigation from '@/components/CommunityNavigation';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -43,6 +46,8 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -64,14 +69,101 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Get current path for navigation highlighting
   const currentPath = usePathname();
 
+  // Check if we're on a specific community page and store it
+  const communityMatch = currentPath.match(/^\/community\/([^\/]+)(?:\/(.+))?$/);
+  const urlCommunityId = communityMatch ? communityMatch[1] : null;
+  const communitySubPath = communityMatch ? communityMatch[2] : null;
+  
+  // Use URL community or selected community
+  const communityId = urlCommunityId && urlCommunityId !== 'create' ? urlCommunityId : selectedCommunityId;
+  const isOnCommunityDetail = communityId && communityId !== 'create';
+
+  // Fetch user's communities to set default and check ownership
+  useEffect(() => {
+    async function loadDefaultCommunity() {
+      if (!user) return;
+      
+      try {
+        const response = await fetch('/api/user/channels');
+        const data = await response.json();
+        
+        const communities = data.communities || [];
+        if (communities.length > 0) {
+          if (!selectedCommunityId) {
+            const stored = localStorage.getItem('lastSelectedCommunity');
+            const defaultId = stored || communities[0].community.id;
+            setSelectedCommunityId(defaultId);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading communities:', error);
+      }
+    }
+    
+    loadDefaultCommunity();
+  }, [user, selectedCommunityId]);
+
+  // Check if user is owner of selected community
+  useEffect(() => {
+    async function checkOwnership() {
+      if (!user || !communityId) {
+        setIsOwner(false);
+        return;
+      }
+      
+      try {
+        // Check directly from the community endpoint
+        const response = await fetch(`/api/communities/${communityId}`);
+        const data = await response.json();
+        
+        console.log('Checking ownership for community:', communityId);
+        console.log('Community data:', data);
+        console.log('User ID:', user.id);
+        console.log('Owner ID:', data.community?.owner_id);
+        console.log('Membership status:', data.membershipStatus);
+        
+        // Check if user is the owner - use membershipStatus.isOwner or compare owner_id
+        const ownerStatus = data.membershipStatus?.isOwner || data.community?.owner_id === user.id;
+        console.log('Is owner:', ownerStatus);
+        setIsOwner(ownerStatus);
+      } catch (error) {
+        console.error('Error checking ownership:', error);
+        setIsOwner(false);
+      }
+    }
+    
+    checkOwnership();
+  }, [user, communityId]);
+
+  // Update selected community when URL changes
+  useEffect(() => {
+    if (urlCommunityId && urlCommunityId !== 'create') {
+      setSelectedCommunityId(urlCommunityId);
+      localStorage.setItem('lastSelectedCommunity', urlCommunityId);
+    }
+  }, [urlCommunityId]);
+
   const navigation = [
     { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
     { name: 'Markets', href: '/markets', icon: TrendingUp, current: currentPath === '/markets' },
     { name: 'Portfolio', href: '/portfolio', icon: DollarSign, current: currentPath === '/portfolio' },
     { name: 'Analytics', href: '/analytics', icon: LineChart, current: currentPath === '/analytics' },
     { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
-    { name: 'Chat', href: '/chat', icon: MessageSquare, current: currentPath === '/chat' },
+    { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
   ];
+
+  // Community-specific tabs (always shown if user has a selected community)
+  const communityTabs = communityId ? [
+    ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
+    { name: 'Feed', href: `/community/${communityId}`, icon: Activity, current: urlCommunityId === communityId && (!communitySubPath || communitySubPath === 'feed') },
+    { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
+    { name: 'Members', href: `/community/${communityId}/members`, icon: Users, current: urlCommunityId === communityId && communitySubPath === 'members' },
+    { name: 'About', href: `/community/${communityId}/about`, icon: Compass, current: urlCommunityId === communityId && communitySubPath === 'about' },
+  ] : [];
+
+  console.log('Community ID:', communityId);
+  console.log('Is Owner:', isOwner);
+  console.log('Community Tabs:', communityTabs);
   const headerNav = [
     { name: 'News', href: '/news', icon: Globe },
     { name: 'Research', href: '/research', icon: Building2 },
@@ -84,7 +176,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       style={{ backgroundColor: 'var(--surface-secondary)' }}
     >
       {/* Sidebar */}
-      <div className="hidden md:flex md:w-40 md:flex-col">
+      <div className="hidden md:flex md:w-28 md:flex-col">
         <div
           className="flex flex-col h-full border-r"
           style={{
@@ -93,15 +185,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
           }}
         >
           {/* Logo Section */}
-          <div className="flex-shrink-0 px-3 py-4">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center group">
+          <div className="flex-shrink-0 px-3 py-3">
+            <div className="flex flex-col items-center">
+              <Link href="/" className="flex flex-col items-center group">
                 <img 
                   src="/pryleaf.PNG" 
                   alt="Pryleaf" 
-                  className="h-7 w-auto group-hover:opacity-80 transition-opacity mr-2"
+                  className="h-7 w-auto group-hover:opacity-80 transition-opacity mb-0.5"
                 />
-                <span className="text-base font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--clr-primary-a40)' }}>
+                <span className="text-xs font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
                   Pryleaf
                 </span>
               </Link>
@@ -109,26 +201,26 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
 
           {/* Main Navigation - Investment Tools */}
-          <nav className="flex-1 px-2 py-2 space-y-1">
+          <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto scrollbar-hide">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center px-2 py-2 rounded-lg transition-all duration-200 text-sm font-medium ${
+                className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium ${
                   item.current
                     ? 'shadow-sm'
                     : 'hover:shadow-sm'
                 }`}
                 style={{
-                  backgroundColor: item.current ? 'var(--info-background)' : 'transparent',
-                  color: item.current ? 'var(--info-text)' : 'var(--text-muted)',
-                  border: item.current ? '1px solid var(--info-border)' : '1px solid transparent'
+                  backgroundColor: item.current ? 'var(--interactive-primary)' : 'transparent',
+                  color: item.current ? 'var(--surface-primary)' : 'var(--text-muted)',
+                  border: item.current ? '1px solid var(--interactive-primary)' : '1px solid transparent'
                 }}
                 onMouseEnter={(e) => {
                   if (!item.current) {
-                    e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
+                    e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
                     e.currentTarget.style.color = 'var(--text-primary)';
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                    e.currentTarget.style.borderColor = 'var(--border-default)';
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -139,51 +231,70 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   }
                 }}
               >
-                <item.icon className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{item.name}</span>
+                <item.icon className="h-5 w-5 mb-1 flex-shrink-0" />
+                <span className="text-center leading-tight">{item.name}</span>
               </Link>
             ))}
+
+            {/* Community Tabs (when viewing a community) */}
+            {communityTabs.length > 0 && (
+              <>
+                <div className="pt-2 pb-1">
+                  <div 
+                    className="text-[10px] font-semibold uppercase tracking-wider text-center px-2"
+                    style={{ color: 'var(--text-subtle)' }}
+                  >
+                    Community
+                  </div>
+                </div>
+                {communityTabs.map((tab) => (
+                  <Link
+                    key={tab.name}
+                    href={tab.href}
+                    className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium ${
+                      tab.current
+                        ? 'shadow-sm'
+                        : 'hover:shadow-sm'
+                    }`}
+                    style={{
+                      backgroundColor: tab.current ? 'var(--success-background)' : 'transparent',
+                      color: tab.current ? 'var(--success-text)' : 'var(--text-muted)',
+                      border: tab.current ? '1px solid var(--success-border)' : '1px solid transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!tab.current) {
+                        e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                        e.currentTarget.style.borderColor = 'var(--border-default)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!tab.current) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }
+                    }}
+                  >
+                    <tab.icon className="h-5 w-5 mb-1 flex-shrink-0" />
+                    <span className="text-center leading-tight">{tab.name}</span>
+                  </Link>
+                ))}
+              </>
+            )}
           </nav>
 
-          {/* Server Selection - Bottom Section */}
-          <div className="flex-shrink-0 px-2 py-3 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-            <div className="space-y-2">
-              <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
-                Server
+          {/* Community Switcher - Bottom Section */}
+          {user && (
+            <div className="flex-shrink-0 px-2 py-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
+              <div className="space-y-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-center mb-1" style={{ color: 'var(--text-subtle)' }}>
+                  Switch
+                </div>
+                <CommunityNavigation />
               </div>
-              
-              {/* Current Server */}
-              <div className="flex items-center px-2 py-1.5 rounded-md text-sm" style={{
-                backgroundColor: 'var(--info-background)',
-                color: 'var(--info-text)',
-                border: '1px solid var(--info-border)'
-              }}>
-                <Server className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="truncate">Pryleaf</span>
-              </div>
-
-              {/* Add Server */}
-              <button 
-                className="flex items-center w-full px-2 py-1.5 rounded-md text-sm transition-all duration-200 border border-dashed hover:border-solid"
-                style={{
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-muted)',
-                  borderColor: 'var(--border-subtle)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="truncate">Join Server</span>
-              </button>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -226,22 +337,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Link>
               ))}
               
-              {/* Mobile Server Section */}
-              <div className="pt-4 mt-4 border-t border-gray-200">
-                <div className="px-3 mb-2">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Community Server
-                  </h3>
+              {/* Mobile Communities Section */}
+              {user && (
+                <div className="pt-4 mt-4 border-t border-gray-200">
+                  <div className="px-3 mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      My Communities
+                    </h3>
+                    <Link href="/community">
+                      <span className="text-xs text-blue-600 hover:text-blue-800">
+                        Browse
+                      </span>
+                    </Link>
+                  </div>
+                  <div className="px-2">
+                    <CommunityNavigation />
+                  </div>
                 </div>
-                <div className="flex items-center px-3 py-2 text-sm text-gray-600">
-                  <Server className="h-4 w-4 mr-3 text-gray-400" />
-                  <span>Pryleaf Community</span>
-                </div>
-                <button className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors">
-                  <Plus className="h-4 w-4 mr-3 text-gray-400" />
-                  <span>Join Server</span>
-                </button>
-              </div>
+              )}
             </nav>
 
             {/* Mobile bottom section */}
