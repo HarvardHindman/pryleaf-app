@@ -370,3 +370,5 @@ COMMENT ON TABLE public.payments IS 'Payment transaction records';
 COMMENT ON TABLE public.creator_payouts IS 'Creator payout records';
 COMMENT ON TABLE public.moderation_log IS 'Audit log for moderation actions';
 
+
+

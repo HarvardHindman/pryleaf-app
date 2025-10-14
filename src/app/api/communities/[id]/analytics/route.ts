@@ -80,6 +80,59 @@ export async function GET(
       .eq('community_id', id)
       .gte('created_at', startOfMonth.toISOString());
 
+    // Get member breakdown by tier
+    const { data: tierBreakdown } = await supabase
+      .from('community_memberships')
+      .select(`
+        tier:community_tiers(name, tier_level)
+      `)
+      .eq('community_id', id)
+      .eq('status', 'active');
+
+    // Count members by tier
+    const membersByTier: any = {
+      free: 0,
+      premium: 0,
+      elite: 0
+    };
+
+    if (tierBreakdown) {
+      for (const membership of tierBreakdown) {
+        const tierLevel = (membership.tier as any)?.tier_level || 0;
+        const tierName = (membership.tier as any)?.name?.toLowerCase() || 'free';
+        
+        if (tierLevel === 0 || tierName.includes('free')) {
+          membersByTier.free++;
+        } else if (tierLevel === 1 || tierName.includes('standard') || tierName.includes('basic')) {
+          membersByTier.premium++;
+        } else {
+          membersByTier.elite++;
+        }
+      }
+    }
+
+    // Get revenue by tier
+    const revenueByTier: any = {
+      free: 0,
+      premium: 0,
+      elite: 0
+    };
+
+    if (memberships) {
+      for (const membership of memberships) {
+        const price = (membership.tier as any)?.price_monthly || 0;
+        const tierName = (membership.tier as any)?.name?.toLowerCase() || 'free';
+        
+        if (price === 0 || tierName.includes('free')) {
+          revenueByTier.free += price;
+        } else if (tierName.includes('standard') || tierName.includes('basic')) {
+          revenueByTier.premium += price;
+        } else {
+          revenueByTier.elite += price;
+        }
+      }
+    }
+
     return NextResponse.json({
       totalMembers: totalMembers || 0,
       totalPosts: totalPosts || 0,
@@ -90,7 +143,9 @@ export async function GET(
       newMembersThisMonth: newMembersThisMonth || 0,
       growthRate: totalMembers > 0 && newMembersThisMonth > 0
         ? Math.round((newMembersThisMonth / totalMembers) * 100)
-        : 0
+        : 0,
+      membersByTier,
+      revenueByTier
     });
   } catch (error: any) {
     console.error('Error fetching analytics:', error);
@@ -100,4 +155,6 @@ export async function GET(
     );
   }
 }
+
+
 

@@ -320,3 +320,5 @@ UPDATE public.communities SET subscriber_count = 32100 WHERE id = '22222222-2222
 
 COMMENT ON TABLE public.communities IS 'Sample seed data - replace owner_id with real user IDs';
 
+
+

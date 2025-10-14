@@ -10,17 +10,19 @@ import {
   Lock,
   Loader2,
   Crown,
-  Image as ImageIcon,
-  Heart,
-  Share2,
-  MoreHorizontal,
-  Send,
   UserPlus,
   Settings,
   Play,
   Check,
-  FileText,
-  Video as VideoIcon
+  Video as VideoIcon,
+  Upload,
+  Eye,
+  Clock,
+  Grid3x3,
+  List,
+  Search,
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 import type { Community, CommunityTier } from '@/lib/communityService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,6 +105,7 @@ export default function CommunityDetailPage() {
   const renderFeedContent = () => {
     const isMember = membershipStatus?.isMember;
     const isOwner = membershipStatus?.isOwner;
+    const userTierLevel = membershipStatus?.tierLevel || 0;
 
     // If not a member, show join prompt
     if (!isMember) {
@@ -110,10 +113,10 @@ export default function CommunityDetailPage() {
         <div className="flex flex-col items-center justify-center py-16 px-4">
           <Lock className="h-16 w-16 mb-4" style={{ color: 'var(--text-muted)' }} />
           <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Join to Access the Feed
+            Join to Access Videos
           </h3>
           <p className="text-center mb-6" style={{ color: 'var(--text-muted)' }}>
-            Become a member to access exclusive posts and content.
+            Become a member to access exclusive video content and live sessions.
           </p>
           <Link href={`/community/${communityId}/about`}>
             <button className="btn btn-primary btn-lg">
@@ -124,7 +127,14 @@ export default function CommunityDetailPage() {
       );
     }
 
-    return <FeedTab communityId={communityId} isOwner={isOwner} />;
+    return (
+      <VideoFeedTab 
+        communityId={communityId} 
+        isOwner={isOwner} 
+        userTierLevel={userTierLevel}
+        communityName={community?.name || ''}
+      />
+    );
   };
 
   if (loading) {
@@ -225,28 +235,31 @@ export default function CommunityDetailPage() {
                 {community.description}
               </p>
 
-              {/* Membership Status */}
-              {membershipStatus && (
-                <div className="flex items-center gap-3">
-                  {isMember ? (
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--success-background)', color: 'var(--success-text)' }}>
-                      <Check className="h-4 w-4" />
-                      <span className="font-semibold">Member</span>
-                      {isOwner && (
-                        <Crown className="h-4 w-4 ml-1" />
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setActiveTab('about')}
-                      className="btn btn-primary"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      Join Community
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* Quick Actions */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Membership Status */}
+                {membershipStatus && (
+                  <>
+                    {isMember ? (
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--success-background)', color: 'var(--success-text)' }}>
+                        <Check className="h-4 w-4" />
+                        <span className="font-semibold">Member</span>
+                        {isOwner && (
+                          <Crown className="h-4 w-4 ml-1" />
+                        )}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setActiveTab('about')}
+                        className="btn btn-primary"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Join Community
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -261,220 +274,377 @@ export default function CommunityDetailPage() {
 }
 
 
-// Feed Tab Component
-function FeedTab({ communityId, isOwner }: any) {
-  const [posts, setPosts] = useState<any[]>([]);
+// Video Feed Tab Component
+interface VideoFeedTabProps {
+  communityId: string;
+  isOwner: boolean;
+  userTierLevel: number;
+  communityName: string;
+}
+
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  content_url: string;
+  thumbnail_url?: string;
+  duration?: number;
+  views: number;
+  likes: number;
+  published_at: string;
+  minimum_tier_level: number;
+  tags: string[];
+}
+
+function VideoFeedTab({ communityId, isOwner, userTierLevel, communityName }: VideoFeedTabProps) {
+  const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newPostText, setNewPostText] = useState('');
-  const [posting, setPosting] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular'>('newest');
+  const [filteredVideos, setFilteredVideos] = useState<Video[]>([]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [communityId]);
+    fetchVideos();
+  }, [communityId, sortBy]);
 
-  async function fetchPosts() {
+  async function fetchVideos() {
     try {
       setLoading(true);
-      const response = await fetch(`/api/communities/${communityId}/posts`);
+      const params = new URLSearchParams({
+        sort: sortBy,
+        ...(searchQuery && { search: searchQuery }),
+      });
+      
+      const response = await fetch(`/api/communities/${communityId}/videos?${params}`);
       if (response.ok) {
         const data = await response.json();
-        setPosts(data.posts || []);
+        setVideos(data.videos || []);
       }
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching videos:', error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCreatePost() {
-    if (!newPostText.trim()) return;
-
-    try {
-      setPosting(true);
-      const response = await fetch(`/api/communities/${communityId}/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: newPostText,
-          type: 'text'
-        })
-      });
-
-      if (response.ok) {
-        setNewPostText('');
-        fetchPosts();
-      }
-    } catch (error) {
-      console.error('Error creating post:', error);
-    } finally {
-      setPosting(false);
+  // Filter videos based on search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredVideos(videos);
+    } else {
+      const query = searchQuery.toLowerCase();
+      setFilteredVideos(
+        videos.filter(
+          (video) =>
+            video.title.toLowerCase().includes(query) ||
+            video.description?.toLowerCase().includes(query) ||
+            video.tags?.some((tag) => tag.toLowerCase().includes(query))
+        )
+      );
     }
-  }
+  }, [searchQuery, videos]);
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatViews = (views: number) => {
+    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+    if (views >= 1000) return `${(views / 1000).toFixed(1)}K`;
+    return views.toString();
+  };
+
+  const formatTimeAgo = (date: string) => {
+    const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+    if (seconds < 60) return 'just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
+    if (seconds < 31536000) return `${Math.floor(seconds / 2592000)}mo ago`;
+    return `${Math.floor(seconds / 31536000)}y ago`;
+  };
+
+  const canAccessVideo = (video: Video) => {
+    return isOwner || video.minimum_tier_level <= userTierLevel;
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Create Post (Owner/Creator Only) */}
-      {isOwner && (
-        <div 
-          className="p-6 rounded-lg border mb-6"
-          style={{
-            backgroundColor: 'var(--surface-primary)',
-            borderColor: 'var(--border-default)'
-          }}
-        >
-          <textarea
-            value={newPostText}
-            onChange={(e) => setNewPostText(e.target.value)}
-            placeholder="Share something with your community..."
-            className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 resize-none"
-            style={{
-              backgroundColor: 'var(--surface-secondary)',
-              borderColor: 'var(--border-default)',
-              color: 'var(--text-primary)',
-              minHeight: '120px'
-            }}
-          />
-          <div className="flex justify-between items-center mt-4">
-            <div className="flex gap-2">
-              <button className="btn btn-ghost btn-sm">
-                <ImageIcon className="h-4 w-4" />
-                Image
+    <div>
+      {/* Controls Bar */}
+      <div 
+        className="sticky top-0 z-10 p-4 rounded-lg border mb-6"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+          {/* Search */}
+          <div className="relative flex-1 max-w-md w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search videos..."
+              className="w-full pl-10 pr-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--surface-secondary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="px-4 py-2 rounded-lg border focus:outline-none focus:ring-2"
+              style={{
+                backgroundColor: 'var(--surface-secondary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="popular">Most Popular</option>
+            </select>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 border rounded-lg p-1" style={{ borderColor: 'var(--border-default)' }}>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === 'grid' ? '' : ''
+                }`}
+                style={{
+                  backgroundColor: viewMode === 'grid' ? 'var(--interactive-primary)' : 'transparent',
+                  color: viewMode === 'grid' ? 'var(--surface-primary)' : 'var(--text-muted)'
+                }}
+              >
+                <Grid3x3 className="h-4 w-4" />
               </button>
-              <button className="btn btn-ghost btn-sm">
-                <VideoIcon className="h-4 w-4" />
-                Video
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded transition-colors ${
+                  viewMode === 'list' ? '' : ''
+                }`}
+                style={{
+                  backgroundColor: viewMode === 'list' ? 'var(--interactive-primary)' : 'transparent',
+                  color: viewMode === 'list' ? 'var(--surface-primary)' : 'var(--text-muted)'
+                }}
+              >
+                <List className="h-4 w-4" />
               </button>
             </div>
-            <button
-              onClick={handleCreatePost}
-              disabled={posting || !newPostText.trim()}
-              className="btn btn-primary"
-            >
-              {posting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  Post
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {posts.length === 0 ? (
-          <div className="text-center py-16">
-            <FileText className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              No posts yet
-            </h3>
-            <p style={{ color: 'var(--text-muted)' }}>
-              {isOwner ? 'Share your first post with the community!' : 'Check back soon for new content.'}
-            </p>
-          </div>
-        ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Post Card Component
-function PostCard({ post }: any) {
-  const [liked, setLiked] = useState(false);
-  const [likes, setLikes] = useState(post.likes || 0);
-
-  const handleLike = () => {
-    setLiked(!liked);
-    setLikes(liked ? likes - 1 : likes + 1);
-  };
-
-  return (
-    <div 
-      className="p-6 rounded-lg border"
-      style={{
-        backgroundColor: 'var(--surface-primary)',
-        borderColor: 'var(--border-default)'
-      }}
-    >
-      {/* Post Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--info-background)' }}>
-            <Crown className="h-5 w-5" style={{ color: 'var(--info-text)' }} />
-          </div>
-          <div>
-            <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Creator
-              <span className="ml-2 text-xs font-normal px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--info-background)', color: 'var(--info-text)' }}>
-                Owner
-              </span>
-            </p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {new Date(post.created_at || Date.now()).toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-        <button className="btn btn-ghost btn-sm">
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Post Content */}
-      <div className="mb-4">
-        <p style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-          {post.content || post.title}
-        </p>
-        {post.media_url && (
-          <div className="mt-4 rounded-lg overflow-hidden">
-            {post.type === 'video' ? (
-              <video controls className="w-full">
-                <source src={post.media_url} />
-              </video>
-            ) : (
-              <img src={post.media_url} alt="Post" className="w-full" />
+            {/* Upload Button (Owner Only) */}
+            {isOwner && (
+              <Link href={`/community/${communityId}/videos`}>
+                <button className="btn btn-primary flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  Upload
+                </button>
+              </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Post Actions */}
-      <div className="flex items-center gap-6 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-        <button
-          onClick={handleLike}
-          className={`flex items-center gap-2 text-sm ${liked ? 'text-red-500' : ''}`}
-          style={{ color: liked ? '#ef4444' : 'var(--text-muted)' }}
-        >
-          <Heart className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
-          {likes}
-        </button>
-        <button className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          <MessageSquare className="h-5 w-5" />
-          {post.comments || 0}
-        </button>
-        <button className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          <Share2 className="h-5 w-5" />
-          Share
-        </button>
-      </div>
+      {/* Video Grid/List */}
+      {filteredVideos.length === 0 ? (
+        <div className="text-center py-20">
+          <Play className="h-20 w-20 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+          <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            {searchQuery ? 'No videos found' : 'No videos yet'}
+          </h3>
+          <p className="text-lg mb-6" style={{ color: 'var(--text-muted)' }}>
+            {searchQuery 
+              ? 'Try adjusting your search terms' 
+              : isOwner 
+                ? 'Upload your first video to start sharing content!' 
+                : 'Check back soon for new content from ' + communityName}
+          </p>
+          {isOwner && !searchQuery && (
+            <Link href={`/community/${communityId}/videos`}>
+              <button className="btn btn-primary btn-lg">
+                <Upload className="h-5 w-5" />
+                Upload First Video
+              </button>
+            </Link>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredVideos.map((video) => {
+            const hasAccess = canAccessVideo(video);
+            return (
+              <Link
+                key={video.id}
+                href={hasAccess ? `/community/${communityId}/videos/${video.id}` : '#'}
+                className={`group ${!hasAccess ? 'cursor-not-allowed' : ''}`}
+                onClick={(e) => {
+                  if (!hasAccess) {
+                    e.preventDefault();
+                    alert('Upgrade your membership to access this video');
+                  }
+                }}
+              >
+                <div 
+                  className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                  style={{ backgroundColor: 'var(--surface-primary)' }}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative aspect-video" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+                    {video.thumbnail_url ? (
+                      <img
+                        src={video.thumbnail_url}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Play className="h-12 w-12" style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                    )}
+                    
+                    {/* Duration Badge */}
+                    {video.duration && (
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded">
+                        {formatDuration(video.duration)}
+                      </div>
+                    )}
+
+                    {/* Lock Overlay */}
+                    {!hasAccess && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <div className="text-center">
+                          <Lock className="h-8 w-8 text-white mx-auto mb-2" />
+                          <p className="text-white text-sm font-medium">
+                            Tier {video.minimum_tier_level}+
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Video Info */}
+                  <div className="p-4">
+                    <h3 className="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity" style={{ color: 'var(--text-primary)' }}>
+                      {video.title}
+                    </h3>
+                    <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        {formatViews(video.views)}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {formatTimeAgo(video.published_at)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredVideos.map((video) => {
+            const hasAccess = canAccessVideo(video);
+            return (
+              <Link
+                key={video.id}
+                href={hasAccess ? `/community/${communityId}/videos/${video.id}` : '#'}
+                className={`group ${!hasAccess ? 'cursor-not-allowed' : ''}`}
+                onClick={(e) => {
+                  if (!hasAccess) {
+                    e.preventDefault();
+                    alert('Upgrade your membership to access this video');
+                  }
+                }}
+              >
+                <div 
+                  className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex gap-4 p-4"
+                  style={{ backgroundColor: 'var(--surface-primary)' }}
+                >
+                  {/* Thumbnail */}
+                  <div className="relative w-64 aspect-video rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+                    {video.thumbnail_url ? (
+                      <img
+                        src={video.thumbnail_url}
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Play className="h-12 w-12" style={{ color: 'var(--text-muted)' }} />
+                      </div>
+                    )}
+                    
+                    {video.duration && (
+                      <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/80 text-white text-xs font-medium rounded">
+                        {formatDuration(video.duration)}
+                      </div>
+                    )}
+
+                    {!hasAccess && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <Lock className="h-6 w-6 text-white" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Video Info */}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-2 group-hover:opacity-80 transition-opacity line-clamp-2" style={{ color: 'var(--text-primary)' }}>
+                      {video.title}
+                    </h3>
+                    <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
+                      {video.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-4 w-4" />
+                        {formatViews(video.views)} views
+                      </span>
+                      <span>•</span>
+                      <span>{formatTimeAgo(video.published_at)}</span>
+                      {!hasAccess && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1" style={{ color: 'var(--interactive-primary)' }}>
+                            <Lock className="h-4 w-4" />
+                            Tier {video.minimum_tier_level}+
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

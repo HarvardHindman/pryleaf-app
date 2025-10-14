@@ -26,7 +26,6 @@ import {
   Activity,
   PieChart,
   LineChart,
-  DollarSign,
   Globe,
   Building2,
   Server,
@@ -146,7 +145,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
     { name: 'Markets', href: '/markets', icon: TrendingUp, current: currentPath === '/markets' },
-    { name: 'Portfolio', href: '/portfolio', icon: DollarSign, current: currentPath === '/portfolio' },
     { name: 'Analytics', href: '/analytics', icon: LineChart, current: currentPath === '/analytics' },
     { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
     { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
@@ -155,7 +153,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Community-specific tabs (always shown if user has a selected community)
   const communityTabs = communityId ? [
     ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
-    { name: 'Feed', href: `/community/${communityId}`, icon: Activity, current: urlCommunityId === communityId && (!communitySubPath || communitySubPath === 'feed') },
+    { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
     { name: 'Members', href: `/community/${communityId}/members`, icon: Users, current: urlCommunityId === communityId && communitySubPath === 'members' },
     { name: 'About', href: `/community/${communityId}/about`, icon: Compass, current: urlCommunityId === communityId && communitySubPath === 'about' },

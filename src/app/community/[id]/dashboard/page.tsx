@@ -20,7 +20,12 @@ import {
   Calendar,
   Loader2,
   Check,
-  X
+  X,
+  Sparkles,
+  Search,
+  Shield,
+  Filter,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -95,7 +100,7 @@ export default function CommunityDashboardPage() {
     <div className="h-full overflow-y-auto" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       {/* Header */}
       <div 
-        className="border-b px-4 md:px-8 py-6"
+        className="border-b px-4 md:px-8 py-4"
         style={{ 
           backgroundColor: 'var(--surface-primary)',
           borderColor: 'var(--border-default)'
@@ -103,7 +108,7 @@ export default function CommunityDashboardPage() {
       >
         <div className="max-w-7xl mx-auto">
           <Link href={`/community/${communityId}`}>
-            <button className="btn btn-ghost btn-sm mb-4">
+            <button className="btn btn-ghost btn-sm mb-3">
               <ArrowLeft className="h-4 w-4" />
               Back to Community
             </button>
@@ -111,13 +116,13 @@ export default function CommunityDashboardPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Crown className="h-6 w-6" style={{ color: 'var(--warning-text)' }} />
-                <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <div className="flex items-center gap-2 mb-1">
+                <Crown className="h-5 w-5" style={{ color: 'var(--warning-text)' }} />
+                <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                   Creator Dashboard
                 </h1>
               </div>
-              <p className="text-lg" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 {community.name}
               </p>
             </div>
@@ -176,9 +181,9 @@ export default function CommunityDashboardPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {activeTab === 'overview' && <OverviewTab community={community} stats={stats} communityId={communityId} />}
-        {activeTab === 'content' && <ContentRedirect communityId={communityId} />}
+        {activeTab === 'content' && <ContentTab communityId={communityId} />}
         {activeTab === 'members' && <MembersManagementTab communityId={communityId} />}
-        {activeTab === 'tiers' && <TiersRedirect communityId={communityId} />}
+        {activeTab === 'tiers' && <TiersTab communityId={communityId} />}
         {activeTab === 'analytics' && <AnalyticsTab communityId={communityId} stats={stats} />}
         {activeTab === 'settings' && <SettingsTab community={community} communityId={communityId} />}
       </div>
@@ -190,7 +195,7 @@ function DashboardTabButton({ active, onClick, icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
+      className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
         active ? 'border-blue-500' : 'border-transparent'
       }`}
       style={{
@@ -199,77 +204,116 @@ function DashboardTabButton({ active, onClick, icon, label }: any) {
       }}
     >
       {icon}
-      <span>{label}</span>
+      <span className="text-sm">{label}</span>
     </button>
   );
 }
 
-function ContentRedirect({ communityId }: any) {
-  useEffect(() => {
-    window.location.href = `/community/${communityId}/dashboard/content`;
-  }, [communityId]);
-
-  return (
-    <div className="flex items-center justify-center py-8">
-      <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
-    </div>
-  );
-}
-
-function TiersRedirect({ communityId }: any) {
-  useEffect(() => {
-    window.location.href = `/community/${communityId}/dashboard/tiers`;
-  }, [communityId]);
-
-  return (
-    <div className="flex items-center justify-center py-8">
-      <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
-    </div>
-  );
-}
+// Content and Tiers tabs now render inline instead of redirecting
 
 function OverviewTab({ community, stats, communityId }: any) {
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(false);
+
+  useEffect(() => {
+    fetchRecentActivities();
+  }, [communityId]);
+
+  async function fetchRecentActivities() {
+    setLoadingActivities(true);
+    try {
+      const response = await fetch(`/api/communities/${communityId}/activity`);
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data.activities || []);
+      }
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    } finally {
+      setLoadingActivities(false);
+    }
+  }
+
+  // Calculate growth percentage
+  const memberGrowth = stats.newMembersThisMonth || 0;
+  const memberGrowthPercent = stats.growthRate || 0;
+
   const metrics = [
     {
       label: 'Total Members',
       value: stats.totalMembers || community.subscriber_count || 0,
       icon: Users,
       color: 'blue',
-      trend: '+12%'
+      trend: memberGrowthPercent > 0 ? `+${memberGrowthPercent}%` : '0%',
+      trendUp: memberGrowthPercent > 0,
+      subtitle: `${memberGrowth} new this month`
     },
     {
       label: 'Monthly Revenue',
       value: `$${((stats.monthlyRevenue || 0) / 100).toFixed(0)}`,
       icon: DollarSign,
       color: 'green',
-      trend: '+8%'
+      trend: stats.monthlyRevenue > 0 ? 'MRR' : '$0',
+      trendUp: stats.monthlyRevenue > 0,
+      subtitle: `${stats.totalMembers || 0} paying members`
     },
     {
-      label: 'Total Posts',
+      label: 'Total Content',
       value: stats.totalPosts || 0,
       icon: MessageSquare,
       color: 'purple',
-      trend: '+5'
+      trend: stats.totalViews ? `${stats.totalViews} views` : '0 views',
+      trendUp: stats.totalViews > 0,
+      subtitle: 'Posts & videos'
     },
     {
       label: 'Engagement Rate',
       value: `${stats.engagementRate || 0}%`,
       icon: Heart,
       color: 'red',
-      trend: '+3%'
+      trend: stats.engagementRate > 50 ? 'Excellent' : stats.engagementRate > 25 ? 'Good' : 'Growing',
+      trendUp: stats.engagementRate > 25,
+      subtitle: 'Member activity'
     }
   ];
 
   return (
     <div className="space-y-8">
+      {/* Welcome Banner */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          background: 'linear-gradient(135deg, var(--info-background) 0%, var(--surface-primary) 100%)',
+          borderColor: 'var(--info-border)'
+        }}
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <Crown className="h-6 w-6" style={{ color: 'var(--warning-text)' }} />
+          <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            Welcome back, Community Owner! 👋
+          </h2>
+        </div>
+        <p style={{ color: 'var(--text-secondary)' }}>
+          Here's what's happening with {community.name}
+        </p>
+      </div>
+
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric, index) => {
           const Icon = metric.icon;
+          const colorMap: any = {
+            blue: 'info',
+            green: 'success',
+            purple: 'info',
+            red: 'danger'
+          };
+          const bgColor = colorMap[metric.color] || 'info';
+          
           return (
             <div
               key={index}
-              className="p-6 rounded-lg border"
+              className="p-6 rounded-lg border hover:shadow-lg transition-shadow"
               style={{
                 backgroundColor: 'var(--surface-primary)',
                 borderColor: 'var(--border-default)'
@@ -278,22 +322,33 @@ function OverviewTab({ community, stats, communityId }: any) {
               <div className="flex items-center justify-between mb-4">
                 <div 
                   className="p-3 rounded-lg"
-                  style={{ backgroundColor: `var(--${metric.color === 'blue' ? 'info' : metric.color === 'green' ? 'success' : metric.color === 'purple' ? 'info' : 'danger'}-background)` }}
+                  style={{ backgroundColor: `var(--${bgColor}-background)` }}
                 >
                   <Icon 
                     className="h-6 w-6" 
-                    style={{ color: `var(--${metric.color === 'blue' ? 'info' : metric.color === 'green' ? 'success' : metric.color === 'purple' ? 'info' : 'danger'}-text)` }}
+                    style={{ color: `var(--${bgColor}-text)` }}
                   />
                 </div>
-                <span className="text-sm font-semibold" style={{ color: 'var(--success-text)' }}>
+                <div className="flex items-center gap-1">
+                  {metric.trendUp && (
+                    <TrendingUp className="h-4 w-4" style={{ color: 'var(--success-text)' }} />
+                  )}
+                  <span 
+                    className="text-sm font-semibold" 
+                    style={{ color: metric.trendUp ? 'var(--success-text)' : 'var(--text-muted)' }}
+                  >
                   {metric.trend}
                 </span>
+                </div>
               </div>
               <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
                 {metric.label}
               </p>
-              <p className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <p className="text-3xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
                 {metric.value}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {metric.subtitle}
               </p>
             </div>
           );
@@ -327,11 +382,57 @@ function OverviewTab({ community, stats, communityId }: any) {
         </Link>
       </div>
 
-      {/* Recent Activity */}
+      {/* Member Breakdown by Tier */}
       <div>
         <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Member Distribution
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <TierBreakdownCard
+            name="Free Members"
+            count={stats.membersByTier?.free || 0}
+            percentage={stats.totalMembers > 0 ? Math.round(((stats.membersByTier?.free || 0) / stats.totalMembers) * 100) : 0}
+            revenue="$0/mo"
+            color="info"
+            icon={Users}
+          />
+          <TierBreakdownCard
+            name="Premium Members"
+            count={stats.membersByTier?.premium || 0}
+            percentage={stats.totalMembers > 0 ? Math.round(((stats.membersByTier?.premium || 0) / stats.totalMembers) * 100) : 0}
+            revenue="Varies"
+            color="success"
+            icon={Crown}
+          />
+          <TierBreakdownCard
+            name="Elite Members"
+            count={stats.membersByTier?.elite || 0}
+            percentage={stats.totalMembers > 0 ? Math.round(((stats.membersByTier?.elite || 0) / stats.totalMembers) * 100) : 0}
+            revenue="Premium"
+            color="warning"
+            icon={Sparkles}
+          />
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Recent Activity
         </h2>
+          <button 
+            onClick={fetchRecentActivities}
+            disabled={loadingActivities}
+            className="btn btn-ghost btn-sm"
+          >
+            {loadingActivities ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Refresh'
+            )}
+          </button>
+        </div>
         <div 
           className="p-6 rounded-lg border"
           style={{
@@ -339,24 +440,114 @@ function OverviewTab({ community, stats, communityId }: any) {
             borderColor: 'var(--border-default)'
           }}
         >
+          {loadingActivities ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
+            </div>
+          ) : activities.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+              <p style={{ color: 'var(--text-muted)' }}>No recent activity</p>
+            </div>
+          ) : (
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 pb-4 border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--info-background)' }}>
-                  <Users className="h-5 w-5" style={{ color: 'var(--info-text)' }} />
+              {activities.slice(0, 10).map((activity, index) => (
+                <ActivityItem key={index} activity={activity} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TierBreakdownCard({ name, count, percentage, revenue, color, icon: Icon }: any) {
+  return (
+    <div 
+      className="p-6 rounded-lg border"
+      style={{
+        backgroundColor: 'var(--surface-primary)',
+        borderColor: 'var(--border-default)'
+      }}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div 
+          className="p-2 rounded-lg"
+          style={{ backgroundColor: `var(--${color}-background)` }}
+        >
+          <Icon className="h-5 w-5" style={{ color: `var(--${color}-text)` }} />
+        </div>
+        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+          {name}
+        </h3>
+      </div>
+      <div className="mb-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            {count}
+          </span>
+          <span className="text-lg" style={{ color: 'var(--text-muted)' }}>
+            ({percentage}%)
+          </span>
+        </div>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+        <div 
+          className="h-2 rounded-full transition-all"
+          style={{ 
+            width: `${percentage}%`,
+            backgroundColor: `var(--${color}-text)`
+          }}
+        />
+      </div>
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        {revenue}
+      </p>
+    </div>
+  );
+}
+
+function ActivityItem({ activity }: any) {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'member_joined': return Users;
+      case 'content_posted': return MessageSquare;
+      case 'tier_upgraded': return TrendingUp;
+      case 'member_left': return X;
+      default: return Calendar;
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'member_joined': return 'success';
+      case 'content_posted': return 'info';
+      case 'tier_upgraded': return 'warning';
+      case 'member_left': return 'danger';
+      default: return 'info';
+    }
+  };
+
+  const Icon = getActivityIcon(activity.type);
+  const color = getActivityColor(activity.type);
+
+  return (
+    <div className="flex items-center gap-4 pb-4 border-b last:border-0" style={{ borderColor: 'var(--border-subtle)' }}>
+      <div 
+        className="w-10 h-10 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: `var(--${color}-background)` }}
+      >
+        <Icon className="h-5 w-5" style={{ color: `var(--${color}-text)` }} />
                 </div>
                 <div className="flex-1">
                   <p style={{ color: 'var(--text-primary)' }}>
-                    <span className="font-semibold">New member</span> joined the community
+          <span className="font-semibold">{activity.title}</span>
+          {activity.description && <span> {activity.description}</span>}
                   </p>
                   <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    2 hours ago
+          {activity.timeAgo || 'Just now'}
                   </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -460,9 +651,21 @@ function ContentTab({ communityId }: any) {
 
 function MembersManagementTab({ communityId }: any) {
   const [members, setMembers] = useState<any[]>([]);
+  const [filteredMembers, setFilteredMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tierFilter, setTierFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
+  const [selectedMember, setSelectedMember] = useState<any>(null);
 
   useEffect(() => {
+    fetchMembers();
+  }, [communityId]);
+
+  useEffect(() => {
+    filterAndSortMembers();
+  }, [members, searchQuery, tierFilter, sortBy]);
+
     async function fetchMembers() {
       try {
         const response = await fetch(`/api/communities/${communityId}/members`);
@@ -476,8 +679,49 @@ function MembersManagementTab({ communityId }: any) {
         setLoading(false);
       }
     }
-    fetchMembers();
-  }, [communityId]);
+
+  function filterAndSortMembers() {
+    let filtered = [...members];
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(m => 
+        m.name?.toLowerCase().includes(query) ||
+        m.email?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply tier filter
+    if (tierFilter !== 'all') {
+      filtered = filtered.filter(m => {
+        const tierName = m.tier_name?.toLowerCase() || 'free';
+        return tierName.includes(tierFilter.toLowerCase());
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime();
+        case 'oldest':
+          return new Date(a.joined_at).getTime() - new Date(b.joined_at).getTime();
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '');
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredMembers(filtered);
+  }
+
+  const tierCounts = members.reduce((acc, m) => {
+    const tierName = m.tier_name?.toLowerCase() || 'free';
+    acc[tierName] = (acc[tierName] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   if (loading) {
     return <div className="flex items-center justify-center py-8">
@@ -487,12 +731,92 @@ function MembersManagementTab({ communityId }: any) {
 
   return (
     <div className="space-y-6">
+      {/* Header with Stats */}
       <div className="flex items-center justify-between">
+        <div>
         <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          Members ({members.length})
+            Members
         </h2>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {filteredMembers.length} of {members.length} members
+          </p>
+        </div>
       </div>
 
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Search */}
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Search members..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-lg border"
+              style={{
+                backgroundColor: 'var(--surface-primary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Tier Filter */}
+        <select
+          value={tierFilter}
+          onChange={(e) => setTierFilter(e.target.value)}
+          className="px-4 py-2 rounded-lg border"
+          style={{
+            backgroundColor: 'var(--surface-primary)',
+            borderColor: 'var(--border-default)',
+            color: 'var(--text-primary)'
+          }}
+        >
+          <option value="all">All Tiers ({members.length})</option>
+          {Object.entries(tierCounts).map(([tier, count]) => (
+            <option key={tier} value={tier}>
+              {tier.charAt(0).toUpperCase() + tier.slice(1)} ({count})
+            </option>
+          ))}
+        </select>
+
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="px-4 py-2 rounded-lg border"
+          style={{
+            backgroundColor: 'var(--surface-primary)',
+            borderColor: 'var(--border-default)',
+            color: 'var(--text-primary)'
+          }}
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="name">Name (A-Z)</option>
+        </select>
+      </div>
+
+      {/* Members Table */}
+      {filteredMembers.length === 0 ? (
+        <div 
+          className="text-center py-16 rounded-lg"
+          style={{ backgroundColor: 'var(--surface-primary)' }}
+        >
+          <Users className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            No members found
+          </h3>
+          <p style={{ color: 'var(--text-muted)' }}>
+            {searchQuery || tierFilter !== 'all' 
+              ? 'Try adjusting your filters'
+              : 'Your first members will appear here'}
+          </p>
+        </div>
+      ) : (
       <div 
         className="rounded-lg border overflow-hidden"
         style={{
@@ -518,15 +842,20 @@ function MembersManagementTab({ communityId }: any) {
             </tr>
           </thead>
           <tbody>
-            {members.map((member, index) => (
-              <tr key={member.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+              {filteredMembers.map((member, index) => (
+                <tr 
+                  key={member.id} 
+                  className="border-t hover:bg-opacity-50 transition-colors cursor-pointer" 
+                  style={{ borderColor: 'var(--border-subtle)' }}
+                  onClick={() => setSelectedMember(member)}
+                >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center font-semibold"
                       style={{ backgroundColor: 'var(--info-background)', color: 'var(--info-text)' }}
                     >
-                      {member.name?.[0] || 'M'}
+                        {member.name?.[0]?.toUpperCase() || 'M'}
                     </div>
                     <div>
                       <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -539,7 +868,15 @@ function MembersManagementTab({ communityId }: any) {
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="tier-badge tier-badge-premium">
+                    <span 
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        member.tier_level === 0 
+                          ? 'bg-gray-100 text-gray-700'
+                          : member.tier_level === 1
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}
+                    >
                     {member.tier_name || 'Free'}
                   </span>
                 </td>
@@ -547,14 +884,130 @@ function MembersManagementTab({ communityId }: any) {
                   {new Date(member.joined_at).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="btn btn-ghost btn-sm">
-                    <MoreHorizontal className="h-4 w-4" />
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedMember(member);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      <Eye className="h-4 w-4" />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
+      )}
+
+      {/* Member Details Modal */}
+      {selectedMember && (
+        <MemberDetailsModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          onRefresh={fetchMembers}
+        />
+      )}
+    </div>
+  );
+}
+
+function MemberDetailsModal({ member, onClose, onRefresh }: any) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div 
+        className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        style={{ backgroundColor: 'var(--surface-primary)' }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 border-b px-6 py-4" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              Member Details
+            </h2>
+            <button onClick={onClose} className="btn btn-ghost btn-sm">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Profile */}
+          <div className="flex items-center gap-4">
+            <div 
+              className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold"
+              style={{ backgroundColor: 'var(--info-background)', color: 'var(--info-text)' }}
+            >
+              {member.name?.[0]?.toUpperCase() || 'M'}
+            </div>
+            <div>
+              <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {member.name}
+              </h3>
+              <p style={{ color: 'var(--text-muted)' }}>{member.email}</p>
+              <span 
+                className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
+                  member.tier_level === 0 
+                    ? 'bg-gray-100 text-gray-700'
+                    : member.tier_level === 1
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-purple-100 text-purple-700'
+                }`}
+              >
+                {member.tier_name || 'Free'} Member
+              </span>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div 
+              className="p-4 rounded-lg text-center"
+              style={{ backgroundColor: 'var(--surface-secondary)' }}
+            >
+              <Calendar className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Joined</p>
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {new Date(member.joined_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div 
+              className="p-4 rounded-lg text-center"
+              style={{ backgroundColor: 'var(--surface-secondary)' }}
+            >
+              <MessageSquare className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Messages</p>
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                --
+              </p>
+            </div>
+            <div 
+              className="p-4 rounded-lg text-center"
+              style={{ backgroundColor: 'var(--surface-secondary)' }}
+            >
+              <Eye className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Views</p>
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                --
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Member Actions
+            </h4>
+            <button className="w-full btn btn-outline">
+              Send Direct Message
+            </button>
+            <button className="w-full btn btn-outline text-orange-600 border-orange-600">
+              Remove from Community
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -593,25 +1046,366 @@ function TiersTab({ communityId }: any) {
 }
 
 function AnalyticsTab({ communityId, stats }: any) {
+  const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+
+  // Revenue metrics
+  const totalRevenue = (stats.monthlyRevenue || 0) / 100;
+  const avgRevenuePerMember = stats.totalMembers > 0 
+    ? totalRevenue / stats.totalMembers 
+    : 0;
+  
+  // Growth metrics
+  const memberGrowthRate = stats.growthRate || 0;
+  const newMembersCount = stats.newMembersThisMonth || 0;
+
+  // Content metrics
+  const totalContent = stats.totalPosts || 0;
+  const totalViews = stats.totalViews || 0;
+  const avgViewsPerContent = totalContent > 0 ? Math.round(totalViews / totalContent) : 0;
+
   return (
     <div className="space-y-6">
+      {/* Header with Period Selector */}
+      <div className="flex items-center justify-between">
       <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
         Analytics & Insights
       </h2>
+        <div className="flex gap-2">
+          {(['7d', '30d', '90d', 'all'] as const).map((period) => (
+            <button
+              key={period}
+              onClick={() => setSelectedPeriod(period)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                selectedPeriod === period ? 'btn-primary' : 'btn-outline'
+              }`}
+            >
+              {period === 'all' ? 'All Time' : period.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <div 
-        className="p-8 rounded-lg border text-center"
+      {/* Revenue Insights */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Revenue Insights
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <AnalyticsMetricCard
+            label="Monthly Recurring Revenue"
+            value={`$${totalRevenue.toFixed(2)}`}
+            change={memberGrowthRate}
+            icon={DollarSign}
+            color="success"
+          />
+          <AnalyticsMetricCard
+            label="Avg Revenue Per Member"
+            value={`$${avgRevenuePerMember.toFixed(2)}`}
+            icon={Users}
+            color="info"
+          />
+          <AnalyticsMetricCard
+            label="Paying Members"
+            value={stats.totalMembers || 0}
+            subtitle={`${newMembersCount} new this month`}
+            icon={TrendingUp}
+            color="success"
+          />
+        </div>
+      </div>
+
+      {/* Revenue Breakdown by Tier */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Revenue by Tier
+        </h3>
+        <div 
+          className="p-6 rounded-lg border"
         style={{
           backgroundColor: 'var(--surface-primary)',
           borderColor: 'var(--border-default)'
         }}
       >
-        <BarChart3 className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-          Detailed Analytics Coming Soon
+          <div className="space-y-4">
+            <RevenueBarItem
+              tierName="Free Tier"
+              members={stats.membersByTier?.free || 0}
+              revenue={0}
+              percentage={0}
+              color="info"
+            />
+            <RevenueBarItem
+              tierName="Premium Tier"
+              members={stats.membersByTier?.premium || 0}
+              revenue={(stats.revenueByTier?.premium || 0) / 100}
+              percentage={totalRevenue > 0 ? ((stats.revenueByTier?.premium || 0) / stats.monthlyRevenue) * 100 : 0}
+              color="success"
+            />
+            <RevenueBarItem
+              tierName="Elite Tier"
+              members={stats.membersByTier?.elite || 0}
+              revenue={(stats.revenueByTier?.elite || 0) / 100}
+              percentage={totalRevenue > 0 ? ((stats.revenueByTier?.elite || 0) / stats.monthlyRevenue) * 100 : 0}
+              color="warning"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Content Performance */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Content Performance
         </h3>
-        <p style={{ color: 'var(--text-muted)' }}>
-          Track revenue, engagement, growth trends, and more.
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <AnalyticsMetricCard
+            label="Total Content"
+            value={totalContent}
+            subtitle="Posts & Videos"
+            icon={MessageSquare}
+            color="info"
+          />
+          <AnalyticsMetricCard
+            label="Total Views"
+            value={totalViews.toLocaleString()}
+            icon={Eye}
+            color="success"
+          />
+          <AnalyticsMetricCard
+            label="Avg Views per Content"
+            value={avgViewsPerContent}
+            icon={BarChart3}
+            color="info"
+          />
+        </div>
+      </div>
+
+      {/* Engagement Metrics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Member Engagement
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div 
+            className="p-6 rounded-lg border"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              borderColor: 'var(--border-default)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Engagement Rate
+              </h4>
+              <Heart className="h-5 w-5" style={{ color: 'var(--danger-text)' }} />
+            </div>
+            <div className="mb-4">
+              <div className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                {stats.engagementRate || 0}%
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="h-3 rounded-full transition-all"
+                  style={{ 
+                    width: `${Math.min(100, stats.engagementRate || 0)}%`,
+                    backgroundColor: 'var(--danger-text)'
+                  }}
+                />
+              </div>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {stats.engagementRate > 50 ? 'Excellent engagement!' : stats.engagementRate > 25 ? 'Good engagement' : 'Room for growth'}
+            </p>
+          </div>
+
+          <div 
+            className="p-6 rounded-lg border"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              borderColor: 'var(--border-default)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Member Growth
+              </h4>
+              <TrendingUp className="h-5 w-5" style={{ color: 'var(--success-text)' }} />
+            </div>
+            <div className="mb-4">
+              <div className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                +{memberGrowthRate}%
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="h-3 rounded-full transition-all"
+                  style={{ 
+                    width: `${Math.min(100, memberGrowthRate)}%`,
+                    backgroundColor: 'var(--success-text)'
+                  }}
+                />
+              </div>
+            </div>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {newMembersCount} new members this month
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Insights & Recommendations */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Insights & Recommendations
+        </h3>
+        <div className="space-y-3">
+          <InsightCard
+            type={memberGrowthRate > 5 ? 'success' : memberGrowthRate > 0 ? 'info' : 'warning'}
+            title={memberGrowthRate > 5 ? 'Strong Growth!' : memberGrowthRate > 0 ? 'Steady Growth' : 'Growth Opportunity'}
+            message={
+              memberGrowthRate > 5 
+                ? `Your community is growing ${memberGrowthRate}% this month. Keep up the great work!`
+                : memberGrowthRate > 0
+                ? `Growing at ${memberGrowthRate}% this month. Consider posting more content to boost growth.`
+                : 'No new members this month. Try creating engaging content or running a promotion.'
+            }
+          />
+          
+          {stats.engagementRate < 25 && (
+            <InsightCard
+              type="warning"
+              title="Boost Engagement"
+              message="Your engagement rate is below 25%. Try posting more regularly, asking questions, or creating polls to increase member interaction."
+            />
+          )}
+
+          {totalContent === 0 && (
+            <InsightCard
+              type="info"
+              title="Start Creating Content"
+              message="You haven't posted any content yet. Create your first post or video to engage your members!"
+            />
+          )}
+
+          {stats.totalMembers > 0 && totalRevenue === 0 && (
+            <InsightCard
+              type="info"
+              title="Monetization Opportunity"
+              message="You have members but no paid subscriptions. Consider creating premium tiers with exclusive benefits."
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AnalyticsMetricCard({ label, value, subtitle, change, icon: Icon, color }: any) {
+  return (
+    <div 
+      className="p-6 rounded-lg border"
+      style={{
+        backgroundColor: 'var(--surface-primary)',
+        borderColor: 'var(--border-default)'
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div 
+          className="p-3 rounded-lg"
+          style={{ backgroundColor: `var(--${color}-background)` }}
+        >
+          <Icon className="h-5 w-5" style={{ color: `var(--${color}-text)` }} />
+        </div>
+        {change !== undefined && (
+          <span 
+            className="text-sm font-semibold"
+            style={{ color: change >= 0 ? 'var(--success-text)' : 'var(--danger-text)' }}
+          >
+            {change >= 0 ? '+' : ''}{change}%
+          </span>
+        )}
+      </div>
+      <p className="text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <p className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+        {value}
+      </p>
+      {subtitle && (
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RevenueBarItem({ tierName, members, revenue, percentage, color }: any) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+            {tierName}
+          </span>
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {members} members
+          </span>
+        </div>
+        <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+          ${revenue.toFixed(2)}/mo
+        </span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-3">
+        <div 
+          className="h-3 rounded-full transition-all"
+          style={{ 
+            width: `${Math.min(100, percentage)}%`,
+            backgroundColor: `var(--${color}-text)`
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function InsightCard({ type, title, message }: any) {
+  const colorMap: any = {
+    success: 'success',
+    info: 'info',
+    warning: 'warning',
+    danger: 'danger'
+  };
+  
+  const iconMap: any = {
+    success: Check,
+    info: Sparkles,
+    warning: TrendingUp,
+    danger: X
+  };
+
+  const Icon = iconMap[type] || Sparkles;
+  const color = colorMap[type] || 'info';
+
+  return (
+    <div 
+      className="p-4 rounded-lg border flex items-start gap-3"
+      style={{
+        backgroundColor: `var(--${color}-background)`,
+        borderColor: `var(--${color}-border)`
+      }}
+    >
+      <div 
+        className="p-2 rounded-lg"
+        style={{ backgroundColor: 'var(--surface-primary)' }}
+      >
+        <Icon className="h-5 w-5" style={{ color: `var(--${color}-text)` }} />
+      </div>
+      <div className="flex-1">
+        <h4 className="font-semibold mb-1" style={{ color: `var(--${color}-text)` }}>
+          {title}
+        </h4>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {message}
         </p>
       </div>
     </div>
@@ -619,12 +1413,65 @@ function AnalyticsTab({ communityId, stats }: any) {
 }
 
 function SettingsTab({ community, communityId }: any) {
+  const [settings, setSettings] = useState(community.settings || {
+    auto_accept_members: true,
+    allow_member_invites: false,
+    show_member_count: true,
+    require_email_verification: false,
+    moderation_enabled: true
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveBasicInfo = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/communities/${communityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: (document.getElementById('community-name') as HTMLInputElement)?.value,
+          description: (document.getElementById('community-description') as HTMLTextAreaElement)?.value,
+        })
+      });
+
+      if (response.ok) {
+        alert('Settings saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/communities/${communityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings })
+      });
+
+      if (response.ok) {
+        alert('Settings saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      alert('Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-4xl">
       <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
         Community Settings
       </h2>
 
+      {/* Basic Information */}
       <div 
         className="p-6 rounded-lg border"
         style={{
@@ -641,6 +1488,7 @@ function SettingsTab({ community, communityId }: any) {
               Community Name
             </label>
             <input
+              id="community-name"
               type="text"
               defaultValue={community.name}
               className="w-full px-4 py-2 rounded-lg border"
@@ -651,11 +1499,36 @@ function SettingsTab({ community, communityId }: any) {
               }}
             />
           </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+              Handle
+            </label>
+            <div className="flex items-center gap-2">
+              <span style={{ color: 'var(--text-muted)' }}>@</span>
+              <input
+                type="text"
+                defaultValue={community.handle}
+                disabled
+                className="flex-1 px-4 py-2 rounded-lg border opacity-60 cursor-not-allowed"
+                style={{
+                  backgroundColor: 'var(--surface-secondary)',
+                  borderColor: 'var(--border-default)',
+                  color: 'var(--text-primary)'
+                }}
+              />
+            </div>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+              Handle cannot be changed after creation
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
               Description
             </label>
             <textarea
+              id="community-description"
               defaultValue={community.description}
               className="w-full px-4 py-2 rounded-lg border resize-none"
               rows={3}
@@ -666,11 +1539,263 @@ function SettingsTab({ community, communityId }: any) {
               }}
             />
           </div>
-          <button className="btn btn-primary">
+
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+              Category
+            </label>
+            <select
+              defaultValue={community.category}
+              className="w-full px-4 py-2 rounded-lg border"
+              style={{
+                backgroundColor: 'var(--surface-secondary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="Options Trading">Options Trading</option>
+              <option value="Technical Analysis">Technical Analysis</option>
+              <option value="Value Investing">Value Investing</option>
+              <option value="Crypto & DeFi">Crypto & DeFi</option>
+              <option value="Day Trading">Day Trading</option>
+              <option value="Swing Trading">Swing Trading</option>
+              <option value="Market Analysis">Market Analysis</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <button 
+            onClick={handleSaveBasicInfo}
+            disabled={saving}
+            className="btn btn-primary"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
             Save Changes
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Community Settings */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Member Settings
+        </h3>
+        <div className="space-y-4">
+          <SettingToggle
+            label="Auto-accept new members"
+            description="Automatically approve members who join free tiers"
+            checked={settings.auto_accept_members}
+            onChange={(checked) => setSettings({ ...settings, auto_accept_members: checked })}
+          />
+          
+          <SettingToggle
+            label="Allow member invites"
+            description="Let members invite others to the community"
+            checked={settings.allow_member_invites}
+            onChange={(checked) => setSettings({ ...settings, allow_member_invites: checked })}
+          />
+          
+          <SettingToggle
+            label="Show member count"
+            description="Display total member count publicly"
+            checked={settings.show_member_count}
+            onChange={(checked) => setSettings({ ...settings, show_member_count: checked })}
+          />
+          
+          <SettingToggle
+            label="Require email verification"
+            description="Members must verify their email before joining"
+            checked={settings.require_email_verification}
+            onChange={(checked) => setSettings({ ...settings, require_email_verification: checked })}
+          />
+        </div>
+      </div>
+
+      {/* Moderation Settings */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Shield className="h-5 w-5" />
+          Moderation & Safety
+        </h3>
+        <div className="space-y-4">
+          <SettingToggle
+            label="Enable moderation"
+            description="Allow you to moderate content and members"
+            checked={settings.moderation_enabled}
+            onChange={(checked) => setSettings({ ...settings, moderation_enabled: checked })}
+          />
+          
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
+              Content Approval
+            </label>
+            <select
+              value={settings.content_approval || 'none'}
+              onChange={(e) => setSettings({ ...settings, content_approval: e.target.value })}
+              className="w-full px-4 py-2 rounded-lg border"
+              style={{
+                backgroundColor: 'var(--surface-secondary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              <option value="none">No approval required</option>
+              <option value="new_members">Approve content from new members</option>
+              <option value="all">Approve all member content</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Notification Settings */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Calendar className="h-5 w-5" />
+          Notification Preferences
+        </h3>
+        <div className="space-y-4">
+          <SettingToggle
+            label="New member notifications"
+            description="Get notified when someone joins your community"
+            checked={settings.notify_new_members !== false}
+            onChange={(checked) => setSettings({ ...settings, notify_new_members: checked })}
+          />
+          
+          <SettingToggle
+            label="Payment notifications"
+            description="Get notified about successful payments and subscriptions"
+            checked={settings.notify_payments !== false}
+            onChange={(checked) => setSettings({ ...settings, notify_payments: checked })}
+          />
+          
+          <SettingToggle
+            label="Weekly summary"
+            description="Receive a weekly email with community stats"
+            checked={settings.weekly_summary !== false}
+            onChange={(checked) => setSettings({ ...settings, weekly_summary: checked })}
+          />
+        </div>
+      </div>
+
+      {/* Save Settings Button */}
+      <div className="flex gap-3">
+        <button 
+          onClick={handleSaveSettings}
+          disabled={saving}
+          className="btn btn-primary"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4" />
+              Save All Settings
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Danger Zone */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--danger-background)',
+          borderColor: 'var(--danger-border)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--danger-text)' }}>
+          <Trash2 className="h-5 w-5" />
+          Danger Zone
+        </h3>
+        <div className="space-y-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h4 className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                Archive Community
+              </h4>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Hide your community from public view. You can restore it later.
+              </p>
+            </div>
+            <button className="btn btn-outline text-orange-600 border-orange-600">
+              Archive
+            </button>
+          </div>
+          
+          <div className="border-t pt-4" style={{ borderColor: 'var(--border-subtle)' }}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h4 className="font-medium mb-1" style={{ color: 'var(--danger-text)' }}>
+                  Delete Community
+                </h4>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Permanently delete your community and all associated data. This cannot be undone.
+                </p>
+              </div>
+              <button className="btn btn-outline text-red-600 border-red-600">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingToggle({ label, description, checked, onChange }: any) {
+  return (
+    <div className="flex items-start justify-between p-4 rounded-lg" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+      <div className="flex-1">
+        <h4 className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+          {label}
+        </h4>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          {description}
+        </p>
+      </div>
+      <button
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          checked ? 'bg-blue-500' : 'bg-gray-300'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
     </div>
   );
 }

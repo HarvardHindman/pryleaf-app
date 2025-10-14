@@ -33,15 +33,12 @@ export async function GET(
       );
     }
 
-    // Fetch posts
+    // Fetch posts (without tier join since community_content uses minimum_tier_level, not tier_id)
     const { data: posts, error } = await supabase
       .from('community_content')
-      .select(`
-        *,
-        tier:community_tiers(name, tier_level)
-      `)
+      .select('*')
       .eq('community_id', id)
-      .eq('type', 'post')
+      .eq('content_type', 'article') // Using content_type field from schema
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -91,33 +88,37 @@ export async function POST(
     const body = await request.json();
     const {
       title,
-      content,
-      type = 'post',
-      media_url,
-      tier_id,
-      required_tier_level = 0
+      description,
+      content_type = 'article',
+      content_url,
+      thumbnail_url,
+      minimum_tier_level = 0,
+      is_published = true,
+      tags = []
     } = body;
 
-    if (!content && !title) {
+    if (!title) {
       return NextResponse.json(
-        { error: 'Post must have a title or content' },
+        { error: 'Post must have a title' },
         { status: 400 }
       );
     }
 
-    // Create post
+    // Create post using correct schema fields
     const { data: post, error } = await supabase
       .from('community_content')
       .insert({
         community_id: id,
         creator_id: user.id,
-        type: type === 'video' ? 'video' : 'post',
+        content_type, // 'article' for posts, 'video' for videos
         title,
-        content,
-        media_url,
-        tier_id,
-        required_tier_level,
-        status: 'published'
+        description,
+        content_url: content_url || '', // Required field in schema
+        thumbnail_url,
+        minimum_tier_level,
+        is_published,
+        published_at: is_published ? new Date().toISOString() : null,
+        tags
       })
       .select()
       .single();
@@ -135,4 +136,6 @@ export async function POST(
     );
   }
 }
+
+
 

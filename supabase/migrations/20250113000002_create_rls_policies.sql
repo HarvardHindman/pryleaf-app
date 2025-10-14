@@ -452,3 +452,5 @@ COMMENT ON FUNCTION public.has_community_access IS 'Check if user has access to 
 COMMENT ON FUNCTION public.is_community_owner IS 'Check if user owns a community';
 COMMENT ON FUNCTION public.get_user_tier_level IS 'Get users current tier level in a community (-1 if not a member, 999 if owner)';
 
+
+
