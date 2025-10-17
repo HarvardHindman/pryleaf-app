@@ -63,22 +63,22 @@ export default async function VideoPlayerPage({
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md text-center">
-          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+        <div className="rounded-xl shadow-lg p-8 max-w-md text-center" style={{ backgroundColor: 'var(--surface-primary)' }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--info-background)' }}>
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: 'var(--info-text)' }}>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
             Membership Required
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="mb-6" style={{ color: 'var(--text-muted)' }}>
             This video is exclusive to Tier {video.minimum_tier_level}+ members.
           </p>
           <a
             href={`/community/${id}`}
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="inline-block px-6 py-3 rounded-lg transition-colors font-medium interactive-primary"
           >
             View Membership Options
           </a>

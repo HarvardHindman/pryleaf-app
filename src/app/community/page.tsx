@@ -13,11 +13,14 @@ import {
   Sparkles,
   TrendingUp,
   ChevronRight,
-  Loader2
+  Loader2,
+  Heart
 } from 'lucide-react';
 import type { Community } from '@/lib/communityService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const categories = [
+  'Your Communities',
   'All',
   'Options Trading',
   'Technical Analysis',
@@ -30,21 +33,41 @@ const categories = [
 ];
 
 export default function CommunityPage() {
+  const { user } = useAuth();
   const [communities, setCommunities] = useState<Community[]>([]);
+  const [userCommunityIds, setUserCommunityIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('your communities');
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCommunities, setFilteredCommunities] = useState<Community[]>([]);
 
-  // Fetch communities
+  // Fetch communities and user memberships
   useEffect(() => {
     async function fetchCommunities() {
       try {
         setLoading(true);
+        
+        // Fetch all communities
         const response = await fetch('/api/communities');
         const data = await response.json();
         setCommunities(data.communities || []);
+        
+        // Fetch user's memberships if logged in
+        if (user) {
+          const membershipsResponse = await fetch('/api/user/memberships');
+          const membershipsData = await membershipsResponse.json();
+          
+          if (membershipsData.memberships) {
+            const communityIds = new Set(
+              membershipsData.memberships.map((m: any) => m.community_id)
+            );
+            setUserCommunityIds(communityIds);
+          }
+        } else {
+          // If not logged in, default to "All" tab
+          setSelectedCategory('all');
+        }
       } catch (error) {
         console.error('Error fetching communities:', error);
       } finally {
@@ -53,14 +76,17 @@ export default function CommunityPage() {
     }
 
     fetchCommunities();
-  }, []);
+  }, [user]);
 
   // Filter communities
   useEffect(() => {
     let filtered = communities;
 
     // Filter by category
-    if (selectedCategory !== 'all') {
+    if (selectedCategory === 'your communities') {
+      // Show only communities the user has joined
+      filtered = filtered.filter(c => userCommunityIds.has(c.id));
+    } else if (selectedCategory !== 'all') {
       filtered = filtered.filter(c => c.category.toLowerCase() === selectedCategory.toLowerCase());
     }
 
@@ -76,7 +102,7 @@ export default function CommunityPage() {
     }
 
     setFilteredCommunities(filtered);
-  }, [communities, selectedCategory, searchQuery]);
+  }, [communities, selectedCategory, searchQuery, userCommunityIds]);
 
   const featuredCommunities = filteredCommunities.filter(c => c.verified).slice(0, 4);
 
@@ -254,8 +280,13 @@ export default function CommunityPage() {
         {/* All Communities */}
         <section>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              {searchQuery ? 'Search Results' : 'All Communities'}
+            <h2 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              {selectedCategory === 'your communities' && <Heart className="h-6 w-6 text-red-500" />}
+              {searchQuery 
+                ? 'Search Results' 
+                : selectedCategory === 'your communities' 
+                  ? 'Your Communities' 
+                  : 'All Communities'}
               <span className="text-base font-normal ml-2" style={{ color: 'var(--text-muted)' }}>
                 ({filteredCommunities.length})
               </span>
@@ -268,13 +299,33 @@ export default function CommunityPage() {
             </div>
           ) : filteredCommunities.length === 0 ? (
             <div className="text-center py-12">
-              <Video className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-              <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                No communities found
-              </h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                Try adjusting your search or filters
-              </p>
+              {selectedCategory === 'your communities' ? (
+                <>
+                  <Heart className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+                  <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    You haven't joined any communities yet
+                  </h3>
+                  <p className="mb-4" style={{ color: 'var(--text-muted)' }}>
+                    Browse and join communities to see them here
+                  </p>
+                  <button
+                    onClick={() => setSelectedCategory('all')}
+                    className="btn btn-primary"
+                  >
+                    Browse All Communities
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Video className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+                  <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    No communities found
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    Try adjusting your search or filters
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className={viewMode === 'grid' ? 'community-grid' : 'space-y-4'}>

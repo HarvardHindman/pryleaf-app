@@ -559,10 +559,16 @@
   font-size: 0.875rem;
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   cursor: pointer;
   border: none;
   gap: 0.5rem;
+  outline: none;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--interactive-primary);
+  opacity: 0.95;
 }
 
 .btn-primary {
@@ -585,11 +591,16 @@
   background-color: transparent;
   color: var(--interactive-primary);
   border: 1px solid var(--interactive-primary);
+  outline: none;
 }
 
 .btn-outline:hover {
   background-color: var(--interactive-primary);
   color: white;
+}
+
+.btn-outline:focus-visible {
+  box-shadow: 0 0 0 2px var(--interactive-primary);
 }
 
 .btn-ghost {
@@ -715,9 +726,11 @@
   border-width: 0;
 }
 
-/* Focus visible styles */
-*:focus-visible {
-  outline: 2px solid var(--interactive-primary);
+/* Focus visible styles - Let component-level styles handle their own focus states */
+/* Only apply to elements that don't have their own focus styling */
+a:focus-visible:not([class]),
+div[tabindex]:focus-visible:not([class]) {
+  outline: 1px solid var(--interactive-primary);
   outline-offset: 2px;
 }
 

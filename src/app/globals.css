@@ -12,8 +12,14 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+  
+  /* Remove default browser focus outlines and let our custom focus styles handle it */
+  *:focus {
+    outline: none;
+  }
+  
   body {
     @apply bg-background text-foreground;
   }
@@ -106,7 +112,8 @@
     background-color: var(--interactive-primary);
     color: var(--surface-primary);
     border: 1px solid var(--interactive-primary);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+    outline: none;
   }
 
   .interactive-primary:hover {
@@ -117,19 +124,29 @@
   .interactive-primary:active {
     background-color: var(--interactive-active);
     border-color: var(--interactive-active);
-    transform: scale(0.98);
+    transform: scale(0.99);
+  }
+  
+  .interactive-primary:focus-visible {
+    box-shadow: 0 0 0 2px var(--interactive-primary);
+    opacity: 0.9;
   }
 
   .interactive-outline {
     background-color: transparent;
     color: var(--interactive-primary);
     border: 1px solid var(--interactive-primary);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+    outline: none;
   }
 
   .interactive-outline:hover {
     background-color: var(--interactive-primary);
     color: var(--surface-primary);
+  }
+  
+  .interactive-outline:focus-visible {
+    box-shadow: 0 0 0 2px var(--interactive-primary);
   }
 
   /* Terminal/Financial Interface Styles */
@@ -196,6 +213,11 @@
     outline: none;
     border-color: var(--interactive-primary);
     box-shadow: 0 0 0 1px var(--interactive-primary);
+  }
+  
+  /* Remove focus outlines on native select elements */
+  select:focus {
+    outline: none;
   }
 
   .portfolio-input:hover {

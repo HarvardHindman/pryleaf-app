@@ -10,8 +10,10 @@ import {
   Bell,
   Lock,
   Crown,
-  MessageSquare
+  MessageSquare,
+  Plus
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Channel {
   id: string;
@@ -27,6 +29,7 @@ interface CommunityWithChannels {
     name: string;
     handle: string;
     avatar_url?: string;
+    owner_id?: string;
   };
   tier: {
     name: string;
@@ -40,26 +43,46 @@ interface CommunityWithChannels {
 }
 
 export default function CommunityNavigation() {
+  const { user } = useAuth();
   const [communities, setCommunities] = useState<CommunityWithChannels[]>([]);
-  const [expandedCommunities, setExpandedCommunities] = useState<Set<string>>(new Set());
+  const [ownedCommunities, setOwnedCommunities] = useState<CommunityWithChannels[]>([]);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
     async function fetchCommunities() {
       try {
-        const response = await fetch('/api/user/channels');
-        const data = await response.json();
+        // Fetch memberships
+        const channelsResponse = await fetch('/api/user/channels');
+        const channelsData = await channelsResponse.json();
         
-        if (data.communities) {
-          setCommunities(data.communities);
-          // Auto-expand communities with channels
-          const expanded = new Set(
-            data.communities
-              .filter((c: CommunityWithChannels) => c.channels.length > 0)
-              .map((c: CommunityWithChannels) => c.community.id)
+        // Fetch communities where user is owner
+        const ownedResponse = await fetch('/api/communities');
+        const ownedData = await ownedResponse.json();
+        
+        const allCommunities = channelsData.communities || [];
+        setCommunities(allCommunities);
+        
+        // Filter owned communities from all communities API
+        if (user && ownedData.communities) {
+          const owned = ownedData.communities.filter(
+            (c: any) => c.owner_id === user.id
           );
-          setExpandedCommunities(expanded);
+          
+          // Convert to CommunityWithChannels format
+          const ownedFormatted = owned.map((c: any) => ({
+            community: c,
+            tier: { name: 'Owner', tier_level: 999 },
+            membership: { status: 'owner', tier_level: 999 },
+            channels: []
+          }));
+          
+          setOwnedCommunities(ownedFormatted);
+          
+          // Store the owned community as last active
+          if (ownedFormatted.length > 0 && typeof window !== 'undefined') {
+            localStorage.setItem('lastActiveCommunity', ownedFormatted[0].community.id);
+          }
         }
       } catch (error) {
         console.error('Error fetching communities:', error);
@@ -68,25 +91,12 @@ export default function CommunityNavigation() {
       }
     }
 
-    fetchCommunities();
-  }, []);
-
-  const toggleCommunity = (communityId: string) => {
-    const newExpanded = new Set(expandedCommunities);
-    if (newExpanded.has(communityId)) {
-      newExpanded.delete(communityId);
+    if (user) {
+      fetchCommunities();
     } else {
-      newExpanded.add(communityId);
+      setLoading(false);
     }
-    setExpandedCommunities(newExpanded);
-  };
-
-  const getTierBadgeClass = (tierLevel: number) => {
-    if (tierLevel === 0) return 'member-badge-free';
-    if (tierLevel === 1) return 'member-badge-premium';
-    if (tierLevel >= 2) return 'member-badge-elite';
-    return 'member-badge-free';
-  };
+  }, [user]);
 
   if (loading) {
     return (
@@ -96,64 +106,85 @@ export default function CommunityNavigation() {
     );
   }
 
-  if (communities.length === 0) {
+  // If user doesn't own a community, show "Create Community" button
+  if (ownedCommunities.length === 0) {
     return (
-      <Link href="/community">
+      <Link href="/community/create">
         <button
-          className="w-full px-2 py-2 rounded-lg text-xs font-medium transition-all"
+          className="w-full px-2 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1"
           style={{
             backgroundColor: 'var(--interactive-primary)',
             color: 'var(--surface-primary)',
             border: '1px solid var(--interactive-primary)'
           }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--interactive-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--interactive-primary)';
+          }}
         >
+          <Plus className="h-3 w-3" />
+          Create Community
+        </button>
+      </Link>
+    );
+  }
+
+  // User owns at least one community
+  const ownedCommunity = ownedCommunities[0]; // Use first owned community
+  
+  // Check if currently viewing own community
+  const communityMatch = pathname.match(/^\/community\/([^\/]+)/);
+  const currentCommunityId = communityMatch ? communityMatch[1] : null;
+  const isViewingOwnCommunity = currentCommunityId === ownedCommunity.community.id;
+
+  // If viewing own community, show "Browse Communities" button
+  if (isViewingOwnCommunity) {
+    return (
+      <Link href="/community">
+        <button
+          className="w-full px-2 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1"
+          style={{
+            backgroundColor: 'var(--interactive-primary)',
+            color: 'var(--surface-primary)',
+            border: '1px solid var(--interactive-primary)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--interactive-hover)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--interactive-primary)';
+          }}
+        >
+          <Hash className="h-3 w-3" />
           Browse Communities
         </button>
       </Link>
     );
   }
 
-  // Get current community from URL or use first one
-  const currentCommunityId = pathname.match(/^\/community\/([^\/]+)/)?.[1];
-  
-  // Find the current community or default to first
-  const defaultCommunity = communities[0];
-  const currentCommunity = currentCommunityId 
-    ? communities.find(c => c.community.id === currentCommunityId) || defaultCommunity
-    : defaultCommunity;
-
+  // Otherwise, show "Your Community" button
   return (
-    <select
-      className="w-full px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer appearance-none"
-      style={{
-        backgroundColor: 'var(--interactive-primary)',
-        color: 'var(--surface-primary)',
-        border: '1px solid var(--interactive-primary)',
-        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-        backgroundPosition: 'right 0.5rem center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: '1.5em 1.5em',
-        paddingRight: '2.5rem'
-      }}
-      value={currentCommunity?.community.id || ''}
-      onChange={(e) => {
-        const selectedId = e.target.value;
-        window.location.href = `/community/${selectedId}`;
-      }}
-    >
-      {communities.map((item) => (
-        <option 
-          key={item.community.id} 
-          value={item.community.id}
-          style={{
-            backgroundColor: 'var(--surface-primary)',
-            color: 'var(--text-primary)'
-          }}
-        >
-          {item.community.name}
-        </option>
-      ))}
-    </select>
+    <Link href={`/community/${ownedCommunity.community.id}`}>
+      <button
+        className="w-full px-2 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1"
+        style={{
+          backgroundColor: 'var(--success-background)',
+          color: 'var(--success-text)',
+          border: '1px solid var(--success-border)'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '0.8';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '1';
+        }}
+      >
+        <Crown className="h-3 w-3" />
+        Your Community
+      </button>
+    </Link>
   );
 }
 

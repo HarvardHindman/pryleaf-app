@@ -141,13 +141,14 @@ export default function VideoLibraryClient({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link
             href={`/community/${communityId}`}
-            className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4"
+            className="inline-flex items-center text-sm mb-4 hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--interactive-primary)' }}
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to {communityName}
@@ -155,11 +156,11 @@ export default function VideoLibraryClient({
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-                <Play className="h-8 w-8 text-blue-600" />
+              <h1 className="text-3xl font-bold flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
+                <Play className="h-8 w-8" style={{ color: 'var(--interactive-primary)' }} />
                 Videos
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
                 {videos.length} {videos.length === 1 ? 'video' : 'videos'}
               </p>
             </div>
@@ -167,7 +168,7 @@ export default function VideoLibraryClient({
             {isOwner && (
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                className="px-6 py-3 rounded-lg transition-colors font-medium flex items-center gap-2 interactive-primary"
               >
                 <Upload className="h-5 w-5" />
                 Upload Video
@@ -178,18 +179,23 @@ export default function VideoLibraryClient({
       </div>
 
       {/* Filters & Controls */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5" style={{ color: 'var(--text-muted)' }} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search videos..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-900 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent"
+                style={{
+                  backgroundColor: 'var(--surface-secondary)',
+                  borderColor: 'var(--border-default)',
+                  color: 'var(--text-primary)'
+                }}
               />
             </div>
 
@@ -198,7 +204,12 @@ export default function VideoLibraryClient({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:text-white"
+                className="px-4 py-2 border rounded-lg focus:ring-2"
+                style={{
+                  backgroundColor: 'var(--surface-secondary)',
+                  borderColor: 'var(--border-default)',
+                  color: 'var(--text-primary)'
+                }}
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -206,24 +217,24 @@ export default function VideoLibraryClient({
               </select>
 
               {/* View Mode Toggle */}
-              <div className="flex items-center gap-1 border border-gray-300 dark:border-gray-600 rounded-lg p-1">
+              <div className="flex items-center gap-1 border rounded-lg p-1" style={{ borderColor: 'var(--border-default)' }}>
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded transition-colors ${
-                    viewMode === 'grid'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  className="p-2 rounded transition-colors"
+                  style={{
+                    backgroundColor: viewMode === 'grid' ? 'var(--interactive-primary)' : 'transparent',
+                    color: viewMode === 'grid' ? 'var(--surface-primary)' : 'var(--text-muted)'
+                  }}
                 >
                   <Grid3x3 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded transition-colors ${
-                    viewMode === 'list'
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                  className="p-2 rounded transition-colors"
+                  style={{
+                    backgroundColor: viewMode === 'list' ? 'var(--interactive-primary)' : 'transparent',
+                    color: viewMode === 'list' ? 'var(--surface-primary)' : 'var(--text-muted)'
+                  }}
                 >
                   <List className="h-4 w-4" />
                 </button>
@@ -237,15 +248,15 @@ export default function VideoLibraryClient({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
           </div>
         ) : videos.length === 0 ? (
           <div className="text-center py-20">
-            <Play className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <Play className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+            <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               No videos yet
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p style={{ color: 'var(--text-muted)' }}>
               {isOwner
                 ? 'Upload your first video to get started!'
                 : 'Check back later for new content.'}
@@ -265,11 +276,11 @@ export default function VideoLibraryClient({
                       e.preventDefault();
                       alert('You need a higher tier membership to access this video');
                     }
-                  }}
+                  }                  }
                 >
-                  <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all">
+                  <div className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all" style={{ backgroundColor: 'var(--surface-primary)' }}>
                     {/* Thumbnail */}
-                    <div className="relative aspect-video bg-gray-200 dark:bg-gray-700">
+                    <div className="relative aspect-video" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
                       {video.thumbnail_url ? (
                         <img
                           src={video.thumbnail_url}
@@ -278,7 +289,7 @@ export default function VideoLibraryClient({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Play className="h-12 w-12 text-gray-400" />
+                          <Play className="h-12 w-12" style={{ color: 'var(--text-muted)' }} />
                         </div>
                       )}
                       
@@ -304,10 +315,10 @@ export default function VideoLibraryClient({
 
                     {/* Info */}
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <h3 className="font-semibold line-clamp-2 mb-2 group-hover:opacity-80 transition-opacity" style={{ color: 'var(--text-primary)' }}>
                         {video.title}
                       </h3>
-                      <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-muted)' }}>
                         <span className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
                           {formatViews(video.views)}
@@ -337,11 +348,11 @@ export default function VideoLibraryClient({
                       e.preventDefault();
                       alert('You need a higher tier membership to access this video');
                     }
-                  }}
+                  }                  }
                 >
-                  <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex gap-4 p-4">
+                  <div className="rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all flex gap-4 p-4" style={{ backgroundColor: 'var(--surface-primary)' }}>
                     {/* Thumbnail */}
-                    <div className="relative w-64 aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="relative w-64 aspect-video rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
                       {video.thumbnail_url ? (
                         <img
                           src={video.thumbnail_url}
@@ -350,7 +361,7 @@ export default function VideoLibraryClient({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Play className="h-12 w-12 text-gray-400" />
+                          <Play className="h-12 w-12" style={{ color: 'var(--text-muted)' }} />
                         </div>
                       )}
                       
@@ -369,13 +380,13 @@ export default function VideoLibraryClient({
 
                     {/* Info */}
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
+                      <h3 className="text-lg font-semibold mb-2 group-hover:opacity-80 transition-opacity line-clamp-2" style={{ color: 'var(--text-primary)' }}>
                         {video.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+                      <p className="text-sm line-clamp-2 mb-3" style={{ color: 'var(--text-muted)' }}>
                         {video.description}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-muted)' }}>
                         <span className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
                           {formatViews(video.views)} views
@@ -385,7 +396,7 @@ export default function VideoLibraryClient({
                         {!hasAccess && (
                           <>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                            <span className="flex items-center gap-1" style={{ color: 'var(--interactive-primary)' }}>
                               <Lock className="h-4 w-4" />
                               Tier {video.minimum_tier_level}+ Only
                             </span>
@@ -413,7 +424,7 @@ export default function VideoLibraryClient({
 
       {/* Details Form Modal */}
       {showDetailsForm && uploadedVideoData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
           <div className="max-w-3xl w-full">
             <VideoDetailsForm
               communityId={communityId}

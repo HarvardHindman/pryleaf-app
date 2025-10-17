@@ -158,17 +158,18 @@ export default function VideoUploadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)' }}>
+      <div className="rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden" style={{ backgroundColor: 'var(--surface-primary)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Upload className="h-5 w-5 text-blue-600" />
+        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
+          <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <Upload className="h-5 w-5" style={{ color: 'var(--interactive-primary)' }} />
             Upload Video
           </h2>
           <button
             onClick={handleClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+            className="transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
             disabled={uploadStatus === 'uploading'}
           >
             <X className="h-5 w-5" />
@@ -183,24 +184,22 @@ export default function VideoUploadModal({
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`
-                border-2 border-dashed rounded-xl p-12 text-center transition-all
-                ${isDragging 
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                  : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-                }
-              `}
+              className="border-2 border-dashed rounded-xl p-12 text-center transition-all"
+              style={{
+                borderColor: isDragging ? 'var(--interactive-primary)' : 'var(--border-default)',
+                backgroundColor: isDragging ? 'var(--info-background)' : 'transparent'
+              }}
             >
-              <Upload className="h-16 w-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              <Upload className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+              <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                 Drag & drop your video here
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
                 or click to browse your files
               </p>
               <button
                 onClick={handleBrowseClick}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-6 py-2 rounded-lg transition-colors font-medium interactive-primary"
               >
                 Select File
               </button>
@@ -211,7 +210,7 @@ export default function VideoUploadModal({
                 onChange={handleFileInputChange}
                 className="hidden"
               />
-              <div className="mt-6 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <div className="mt-6 text-xs space-y-1" style={{ color: 'var(--text-subtle)' }}>
                 <p>Supported formats: MP4, MOV, AVI, MKV, WebM</p>
                 <p>Maximum file size: 2GB</p>
               </div>
@@ -220,20 +219,21 @@ export default function VideoUploadModal({
             // File Selected / Upload Progress
             <div className="space-y-6">
               {/* File Info */}
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+              <div className="rounded-lg p-4" style={{ backgroundColor: 'var(--surface-secondary)' }}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white truncate">
+                    <p className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                       {selectedFile.name}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                       {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                     </p>
                   </div>
                   {uploadStatus === 'idle' && (
                     <button
                       onClick={() => setSelectedFile(null)}
-                      className="text-gray-500 hover:text-red-600 transition-colors ml-4"
+                      className="transition-colors ml-4 hover:opacity-80"
+                      style={{ color: 'var(--text-muted)' }}
                     >
                       <X className="h-5 w-5" />
                     </button>
@@ -244,19 +244,20 @@ export default function VideoUploadModal({
                 {(uploadStatus === 'uploading' || uploadStatus === 'processing') && (
                   <div className="mt-4">
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-700 dark:text-gray-300">
+                      <span style={{ color: 'var(--text-primary)' }}>
                         {uploadStatus === 'uploading' ? 'Uploading...' : 'Processing...'}
                       </span>
-                      <span className="text-gray-600 dark:text-gray-400">
+                      <span style={{ color: 'var(--text-muted)' }}>
                         {uploadProgress}%
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div className="w-full rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
                       <div
-                        className={`h-full transition-all duration-300 ${
-                          uploadStatus === 'uploading' ? 'bg-blue-600' : 'bg-green-600'
-                        }`}
-                        style={{ width: `${uploadProgress}%` }}
+                        className="h-full transition-all duration-300"
+                        style={{
+                          width: `${uploadProgress}%`,
+                          backgroundColor: uploadStatus === 'uploading' ? 'var(--interactive-primary)' : 'var(--success-text)'
+                        }}
                       />
                     </div>
                   </div>
@@ -264,7 +265,7 @@ export default function VideoUploadModal({
 
                 {/* Success State */}
                 {uploadStatus === 'success' && (
-                  <div className="mt-4 flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <div className="mt-4 flex items-center gap-2" style={{ color: 'var(--success-text)' }}>
                     <CheckCircle className="h-5 w-5" />
                     <span className="font-medium">Upload complete!</span>
                   </div>
@@ -272,7 +273,7 @@ export default function VideoUploadModal({
 
                 {/* Error State */}
                 {uploadStatus === 'error' && errorMessage && (
-                  <div className="mt-4 flex items-start gap-2 text-red-600 dark:text-red-400">
+                  <div className="mt-4 flex items-start gap-2" style={{ color: 'var(--danger-text)' }}>
                     <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                     <span className="text-sm">{errorMessage}</span>
                   </div>
@@ -284,14 +285,18 @@ export default function VideoUploadModal({
                 <button
                   onClick={handleClose}
                   disabled={uploadStatus === 'uploading' || uploadStatus === 'processing'}
-                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-2 border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed interactive-outline"
+                  style={{
+                    borderColor: 'var(--border-default)',
+                    color: 'var(--text-primary)'
+                  }}
                 >
                   Cancel
                 </button>
                 {uploadStatus === 'idle' && (
                   <button
                     onClick={handleUpload}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                    className="px-6 py-2 rounded-lg transition-colors font-medium flex items-center gap-2 interactive-primary"
                   >
                     <Upload className="h-4 w-4" />
                     Upload Video
@@ -300,7 +305,11 @@ export default function VideoUploadModal({
                 {uploadStatus === 'uploading' && (
                   <button
                     disabled
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 opacity-75 cursor-not-allowed"
+                    className="px-6 py-2 rounded-lg font-medium flex items-center gap-2 opacity-75 cursor-not-allowed"
+                    style={{
+                      backgroundColor: 'var(--interactive-primary)',
+                      color: 'var(--surface-primary)'
+                    }}
                   >
                     <Loader className="h-4 w-4 animate-spin" />
                     Uploading...
@@ -309,7 +318,7 @@ export default function VideoUploadModal({
                 {uploadStatus === 'error' && (
                   <button
                     onClick={handleUpload}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="px-6 py-2 rounded-lg transition-colors font-medium interactive-primary"
                   >
                     Retry Upload
                   </button>

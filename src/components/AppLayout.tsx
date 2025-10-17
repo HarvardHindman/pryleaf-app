@@ -77,21 +77,51 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const communityId = urlCommunityId && urlCommunityId !== 'create' ? urlCommunityId : selectedCommunityId;
   const isOnCommunityDetail = communityId && communityId !== 'create';
 
-  // Fetch user's communities to set default and check ownership
+  // Load last active community from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('lastActiveCommunity');
+      if (stored) {
+        setSelectedCommunityId(stored);
+      }
+    }
+  }, []);
+
+  // Fetch user's communities and prioritize owned communities
   useEffect(() => {
     async function loadDefaultCommunity() {
       if (!user) return;
       
       try {
+        // Fetch all communities to check ownership
+        const communitiesResponse = await fetch('/api/communities');
+        const communitiesData = await communitiesResponse.json();
+        
+        // Find owned communities
+        const ownedCommunities = (communitiesData.communities || []).filter(
+          (c: any) => c.owner_id === user.id
+        );
+        
+        // If user owns a community, prioritize it and store it
+        if (ownedCommunities.length > 0) {
+          const ownedId = ownedCommunities[0].id;
+          setSelectedCommunityId(ownedId);
+          localStorage.setItem('lastActiveCommunity', ownedId);
+          return; // Don't continue with memberships
+        }
+        
+        // Otherwise, use memberships
         const response = await fetch('/api/user/channels');
         const data = await response.json();
         
-        const communities = data.communities || [];
-        if (communities.length > 0) {
-          if (!selectedCommunityId) {
-            const stored = localStorage.getItem('lastSelectedCommunity');
-            const defaultId = stored || communities[0].community.id;
+        const memberCommunities = data.communities || [];
+        if (memberCommunities.length > 0) {
+          // Only set if no stored community exists
+          const stored = localStorage.getItem('lastActiveCommunity');
+          if (!stored) {
+            const defaultId = memberCommunities[0].community.id;
             setSelectedCommunityId(defaultId);
+            localStorage.setItem('lastActiveCommunity', defaultId);
           }
         }
       } catch (error) {
@@ -100,7 +130,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
     
     loadDefaultCommunity();
-  }, [user, selectedCommunityId]);
+  }, [user]);
 
   // Check if user is owner of selected community
   useEffect(() => {
@@ -150,14 +180,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
   ];
 
-  // Community-specific tabs (always shown if user has a selected community)
+  // Community-specific tabs
+  // If no community is selected, redirect to /community page
+  const fallbackHref = '/community';
   const communityTabs = communityId ? [
     ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
     { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
     { name: 'Members', href: `/community/${communityId}/members`, icon: Users, current: urlCommunityId === communityId && communitySubPath === 'members' },
     { name: 'About', href: `/community/${communityId}/about`, icon: Compass, current: urlCommunityId === communityId && communitySubPath === 'about' },
-  ] : [];
+  ] : [
+    // No community selected - all tabs redirect to /community page
+    { name: 'Dashboard', href: fallbackHref, icon: BarChart3, current: false },
+    { name: 'Videos', href: fallbackHref, icon: Play, current: false },
+    { name: 'Chat', href: fallbackHref, icon: MessageSquare, current: false },
+    { name: 'Members', href: fallbackHref, icon: Users, current: false },
+    { name: 'About', href: fallbackHref, icon: Compass, current: false },
+  ];
 
   console.log('Community ID:', communityId);
   console.log('Is Owner:', isOwner);
@@ -234,8 +273,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </Link>
             ))}
 
-            {/* Community Tabs (when viewing a community) */}
-            {communityTabs.length > 0 && (
+            {/* Community Tabs (always shown, redirect to /community if no community selected) */}
+            {user && communityTabs.length > 0 && (
               <>
                 <div className="pt-2 pb-1">
                   <div 

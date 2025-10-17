@@ -49,6 +49,11 @@ export default function CommunityDetailPage() {
         setCommunity(data.community);
         setTiers(data.tiers || []);
         setMembershipStatus(data.membershipStatus);
+        
+        // Store the last active community in localStorage
+        if (data.community && user) {
+          localStorage.setItem('lastActiveCommunity', communityId);
+        }
       } catch (error) {
         console.error('Error fetching community details:', error);
       } finally {
@@ -59,7 +64,7 @@ export default function CommunityDetailPage() {
     if (communityId) {
       fetchCommunityDetails();
     }
-  }, [communityId]);
+  }, [communityId, user]);
 
   const handleJoinTier = async (tierId: string, priceCents: number) => {
     if (!tierId) return;

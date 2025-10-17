@@ -164,12 +164,13 @@ export default function VideoPlayerClient({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--surface-secondary)' }}>
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Back Link */}
         <Link
           href={`/community/${communityId}/videos`}
-          className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4"
+          className="inline-flex items-center text-sm mb-4 hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--interactive-primary)' }}
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Videos
@@ -192,13 +193,13 @@ export default function VideoPlayerClient({
             </div>
 
             {/* Video Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            <div className="rounded-xl p-6" style={{ backgroundColor: 'var(--surface-primary)' }}>
+              <h1 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                 {video.title}
               </h1>
 
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-muted)' }}>
                   <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
                     {formatViews(video.views)} views
@@ -213,11 +214,12 @@ export default function VideoPlayerClient({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleLike}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      liked
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    }`}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: liked ? 'var(--info-background)' : 'var(--surface-tertiary)',
+                      color: liked ? 'var(--info-text)' : 'var(--text-primary)',
+                      border: liked ? '1px solid var(--info-border)' : '1px solid var(--border-default)'
+                    }}
                   >
                     <ThumbsUp className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
                     <span className="font-medium">{likeCount}</span>
@@ -225,7 +227,12 @@ export default function VideoPlayerClient({
 
                   <button
                     onClick={handleShare}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                    style={{
+                      backgroundColor: 'var(--surface-tertiary)',
+                      color: 'var(--text-primary)',
+                      border: '1px solid var(--border-default)'
+                    }}
                   >
                     <Share2 className="h-5 w-5" />
                     <span className="font-medium">Share</span>
@@ -234,7 +241,12 @@ export default function VideoPlayerClient({
                   {isOwner && (
                     <button
                       onClick={handleDelete}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                      style={{
+                        backgroundColor: 'var(--danger-background)',
+                        color: 'var(--danger-text)',
+                        border: '1px solid var(--danger-border)'
+                      }}
                     >
                       <Trash2 className="h-5 w-5" />
                       <span className="font-medium">Delete</span>
@@ -244,7 +256,7 @@ export default function VideoPlayerClient({
               </div>
 
               {/* Community Info */}
-              <div className="flex items-center gap-3 py-4 border-t border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3 py-4 border-t border-b" style={{ borderColor: 'var(--border-default)' }}>
                 <Link
                   href={`/community/${communityId}`}
                   className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
@@ -253,10 +265,10 @@ export default function VideoPlayerClient({
                     {communityName[0]}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">
+                    <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {communityName}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                       @{communityHandle}
                     </p>
                   </div>
@@ -265,15 +277,16 @@ export default function VideoPlayerClient({
 
               {/* Description */}
               <div className="mt-4">
-                <p className={`text-gray-700 dark:text-gray-300 whitespace-pre-wrap ${
+                <p className={`whitespace-pre-wrap ${
                   !showFullDescription && video.description.length > 300 ? 'line-clamp-3' : ''
-                }`}>
+                }`} style={{ color: 'var(--text-secondary)' }}>
                   {video.description}
                 </p>
                 {video.description.length > 300 && (
                   <button
                     onClick={() => setShowFullDescription(!showFullDescription)}
-                    className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium mt-2"
+                    className="hover:underline text-sm font-medium mt-2"
+                    style={{ color: 'var(--interactive-primary)' }}
                   >
                     {showFullDescription ? 'Show less' : 'Show more'}
                   </button>
@@ -286,7 +299,11 @@ export default function VideoPlayerClient({
                   {video.tags.map((tag: string) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm"
+                      className="px-3 py-1 rounded-full text-sm"
+                      style={{
+                        backgroundColor: 'var(--surface-tertiary)',
+                        color: 'var(--text-primary)'
+                      }}
                     >
                       #{tag}
                     </span>
@@ -298,13 +315,13 @@ export default function VideoPlayerClient({
 
           {/* Sidebar - Related Videos */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sticky top-6">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+            <div className="rounded-xl p-4 sticky top-6" style={{ backgroundColor: 'var(--surface-primary)' }}>
+              <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 More Videos
               </h2>
 
               {relatedVideos.length === 0 ? (
-                <p className="text-sm text-gray-600 dark:text-gray-400 text-center py-8">
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
                   No more videos available
                 </p>
               ) : (
@@ -325,7 +342,7 @@ export default function VideoPlayerClient({
                       >
                         <div className="flex gap-3">
                           {/* Thumbnail */}
-                          <div className="relative w-40 aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="relative w-40 aspect-video rounded-lg overflow-hidden flex-shrink-0" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
                             {relatedVideo.thumbnail_url ? (
                               <img
                                 src={relatedVideo.thumbnail_url}
@@ -334,7 +351,7 @@ export default function VideoPlayerClient({
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <Play className="h-6 w-6 text-gray-400" />
+                                <Play className="h-6 w-6" style={{ color: 'var(--text-muted)' }} />
                               </div>
                             )}
 
@@ -347,13 +364,13 @@ export default function VideoPlayerClient({
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1">
+                            <h3 className="font-medium text-sm line-clamp-2 transition-colors mb-1 group-hover:opacity-80" style={{ color: 'var(--text-primary)' }}>
                               {relatedVideo.title}
                             </h3>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                               {formatViews(relatedVideo.views)} views
                             </p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                               {formatTimeAgo(relatedVideo.published_at)}
                             </p>
                           </div>
