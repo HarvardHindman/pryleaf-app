@@ -2,10 +2,15 @@
 
 // AppLayout is now handled at the root level
 import PortfolioManager from '@/components/PortfolioManager';
+import PortfolioPieChart from '@/components/PortfolioPieChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Briefcase, BarChart3, PieChart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Briefcase, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import TradingViewChart from '@/components/charts/TradingViewChart';
+import { ChartDataService } from '@/lib/chartDataService';
+import { ChartData } from '@/components/charts/TradingViewChart';
+import { useState, useEffect, useMemo } from 'react';
 
 export default function Portfolio() {
   const { user } = useAuth();
@@ -17,6 +22,9 @@ export default function Portfolio() {
     portfolioMetrics 
   } = usePortfolio();
 
+  const [portfolioChartData, setPortfolioChartData] = useState<ChartData[]>([]);
+  const [chartLoading, setChartLoading] = useState(true);
+
   const formatCurrency = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -27,6 +35,61 @@ export default function Portfolio() {
   const formatPercentage = (value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
+
+  // Prepare data for pie chart
+  const pieChartData = useMemo(() => {
+    console.log('Portfolio stocks for pie chart:', portfolioStocks);
+    const data = portfolioStocks
+      .filter(stock => stock.price > 0 && stock.shares && stock.shares > 0)
+      .map(stock => ({
+        symbol: stock.symbol,
+        name: stock.name,
+        value: stock.price * (stock.shares || 0),
+        shares: stock.shares || 0,
+        price: stock.price
+      }));
+    console.log('Prepared pie chart data:', data);
+    return data;
+  }, [portfolioStocks]);
+
+  // Load portfolio chart data when holdings change
+  useEffect(() => {
+    if (portfolioStocks.length > 0) {
+      const loadPortfolioChart = async () => {
+        setChartLoading(true);
+        try {
+          const holdings = portfolioStocks.map(stock => ({
+            symbol: stock.symbol,
+            shares: stock.shares || 0,
+            averageCost: stock.costBasis || 0
+          }));
+          
+          const data = await ChartDataService.getPortfolioChartData(holdings);
+          setPortfolioChartData(data);
+        } catch (error) {
+          console.error('Error loading portfolio chart data:', error);
+          // Fallback to mock data
+          const mockData = await ChartDataService.getChartData({
+            symbol: 'PORTFOLIO',
+            interval: 'daily',
+            period: 30,
+            useMockData: true
+          });
+          setPortfolioChartData(mockData.map(point => ({
+            time: point.time,
+            value: point.close || 10000
+          })));
+        } finally {
+          setChartLoading(false);
+        }
+      };
+
+      loadPortfolioChart();
+    } else {
+      setPortfolioChartData([]);
+      setChartLoading(false);
+    }
+  }, [portfolioStocks]);
 
   if (!user) {
     return (
@@ -151,6 +214,32 @@ export default function Portfolio() {
               <div className="text-center text-red-500">
                 <p>Error: {error}</p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Portfolio Allocation Pie Chart */}
+        <PortfolioPieChart holdings={pieChartData} />
+
+        {/* Portfolio Performance Chart */}
+        {portfolioStocks.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Portfolio Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TradingViewChart
+                data={portfolioChartData}
+                symbol="PORTFOLIO"
+                type="line"
+                height={400}
+                className="w-full"
+                theme="dark"
+                autoSize={true}
+              />
             </CardContent>
           </Card>
         )}

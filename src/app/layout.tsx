@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StreamChatProvider } from "@/contexts/StreamChatContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { CommunityCacheProvider } from "@/contexts/CommunityCacheContext";
+import { TickerCacheProvider } from "@/contexts/TickerCacheContext";
 import AppShell from "@/components/AppShell";
 
 const geistSans = Geist({
@@ -40,11 +42,15 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <StreamChatProvider>
-              <AppShell>
-                {children}
-              </AppShell>
-            </StreamChatProvider>
+            <CommunityCacheProvider>
+              <TickerCacheProvider>
+                <StreamChatProvider>
+                  <AppShell>
+                    {children}
+                  </AppShell>
+                </StreamChatProvider>
+              </TickerCacheProvider>
+            </CommunityCacheProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

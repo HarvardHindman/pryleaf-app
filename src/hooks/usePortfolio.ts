@@ -20,9 +20,57 @@ export function usePortfolio() {
   const pendingActions = useRef<PendingAction[]>([]);
   const optimisticUpdateCount = useRef(0);
 
-  // Helper to update portfolio stocks from holdings
-  const updatePortfolioStocks = useCallback((holdings: PortfolioHolding[]) => {
-    const stocks = PortfolioService.convertToPortfolioStocks(holdings);
+  // Helper to fetch prices and update portfolio stocks
+  const fetchPricesAndUpdateStocks = useCallback(async (holdings: PortfolioHolding[]) => {
+    // Fetch current prices for all holdings
+    const symbols = holdings.map(h => h.symbol);
+    const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
+    
+    // Fetch prices for all symbols
+    if (symbols.length > 0) {
+      try {
+        const pricesResponse = await fetch(`/api/prices?symbols=${symbols.join(',')}`);
+        if (pricesResponse.ok) {
+          const pricesData = await pricesResponse.json();
+          // pricesData is an object with symbol keys
+          Object.keys(pricesData).forEach(symbol => {
+            const data = pricesData[symbol];
+            marketPrices[symbol] = {
+              price: data.price || 0,
+              change: data.change || 0,
+              changePercent: data.changePercent || 0
+            };
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch market prices:', error);
+        // Fall back to using cost basis as price
+        holdings.forEach(h => {
+          marketPrices[h.symbol] = {
+            price: h.average_cost,
+            change: 0,
+            changePercent: 0
+          };
+        });
+      }
+    }
+    
+    const stocks = PortfolioService.convertToPortfolioStocks(holdings, marketPrices);
+    setPortfolioStocks(stocks);
+  }, []);
+
+  // Helper to update portfolio stocks from holdings (synchronous, uses cost basis)
+  const updatePortfolioStocksSync = useCallback((holdings: PortfolioHolding[]) => {
+    // Use cost basis as price for immediate updates
+    const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
+    holdings.forEach(h => {
+      marketPrices[h.symbol] = {
+        price: h.average_cost, // Use cost basis as fallback
+        change: 0,
+        changePercent: 0
+      };
+    });
+    const stocks = PortfolioService.convertToPortfolioStocks(holdings, marketPrices);
     setPortfolioStocks(stocks);
   }, []);
 
@@ -47,8 +95,8 @@ export function usePortfolio() {
       const portfolioData: PortfolioWithHoldings = await response.json();
       setPortfolio(portfolioData);
       
-      // Convert to PortfolioStock format for existing UI components
-      updatePortfolioStocks(portfolioData.holdings);
+      // Convert to PortfolioStock format with real prices
+      await fetchPricesAndUpdateStocks(portfolioData.holdings);
       
     } catch (err) {
       console.error('Failed to fetch portfolio:', err);
@@ -56,7 +104,7 @@ export function usePortfolio() {
     } finally {
       setLoading(false);
     }
-  }, [user, updatePortfolioStocks]);
+  }, [user, fetchPricesAndUpdateStocks]);
 
   // Optimistic add holding - immediate UI update, then sync with server
   const addHolding = useCallback(async (symbol: string, shares: number, averageCost: number, companyName?: string) => {
@@ -82,7 +130,7 @@ export function usePortfolio() {
         ...prev,
         holdings: [...prev.holdings, optimisticHolding]
       };
-      updatePortfolioStocks(newPortfolio.holdings);
+      updatePortfolioStocksSync(newPortfolio.holdings);
       return newPortfolio;
     });
     
@@ -125,7 +173,9 @@ export function usePortfolio() {
             h.id === optimisticId ? holding : h
           )
         };
-        updatePortfolioStocks(newPortfolio.holdings);
+        updatePortfolioStocksSync(newPortfolio.holdings);
+        // Fetch real prices in background
+        fetchPricesAndUpdateStocks(newPortfolio.holdings);
         return newPortfolio;
       });
       
@@ -144,7 +194,7 @@ export function usePortfolio() {
           ...prev,
           holdings: prev.holdings.filter(h => h.id !== optimisticId)
         };
-        updatePortfolioStocks(newPortfolio.holdings);
+        updatePortfolioStocksSync(newPortfolio.holdings);
         return newPortfolio;
       });
       
@@ -153,7 +203,7 @@ export function usePortfolio() {
     } finally {
       setIsUpdating(false);
     }
-  }, [portfolio?.id, updatePortfolioStocks]);
+  }, [portfolio?.id, updatePortfolioStocksSync, fetchPricesAndUpdateStocks]);
 
   // Optimistic update holding - immediate UI update, then sync with server
   const updateHolding = useCallback(async (holdingId: string, shares: number, averageCost: number) => {
@@ -175,7 +225,7 @@ export function usePortfolio() {
             : h
         )
       };
-      updatePortfolioStocks(newPortfolio.holdings);
+      updatePortfolioStocksSync(newPortfolio.holdings);
       return newPortfolio;
     });
     
@@ -211,7 +261,9 @@ export function usePortfolio() {
           ...prev,
           holdings: prev.holdings.map(h => h.id === holdingId ? holding : h)
         };
-        updatePortfolioStocks(newPortfolio.holdings);
+        updatePortfolioStocksSync(newPortfolio.holdings);
+        // Fetch real prices in background
+        fetchPricesAndUpdateStocks(newPortfolio.holdings);
         return newPortfolio;
       });
       
@@ -234,7 +286,7 @@ export function usePortfolio() {
               : h
           )
         };
-        updatePortfolioStocks(newPortfolio.holdings);
+        updatePortfolioStocksSync(newPortfolio.holdings);
         return newPortfolio;
       });
       
@@ -243,7 +295,7 @@ export function usePortfolio() {
     } finally {
       setIsUpdating(false);
     }
-  }, [portfolio?.holdings, updatePortfolioStocks]);
+  }, [portfolio?.holdings, updatePortfolioStocksSync, fetchPricesAndUpdateStocks]);
 
   // Optimistic remove holding - immediate UI update, then sync with server
   const removeHolding = useCallback(async (holdingId: string) => {
@@ -261,7 +313,7 @@ export function usePortfolio() {
         ...prev,
         holdings: prev.holdings.filter(h => h.id !== holdingId)
       };
-      updatePortfolioStocks(newPortfolio.holdings);
+      updatePortfolioStocksSync(newPortfolio.holdings);
       return newPortfolio;
     });
     
@@ -301,7 +353,7 @@ export function usePortfolio() {
           ...prev,
           holdings: [...prev.holdings, originalHolding]
         };
-        updatePortfolioStocks(newPortfolio.holdings);
+        updatePortfolioStocksSync(newPortfolio.holdings);
         return newPortfolio;
       });
       
@@ -310,7 +362,7 @@ export function usePortfolio() {
     } finally {
       setIsUpdating(false);
     }
-  }, [portfolio?.holdings, updatePortfolioStocks]);
+  }, [portfolio?.holdings, updatePortfolioStocksSync, fetchPricesAndUpdateStocks]);
 
   // Find holding by symbol (for updates)
   const findHoldingBySymbol = useCallback((symbol: string) => {

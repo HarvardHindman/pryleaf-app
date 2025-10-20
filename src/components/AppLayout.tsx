@@ -36,6 +36,7 @@ import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 import CommunityNavigation from '@/components/CommunityNavigation';
 
 interface AppLayoutProps {
@@ -46,9 +47,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
-  const [isOwner, setIsOwner] = useState(false);
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { ownedCommunities, isUserOwner, communityDetailsCache, getCommunityById } = useCommunityCache();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu when clicking outside
@@ -76,6 +77,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Use URL community or selected community
   const communityId = urlCommunityId && urlCommunityId !== 'create' ? urlCommunityId : selectedCommunityId;
   const isOnCommunityDetail = communityId && communityId !== 'create';
+  
+  // Get current community name for sidebar display
+  const currentCommunity = communityId ? getCommunityById(communityId) : null;
+  const communityDisplayName = currentCommunity ? currentCommunity.name : 'Community';
 
   // Load last active community from localStorage on mount
   useEffect(() => {
@@ -83,86 +88,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
       const stored = localStorage.getItem('lastActiveCommunity');
       if (stored) {
         setSelectedCommunityId(stored);
+      } else if (ownedCommunities.length > 0) {
+        // Set to owned community if exists
+        setSelectedCommunityId(ownedCommunities[0].community.id);
       }
     }
-  }, []);
-
-  // Fetch user's communities and prioritize owned communities
-  useEffect(() => {
-    async function loadDefaultCommunity() {
-      if (!user) return;
-      
-      try {
-        // Fetch all communities to check ownership
-        const communitiesResponse = await fetch('/api/communities');
-        const communitiesData = await communitiesResponse.json();
-        
-        // Find owned communities
-        const ownedCommunities = (communitiesData.communities || []).filter(
-          (c: any) => c.owner_id === user.id
-        );
-        
-        // If user owns a community, prioritize it and store it
-        if (ownedCommunities.length > 0) {
-          const ownedId = ownedCommunities[0].id;
-          setSelectedCommunityId(ownedId);
-          localStorage.setItem('lastActiveCommunity', ownedId);
-          return; // Don't continue with memberships
-        }
-        
-        // Otherwise, use memberships
-        const response = await fetch('/api/user/channels');
-        const data = await response.json();
-        
-        const memberCommunities = data.communities || [];
-        if (memberCommunities.length > 0) {
-          // Only set if no stored community exists
-          const stored = localStorage.getItem('lastActiveCommunity');
-          if (!stored) {
-            const defaultId = memberCommunities[0].community.id;
-            setSelectedCommunityId(defaultId);
-            localStorage.setItem('lastActiveCommunity', defaultId);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading communities:', error);
-      }
-    }
-    
-    loadDefaultCommunity();
-  }, [user]);
-
-  // Check if user is owner of selected community
-  useEffect(() => {
-    async function checkOwnership() {
-      if (!user || !communityId) {
-        setIsOwner(false);
-        return;
-      }
-      
-      try {
-        // Check directly from the community endpoint
-        const response = await fetch(`/api/communities/${communityId}`);
-        const data = await response.json();
-        
-        console.log('Checking ownership for community:', communityId);
-        console.log('Community data:', data);
-        console.log('User ID:', user.id);
-        console.log('Owner ID:', data.community?.owner_id);
-        console.log('Membership status:', data.membershipStatus);
-        
-        // Check if user is the owner - use membershipStatus.isOwner or compare owner_id
-        const ownerStatus = data.membershipStatus?.isOwner || data.community?.owner_id === user.id;
-        console.log('Is owner:', ownerStatus);
-        setIsOwner(ownerStatus);
-      } catch (error) {
-        console.error('Error checking ownership:', error);
-        setIsOwner(false);
-      }
-    }
-    
-    checkOwnership();
-  }, [user, communityId]);
+  }, [ownedCommunities]);
 
   // Update selected community when URL changes
   useEffect(() => {
@@ -174,36 +105,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
-    { name: 'Markets', href: '/markets', icon: TrendingUp, current: currentPath === '/markets' },
-    { name: 'Analytics', href: '/analytics', icon: LineChart, current: currentPath === '/analytics' },
+    { name: 'Research', href: '/research', icon: Building2, current: currentPath === '/research' },
     { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
     { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
   ];
 
-  // Community-specific tabs
+  // Check if user is owner using cache
+  const isOwner = communityId ? isUserOwner(communityId) : false;
+
+  // Community-specific tabs - Simplified!
   // If no community is selected, redirect to /community page
   const fallbackHref = '/community';
   const communityTabs = communityId ? [
     ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
     { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
-    { name: 'Members', href: `/community/${communityId}/members`, icon: Users, current: urlCommunityId === communityId && communitySubPath === 'members' },
-    { name: 'About', href: `/community/${communityId}/about`, icon: Compass, current: urlCommunityId === communityId && communitySubPath === 'about' },
   ] : [
     // No community selected - all tabs redirect to /community page
     { name: 'Dashboard', href: fallbackHref, icon: BarChart3, current: false },
     { name: 'Videos', href: fallbackHref, icon: Play, current: false },
     { name: 'Chat', href: fallbackHref, icon: MessageSquare, current: false },
-    { name: 'Members', href: fallbackHref, icon: Users, current: false },
-    { name: 'About', href: fallbackHref, icon: Compass, current: false },
   ];
-
-  console.log('Community ID:', communityId);
-  console.log('Is Owner:', isOwner);
-  console.log('Community Tabs:', communityTabs);
   const headerNav = [
     { name: 'News', href: '/news', icon: Globe },
-    { name: 'Research', href: '/research', icon: Building2 },
     { name: 'Tools', href: '/tools', icon: Settings },
   ];
 
@@ -273,17 +197,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </Link>
             ))}
 
+            {/* Community Banner - Visual separator */}
+            {user && communityTabs.length > 0 && (
+              <div 
+                className="mx-2 my-3 px-3 py-2 rounded-lg border"
+                style={{ 
+                  backgroundColor: 'var(--surface-tertiary)',
+                  borderColor: 'var(--border-default)'
+                }}
+              >
+                <div 
+                  className="text-xs font-semibold text-center truncate"
+                  style={{ color: 'var(--text-primary)' }}
+                  title={communityDisplayName}
+                >
+                  {communityDisplayName}
+                </div>
+              </div>
+            )}
+
             {/* Community Tabs (always shown, redirect to /community if no community selected) */}
             {user && communityTabs.length > 0 && (
               <>
-                <div className="pt-2 pb-1">
-                  <div 
-                    className="text-[10px] font-semibold uppercase tracking-wider text-center px-2"
-                    style={{ color: 'var(--text-subtle)' }}
-                  >
-                    Community
-                  </div>
-                </div>
                 {communityTabs.map((tab) => (
                   <Link
                     key={tab.name}
@@ -324,12 +259,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Community Switcher - Bottom Section */}
           {user && (
             <div className="flex-shrink-0 px-2 py-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
-              <div className="space-y-1">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-center mb-1" style={{ color: 'var(--text-subtle)' }}>
-                  Switch
-                </div>
-                <CommunityNavigation />
-              </div>
+              <CommunityNavigation />
             </div>
           )}
         </div>
@@ -377,15 +307,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
               {/* Mobile Communities Section */}
               {user && (
                 <div className="pt-4 mt-4 border-t border-gray-200">
-                  <div className="px-3 mb-2 flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      My Communities
-                    </h3>
-                    <Link href="/community">
-                      <span className="text-xs text-blue-600 hover:text-blue-800">
-                        Browse
-                      </span>
-                    </Link>
+                  {/* Community Banner for Mobile */}
+                  <div 
+                    className="mx-3 mb-3 px-3 py-2 rounded-lg border"
+                    style={{ 
+                      backgroundColor: 'var(--surface-tertiary)',
+                      borderColor: 'var(--border-default)'
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div 
+                        className="text-xs font-semibold truncate flex-1"
+                        style={{ color: 'var(--text-primary)' }}
+                        title={communityDisplayName}
+                      >
+                        {communityDisplayName}
+                      </div>
+                      <Link href="/community">
+                        <span className="text-xs text-blue-600 hover:text-blue-800 ml-2">
+                          Browse
+                        </span>
+                      </Link>
+                    </div>
                   </div>
                   <div className="px-2">
                     <CommunityNavigation />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import {
   CheckCircle,
@@ -9,35 +9,23 @@ import {
   Loader2,
   Star
 } from 'lucide-react';
+import { useCommunityDetails } from '@/hooks/useCommunityDetails';
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 
 export default function CommunityAboutPage() {
   const params = useParams();
   const communityId = params.id as string;
   
-  const [loading, setLoading] = useState(true);
-  const [community, setCommunity] = useState<any>(null);
-  const [tiers, setTiers] = useState<any[]>([]);
-  const [membershipStatus, setMembershipStatus] = useState<any>(null);
+  // Use cached community details
+  const { details, loading } = useCommunityDetails(communityId);
+  const { invalidateCommunityDetails } = useCommunityCache();
+  
   const [joiningTierId, setJoiningTierId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const response = await fetch(`/api/communities/${communityId}`);
-        const data = await response.json();
-        
-        setCommunity(data.community);
-        setTiers(data.tiers || []);
-        setMembershipStatus(data.membershipStatus);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [communityId]);
+  // Extract data from cached details
+  const community = details;
+  const tiers = details?.tiers || [];
+  const membershipStatus = details?.membershipStatus;
 
   const handleJoinTier = async (tierId: string, priceCents: number) => {
     if (!tierId) return;
@@ -56,6 +44,9 @@ export default function CommunityAboutPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Invalidate cache to force refresh
+        invalidateCommunityDetails(communityId);
+        
         if (priceCents === 0) {
           window.location.reload();
         } else {

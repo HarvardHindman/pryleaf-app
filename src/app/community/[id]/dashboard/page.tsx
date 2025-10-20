@@ -25,11 +25,15 @@ import {
   Search,
   Shield,
   Filter,
-  EyeOff
+  EyeOff,
+  Palette,
+  Image as ImageIcon,
+  Upload,
+  Camera
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-type DashboardTab = 'overview' | 'content' | 'members' | 'tiers' | 'analytics' | 'settings';
+type DashboardTab = 'overview' | 'content' | 'members' | 'tiers' | 'analytics' | 'appearance' | 'settings';
 
 export default function CommunityDashboardPage() {
   const params = useParams();
@@ -170,6 +174,12 @@ export default function CommunityDashboardPage() {
             label="Analytics"
           />
           <DashboardTabButton
+            active={activeTab === 'appearance'}
+            onClick={() => setActiveTab('appearance')}
+            icon={<Palette className="h-4 w-4" />}
+            label="Appearance"
+          />
+          <DashboardTabButton
             active={activeTab === 'settings'}
             onClick={() => setActiveTab('settings')}
             icon={<Settings className="h-4 w-4" />}
@@ -185,6 +195,7 @@ export default function CommunityDashboardPage() {
         {activeTab === 'members' && <MembersManagementTab communityId={communityId} />}
         {activeTab === 'tiers' && <TiersTab communityId={communityId} />}
         {activeTab === 'analytics' && <AnalyticsTab communityId={communityId} stats={stats} />}
+        {activeTab === 'appearance' && <AppearanceTab community={community} communityId={communityId} />}
         {activeTab === 'settings' && <SettingsTab community={community} communityId={communityId} />}
       </div>
     </div>
@@ -1407,6 +1418,498 @@ function InsightCard({ type, title, message }: any) {
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           {message}
         </p>
+      </div>
+    </div>
+  );
+}
+
+function AppearanceTab({ community, communityId }: any) {
+  const [uploading, setUploading] = useState<'avatar' | 'banner' | null>(null);
+  const [formData, setFormData] = useState({
+    avatar_url: community.avatar_url || '',
+    banner_url: community.banner_url || '',
+    accent_color: community.accent_color || '#3b82f6',
+    long_description: community.long_description || community.description || ''
+  });
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(community.avatar_url || null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(community.banner_url || null);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const showMessage = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 5000);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      showMessage('error', 'Please upload an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showMessage('error', 'Image must be less than 5MB');
+      return;
+    }
+
+    setUploading('avatar');
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('communityId', communityId);
+
+      const response = await fetch(`/api/communities/${communityId}/avatar`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAvatarPreview(data.avatar_url);
+        setFormData(prev => ({ ...prev, avatar_url: data.avatar_url }));
+        showMessage('success', 'Avatar uploaded successfully!');
+      } else {
+        showMessage('error', data.error || 'Failed to upload avatar');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to upload avatar');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      showMessage('error', 'Please upload an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showMessage('error', 'Image must be less than 10MB');
+      return;
+    }
+
+    setUploading('banner');
+    try {
+      const formData = new FormData();
+      formData.append('banner', file);
+      formData.append('communityId', communityId);
+
+      const response = await fetch(`/api/communities/${communityId}/banner`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBannerPreview(data.banner_url);
+        setFormData(prev => ({ ...prev, banner_url: data.banner_url }));
+        showMessage('success', 'Banner uploaded successfully!');
+      } else {
+        showMessage('error', data.error || 'Failed to upload banner');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to upload banner');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleSaveAppearance = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/communities/${communityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avatar_url: formData.avatar_url,
+          banner_url: formData.banner_url,
+          accent_color: formData.accent_color,
+          long_description: formData.long_description
+        })
+      });
+
+      if (response.ok) {
+        showMessage('success', 'Appearance settings saved successfully!');
+        window.location.reload(); // Refresh to see changes
+      } else {
+        const data = await response.json();
+        showMessage('error', data.error || 'Failed to save settings');
+      }
+    } catch (error) {
+      showMessage('error', 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+        Community Appearance
+      </h2>
+
+      {/* Success/Error Messages */}
+      {message && (
+        <div 
+          className="p-4 rounded-lg flex items-start gap-3"
+          style={{
+            backgroundColor: message.type === 'success' ? 'var(--success-background)' : 'var(--danger-background)',
+            color: message.type === 'success' ? 'var(--success-text)' : 'var(--danger-text)',
+            border: `1px solid ${message.type === 'success' ? 'var(--success-border)' : 'var(--danger-border)'}`
+          }}
+        >
+          {message.type === 'success' ? (
+            <Check className="h-5 w-5 flex-shrink-0" />
+          ) : (
+            <X className="h-5 w-5 flex-shrink-0" />
+          )}
+          <span>{message.text}</span>
+        </div>
+      )}
+
+      {/* Avatar Upload */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Camera className="h-5 w-5" />
+          Community Avatar
+        </h3>
+        
+        <div className="flex items-center gap-6">
+          {/* Avatar Preview */}
+          <div className="relative">
+            <div 
+              className="w-32 h-32 rounded-full border-4 flex items-center justify-center text-4xl font-bold overflow-hidden"
+              style={{ 
+                backgroundColor: 'var(--surface-secondary)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              {avatarPreview ? (
+                <img src={avatarPreview} alt={community.name} className="w-full h-full object-cover" />
+              ) : (
+                <span style={{ color: 'var(--text-muted)' }}>
+                  {community.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            {uploading === 'avatar' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              </div>
+            )}
+          </div>
+
+          {/* Upload Button */}
+          <div className="flex-1">
+            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+              This image will appear next to your community name throughout Pryleaf
+            </p>
+            <div className="flex gap-3">
+              <label className="btn btn-primary cursor-pointer">
+                <Upload className="h-4 w-4" />
+                Upload Avatar
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  disabled={uploading !== null}
+                />
+              </label>
+              {avatarPreview && (
+                <button
+                  onClick={() => {
+                    setAvatarPreview(null);
+                    setFormData(prev => ({ ...prev, avatar_url: '' }));
+                  }}
+                  className="btn btn-outline"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>
+              Recommended: Square image, at least 256x256px, max 5MB
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Banner Upload */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <ImageIcon className="h-5 w-5" />
+          Community Banner
+        </h3>
+        
+        {/* Banner Preview */}
+        <div className="mb-4">
+          <div 
+            className="w-full h-48 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden relative"
+            style={{ 
+              backgroundColor: 'var(--surface-secondary)',
+              borderColor: 'var(--border-default)',
+              backgroundImage: bannerPreview ? `url(${bannerPreview})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            {!bannerPreview && (
+              <div className="text-center">
+                <ImageIcon className="h-16 w-16 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  No banner uploaded
+                </p>
+              </div>
+            )}
+            {uploading === 'banner' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                <Loader2 className="h-8 w-8 animate-spin text-white" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Upload Controls */}
+        <div>
+          <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+            This banner appears at the top of your community page
+          </p>
+          <div className="flex gap-3">
+            <label className="btn btn-primary cursor-pointer">
+              <Upload className="h-4 w-4" />
+              Upload Banner
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleBannerUpload}
+                className="hidden"
+                disabled={uploading !== null}
+              />
+            </label>
+            {bannerPreview && (
+              <button
+                onClick={() => {
+                  setBannerPreview(null);
+                  setFormData(prev => ({ ...prev, banner_url: '' }));
+                }}
+                className="btn btn-outline"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <p className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>
+            Recommended: 1920x400px (wide format), max 10MB
+          </p>
+        </div>
+      </div>
+
+      {/* Long Description */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          About Section
+        </h3>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+            Extended Description
+          </label>
+          <textarea
+            value={formData.long_description}
+            onChange={(e) => setFormData({ ...formData, long_description: e.target.value })}
+            className="w-full px-4 py-3 rounded-lg border resize-none"
+            rows={8}
+            style={{
+              backgroundColor: 'var(--surface-secondary)',
+              borderColor: 'var(--border-default)',
+              color: 'var(--text-primary)'
+            }}
+            placeholder="Tell visitors what your community is all about, what they'll learn, and why they should join..."
+            maxLength={2000}
+          />
+          <p className="text-xs mt-2 text-right" style={{ color: 'var(--text-subtle)' }}>
+            {formData.long_description.length}/2000 characters
+          </p>
+          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            This description appears on your community's main page for non-members
+          </p>
+        </div>
+      </div>
+
+      {/* Brand Colors */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <Palette className="h-5 w-5" />
+          Brand Colors
+        </h3>
+        
+        <div>
+          <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
+            Accent Color
+          </label>
+          <div className="flex items-center gap-4">
+            <input
+              type="color"
+              value={formData.accent_color}
+              onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
+              className="w-24 h-12 rounded-lg border cursor-pointer"
+              style={{ borderColor: 'var(--border-default)' }}
+            />
+            <div className="flex-1">
+              <input
+                type="text"
+                value={formData.accent_color}
+                onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg border font-mono"
+                style={{
+                  backgroundColor: 'var(--surface-secondary)',
+                  borderColor: 'var(--border-default)',
+                  color: 'var(--text-primary)'
+                }}
+                placeholder="#3b82f6"
+                pattern="^#[0-9A-Fa-f]{6}$"
+              />
+            </div>
+            <div 
+              className="w-12 h-12 rounded-lg border"
+              style={{ 
+                backgroundColor: formData.accent_color,
+                borderColor: 'var(--border-default)'
+              }}
+            />
+          </div>
+          <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
+            This color will be used for buttons, links, and highlights in your community (coming soon)
+          </p>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div 
+        className="p-6 rounded-lg border"
+        style={{
+          backgroundColor: 'var(--surface-primary)',
+          borderColor: 'var(--border-default)'
+        }}
+      >
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          Preview
+        </h3>
+        
+        <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-default)' }}>
+          {/* Banner Preview */}
+          {bannerPreview && (
+            <div 
+              className="w-full h-32 bg-cover bg-center"
+              style={{ backgroundImage: `url(${bannerPreview})` }}
+            />
+          )}
+          
+          {/* Community Header Preview */}
+          <div className="p-6" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+            <div className="flex items-start gap-4">
+              <div 
+                className="w-16 h-16 rounded-full border-2 flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0"
+                style={{ borderColor: 'var(--border-default)', backgroundColor: 'var(--surface-primary)' }}
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt={community.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    {community.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  {community.name}
+                </h3>
+                <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+                  @{community.handle}
+                </p>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {community.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
+          This is how your community will appear to visitors
+        </p>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex gap-3">
+        <button 
+          onClick={handleSaveAppearance}
+          disabled={saving}
+          className="btn btn-primary"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Check className="h-4 w-4" />
+              Save Appearance
+            </>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            setFormData({
+              avatar_url: community.avatar_url || '',
+              banner_url: community.banner_url || '',
+              accent_color: community.accent_color || '#3b82f6',
+              long_description: community.long_description || community.description || ''
+            });
+            setAvatarPreview(community.avatar_url || null);
+            setBannerPreview(community.banner_url || null);
+          }}
+          className="btn btn-outline"
+        >
+          Reset Changes
+        </button>
       </div>
     </div>
   );

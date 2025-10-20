@@ -77,6 +77,7 @@ export async function PATCH(
       long_description,
       avatar_url,
       banner_url,
+      accent_color,
       specialty,
       category,
       settings
@@ -91,6 +92,7 @@ export async function PATCH(
         ...(long_description !== undefined && { long_description }),
         ...(avatar_url !== undefined && { avatar_url }),
         ...(banner_url !== undefined && { banner_url }),
+        ...(accent_color !== undefined && { accent_color }),
         ...(specialty && { specialty }),
         ...(category && { category }),
         ...(settings && { settings })

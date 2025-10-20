@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Video, 
@@ -16,8 +16,9 @@ import {
   Loader2,
   Heart
 } from 'lucide-react';
-import type { Community } from '@/lib/communityService';
+import type { Community } from '@/contexts/CommunityCacheContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 
 const categories = [
   'Your Communities',
@@ -34,77 +35,60 @@ const categories = [
 
 export default function CommunityPage() {
   const { user } = useAuth();
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [userCommunityIds, setUserCommunityIds] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const { allCommunities, userMemberships, ownedCommunities, loading } = useCommunityCache();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedCategory, setSelectedCategory] = useState('your communities');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredCommunities, setFilteredCommunities] = useState<Community[]>([]);
 
-  // Fetch communities and user memberships
+  // Create set of user's community IDs (including owned)
+  const userCommunityIds = useMemo(() => {
+    const ids = new Set<string>();
+    userMemberships.forEach(m => ids.add(m.community.id));
+    ownedCommunities.forEach(oc => ids.add(oc.community.id));
+    return ids;
+  }, [userMemberships, ownedCommunities]);
+
+  // Set initial category based on user's communities
   useEffect(() => {
-    async function fetchCommunities() {
-      try {
-        setLoading(true);
-        
-        // Fetch all communities
-        const response = await fetch('/api/communities');
-        const data = await response.json();
-        setCommunities(data.communities || []);
-        
-        // Fetch user's memberships if logged in
-        if (user) {
-          const membershipsResponse = await fetch('/api/user/memberships');
-          const membershipsData = await membershipsResponse.json();
-          
-          if (membershipsData.memberships) {
-            const communityIds = new Set(
-              membershipsData.memberships.map((m: any) => m.community_id)
-            );
-            setUserCommunityIds(communityIds);
-          }
-        } else {
-          // If not logged in, default to "All" tab
-          setSelectedCategory('all');
-        }
-      } catch (error) {
-        console.error('Error fetching communities:', error);
-      } finally {
-        setLoading(false);
+    if (!loading) {
+      if (user && userCommunityIds.size > 0) {
+        // User is logged in and has communities
+        setSelectedCategory('your communities');
+      } else {
+        // Not logged in or no communities
+        setSelectedCategory('all');
       }
     }
+  }, [loading, user, userCommunityIds.size]);
 
-    fetchCommunities();
-  }, [user]);
-
-  // Filter communities
-  useEffect(() => {
-    let filtered = communities;
+  // Filter communities based on category and search (memoized for performance)
+  const filteredCommunities = useMemo(() => {
+    let filtered = [...allCommunities];
 
     // Filter by category
     if (selectedCategory === 'your communities') {
-      // Show only communities the user has joined
       filtered = filtered.filter(c => userCommunityIds.has(c.id));
     } else if (selectedCategory !== 'all') {
-      filtered = filtered.filter(c => c.category.toLowerCase() === selectedCategory.toLowerCase());
+      filtered = filtered.filter(c => c.category?.toLowerCase() === selectedCategory.toLowerCase());
     }
 
     // Filter by search query
-    if (searchQuery) {
+    if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(c => 
         c.name.toLowerCase().includes(query) ||
         c.handle.toLowerCase().includes(query) ||
-        c.description?.toLowerCase().includes(query) ||
-        c.specialty?.toLowerCase().includes(query)
+        c.description?.toLowerCase().includes(query)
       );
     }
 
-    setFilteredCommunities(filtered);
-  }, [communities, selectedCategory, searchQuery, userCommunityIds]);
+    return filtered;
+  }, [allCommunities, selectedCategory, searchQuery, userCommunityIds]);
 
-  const featuredCommunities = filteredCommunities.filter(c => c.verified).slice(0, 4);
+  const featuredCommunities = useMemo(() => 
+    filteredCommunities.filter(c => c.verified).slice(0, 4),
+    [filteredCommunities]
+  );
 
   return (
     <div 

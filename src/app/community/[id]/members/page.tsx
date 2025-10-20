@@ -4,46 +4,42 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Users, Calendar, Loader2, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommunityDetails } from '@/hooks/useCommunityDetails';
 
 export default function CommunityMembersPage() {
   const params = useParams();
   const { user } = useAuth();
   const communityId = params.id as string;
   
+  // Use cached community details to check membership
+  const { details, loading: detailsLoading } = useCommunityDetails(communityId);
+  
   const [members, setMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [membersLoading, setMembersLoading] = useState(false);
+  
+  const hasAccess = details?.membershipStatus?.isMember || details?.membershipStatus?.isOwner || false;
+  const loading = detailsLoading || membersLoading;
 
   useEffect(() => {
-    async function checkAccessAndFetchMembers() {
+    async function fetchMembers() {
+      if (!hasAccess || !user) return;
+      
       try {
-        // Check membership first
-        const communityResponse = await fetch(`/api/communities/${communityId}`);
-        const communityData = await communityResponse.json();
-        
-        if (communityData.membershipStatus?.isMember) {
-          setHasAccess(true);
-          
-          // Fetch members
-          const membersResponse = await fetch(`/api/communities/${communityId}/members`);
-          if (membersResponse.ok) {
-            const data = await membersResponse.json();
-            setMembers(data.members || []);
-          }
+        setMembersLoading(true);
+        const membersResponse = await fetch(`/api/communities/${communityId}/members`);
+        if (membersResponse.ok) {
+          const data = await membersResponse.json();
+          setMembers(data.members || []);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching members:', error);
       } finally {
-        setLoading(false);
+        setMembersLoading(false);
       }
     }
 
-    if (user) {
-      checkAccessAndFetchMembers();
-    } else {
-      setLoading(false);
-    }
-  }, [communityId, user]);
+    fetchMembers();
+  }, [communityId, hasAccess, user]);
 
   if (loading) {
     return (

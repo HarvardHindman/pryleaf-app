@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { AlphaVantageSupabase, CompanyOverview, Quote } from '@/lib/alphaVantageSupabase';
 
+/**
+ * Ticker API Route - Uses Alpha Vantage with Supabase caching
+ * Replaces Yahoo Finance with cached Alpha Vantage data
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ ticker: string }> }
@@ -9,56 +13,63 @@ export async function GET(
     const { ticker: tickerParam } = await params;
     const ticker = tickerParam.toUpperCase();
 
-    // Fetch quote data (price, change, market cap, etc.)
-    const quote = await yahooFinance.quote(ticker);
-    
-    // Fetch additional summary profile data (company description, etc.)
-    const summaryProfile = await yahooFinance.quoteSummary(ticker, {
-      modules: ['summaryProfile', 'defaultKeyStatistics', 'financialData']
-    });
+    // Fetch company overview and quote from Alpha Vantage (with caching)
+    const [overview, quote] = await Promise.all([
+      AlphaVantageSupabase.getCompanyOverview(ticker),
+      AlphaVantageSupabase.getQuote(ticker)
+    ]);
 
-    // Extract the data we need
-    const quoteData = quote;
-    const profile = summaryProfile.summaryProfile;
-    const keyStats = summaryProfile.defaultKeyStatistics;
-    const financialData = summaryProfile.financialData;
+    if (!overview && !quote) {
+      return NextResponse.json(
+        { error: 'Unable to fetch ticker data. Please try again later.' },
+        { status: 404 }
+      );
+    }
 
-    // Consolidate all data into a clean response
+    // Calculate current price from available data
+    const currentPrice = quote ? parseFloat(quote.price) : 
+      (overview && parseFloat(overview.MarketCapitalization) > 0 && parseFloat(overview.SharesOutstanding) > 0) ?
+      (parseFloat(overview.MarketCapitalization) / parseFloat(overview.SharesOutstanding)) : 0;
+
+    const dailyChange = quote ? parseFloat(quote.change) : 0;
+    const dailyChangePercent = quote ? parseFloat(quote.changePercent.replace('%', '')) : 0;
+
+    // Consolidate all data into a clean response matching the existing interface
     const consolidatedData = {
       // Header Section Data
-      companyName: quoteData.displayName || quoteData.longName || quoteData.shortName,
-      ticker: quoteData.symbol,
-      currentPrice: quoteData.regularMarketPrice,
-      dailyChange: quoteData.regularMarketChange,
-      dailyChangePercent: quoteData.regularMarketChangePercent,
-      currency: quoteData.currency,
+      companyName: overview?.Name || `${ticker} Inc.`,
+      ticker: ticker,
+      currentPrice: currentPrice,
+      dailyChange: dailyChange,
+      dailyChangePercent: dailyChangePercent,
+      currency: overview?.Currency || 'USD',
 
       // Key Statistics
-      marketCap: quoteData.marketCap,
-      peRatio: quoteData.trailingPE,
-      eps: quoteData.epsTrailingTwelveMonths,
-      dividendYield: (quoteData as any).dividendYield,
-      fiftyTwoWeekHigh: quoteData.fiftyTwoWeekHigh,
-      fiftyTwoWeekLow: quoteData.fiftyTwoWeekLow,
-      averageVolume: (quoteData as any).averageVolume,
-      volume: quoteData.regularMarketVolume,
+      marketCap: overview ? parseFloat(overview.MarketCapitalization) : 0,
+      peRatio: overview ? parseFloat(overview.PERatio) : 0,
+      eps: overview ? parseFloat(overview.EPS) : 0,
+      dividendYield: overview ? parseFloat(overview.DividendYield) : 0,
+      fiftyTwoWeekHigh: overview ? parseFloat(overview["52WeekHigh"]) : 0,
+      fiftyTwoWeekLow: overview ? parseFloat(overview["52WeekLow"]) : 0,
+      averageVolume: 0, // Not available in Alpha Vantage overview
+      volume: quote ? parseInt(quote.volume) : 0,
 
       // Company Profile
-      businessSummary: profile?.longBusinessSummary,
-      sector: profile?.sector,
-      industry: profile?.industry,
-      website: profile?.website,
-      employees: profile?.fullTimeEmployees,
+      businessSummary: overview?.Description || 'No description available.',
+      sector: overview?.Sector || 'N/A',
+      industry: overview?.Industry || 'N/A',
+      website: '', // Not in Alpha Vantage overview
+      employees: 0, // Not in Alpha Vantage overview
 
       // Additional financial data
-      totalRevenue: financialData?.totalRevenue,
-      grossMargins: financialData?.grossMargins,
-      operatingMargins: financialData?.operatingMargins,
-      profitMargins: financialData?.profitMargins,
+      totalRevenue: overview ? parseFloat(overview.RevenueTTM) : 0,
+      grossMargins: overview ? parseFloat(overview.GrossProfitTTM) / parseFloat(overview.RevenueTTM) : 0,
+      operatingMargins: overview ? parseFloat(overview.OperatingMarginTTM) : 0,
+      profitMargins: overview ? parseFloat(overview.ProfitMargin) : 0,
 
       // Exchange info
-      exchange: quoteData.fullExchangeName,
-      exchangeTimezoneName: quoteData.exchangeTimezoneName,
+      exchange: overview?.Exchange || 'NASDAQ',
+      exchangeTimezoneName: 'America/New_York', // Default
       
       // Last updated
       lastUpdated: new Date().toISOString(),
@@ -69,14 +80,6 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching ticker data:', error);
     
-    // Return appropriate error response
-    if (error instanceof Error && error.message.includes('No data found')) {
-      return NextResponse.json(
-        { error: 'Ticker not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Failed to fetch ticker data' },
       { status: 500 }

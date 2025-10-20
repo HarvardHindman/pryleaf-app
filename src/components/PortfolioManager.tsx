@@ -133,17 +133,20 @@ interface EditHoldingFormProps {
 function EditHoldingForm({ holding, onUpdate, onCancel, loading }: EditHoldingFormProps) {
   const [shares, setShares] = useState(holding.shares.toString());
   const [averageCost, setAverageCost] = useState(holding.average_cost.toString());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!shares || !averageCost) return;
+    if (!shares || !averageCost || isSubmitting) return;
     
+    setIsSubmitting(true);
     const success = await onUpdate(
       holding.id,
       parseFloat(shares),
       parseFloat(averageCost)
     );
+    setIsSubmitting(false);
     
     if (success) {
       onCancel();
@@ -157,15 +160,15 @@ function EditHoldingForm({ holding, onUpdate, onCancel, loading }: EditHoldingFo
           <h4 className="font-medium text-text-default">
             Edit {holding.symbol}
           </h4>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
@@ -180,7 +183,7 @@ function EditHoldingForm({ holding, onUpdate, onCancel, loading }: EditHoldingFo
               value={shares}
               onChange={(e) => setShares(e.target.value)}
               required
-              disabled={loading}
+              disabled={isSubmitting}
             />
           </div>
           <div>
@@ -194,7 +197,7 @@ function EditHoldingForm({ holding, onUpdate, onCancel, loading }: EditHoldingFo
               value={averageCost}
               onChange={(e) => setAverageCost(e.target.value)}
               required
-              disabled={loading}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -203,9 +206,9 @@ function EditHoldingForm({ holding, onUpdate, onCancel, loading }: EditHoldingFo
           <Button 
             type="submit" 
             size="sm"
-            disabled={loading || !shares || !averageCost}
+            disabled={isSubmitting || !shares || !averageCost}
           >
-            {loading ? 'Updating...' : 'Update'}
+            {isSubmitting ? 'Updating...' : 'Update'}
           </Button>
         </div>
       </form>

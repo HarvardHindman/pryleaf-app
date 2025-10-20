@@ -24,8 +24,9 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react';
-import type { Community, CommunityTier } from '@/lib/communityService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCommunityDetails } from '@/hooks/useCommunityDetails';
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 
 export default function CommunityDetailPage() {
   const params = useParams();
@@ -33,38 +34,18 @@ export default function CommunityDetailPage() {
   const communityId = params.id as string;
   const { user } = useAuth();
   
-  const [loading, setLoading] = useState(true);
-  const [community, setCommunity] = useState<Community | null>(null);
-  const [tiers, setTiers] = useState<CommunityTier[]>([]);
-  const [membershipStatus, setMembershipStatus] = useState<any>(null);
+  // Use cached community details
+  const { details, loading, error } = useCommunityDetails(communityId);
+  const { invalidateCommunityDetails } = useCommunityCache();
+  
   const [joiningTierId, setJoiningTierId] = useState<string | null>(null);
 
+  // Store last active community
   useEffect(() => {
-    async function fetchCommunityDetails() {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/communities/${communityId}`);
-        const data = await response.json();
-        
-        setCommunity(data.community);
-        setTiers(data.tiers || []);
-        setMembershipStatus(data.membershipStatus);
-        
-        // Store the last active community in localStorage
-        if (data.community && user) {
-          localStorage.setItem('lastActiveCommunity', communityId);
-        }
-      } catch (error) {
-        console.error('Error fetching community details:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (details && user && communityId) {
+      localStorage.setItem('lastActiveCommunity', communityId);
     }
-
-    if (communityId) {
-      fetchCommunityDetails();
-    }
-  }, [communityId, user]);
+  }, [details, user, communityId]);
 
   const handleJoinTier = async (tierId: string, priceCents: number) => {
     if (!tierId) return;
@@ -83,8 +64,11 @@ export default function CommunityDetailPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Invalidate cache to force refresh
+        invalidateCommunityDetails(communityId);
+        
         if (priceCents === 0) {
-          // Free tier - reload page to show updated status
+          // Free tier - reload to show updated status
           window.location.reload();
         } else {
           // Paid tier - redirect to Stripe checkout (when implemented)
@@ -112,22 +96,110 @@ export default function CommunityDetailPage() {
     const isOwner = membershipStatus?.isOwner;
     const userTierLevel = membershipStatus?.tierLevel || 0;
 
-    // If not a member, show join prompt
-    if (!isMember) {
+    // If not a member, show membership tiers
+    if (!isMember && !isOwner) {
       return (
-        <div className="flex flex-col items-center justify-center py-16 px-4">
-          <Lock className="h-16 w-16 mb-4" style={{ color: 'var(--text-muted)' }} />
-          <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Join to Access Videos
-          </h3>
-          <p className="text-center mb-6" style={{ color: 'var(--text-muted)' }}>
-            Become a member to access exclusive video content and live sessions.
-          </p>
-          <Link href={`/community/${communityId}/about`}>
-            <button className="btn btn-primary btn-lg">
-              View Membership Options
-            </button>
-          </Link>
+        <div className="space-y-12">
+          {/* About Section */}
+          {community.long_description && (
+            <section>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+                About this Community
+              </h2>
+              <div 
+                className="prose max-w-none text-base leading-relaxed"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                {community.long_description}
+              </div>
+            </section>
+          )}
+
+          {/* Membership Tiers */}
+          <section>
+            <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--text-primary)' }}>
+              Choose Your Membership
+            </h2>
+            <div className="tier-comparison-grid">
+              {tiers.map((tier: any, index: number) => {
+                const isCurrentTier = membershipStatus?.membership?.tier_id === tier.id;
+                const canAccess = membershipStatus?.tierLevel >= tier.tier_level;
+                const isPopular = index === 1 && tiers.length > 1;
+
+                return (
+                  <div
+                    key={tier.id}
+                    className={`tier-card ${isPopular ? 'tier-card-popular' : ''}`}
+                  >
+                    <div className="text-center mb-6">
+                      <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                        {tier.name}
+                      </h3>
+                      <div className="tier-price mb-2">
+                        ${(tier.price_monthly / 100).toFixed(0)}
+                        <span className="tier-price-period">/month</span>
+                      </div>
+                      {tier.description && (
+                        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                          {tier.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Features List */}
+                    <ul className="tier-feature-list mb-6">
+                      {tier.features?.map((feature: string, idx: number) => (
+                        <li key={idx} className="tier-feature">
+                          <CheckCircle className="h-4 w-4 tier-feature-icon" />
+                          <span>{feature}</span>
+                        </li>
+                      )) || (
+                        <>
+                          <li className="tier-feature">
+                            <CheckCircle className="h-4 w-4 tier-feature-icon" />
+                            <span>Access to {tier.name} content</span>
+                          </li>
+                          <li className="tier-feature">
+                            <CheckCircle className="h-4 w-4 tier-feature-icon" />
+                            <span>Community chat access</span>
+                          </li>
+                          {tier.tier_level > 0 && (
+                            <li className="tier-feature">
+                              <CheckCircle className="h-4 w-4 tier-feature-icon" />
+                              <span>Exclusive member perks</span>
+                            </li>
+                          )}
+                        </>
+                      )}
+                    </ul>
+
+                    {/* Join Button */}
+                    <button
+                      onClick={() => handleJoinTier(tier.id, tier.price_monthly)}
+                      disabled={joiningTierId === tier.id || isCurrentTier}
+                      className="btn btn-primary w-full"
+                    >
+                      {joiningTierId === tier.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Joining...
+                        </>
+                      ) : isCurrentTier ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Current Tier
+                        </>
+                      ) : (
+                        <>
+                          Join {tier.name}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </div>
       );
     }
@@ -150,7 +222,12 @@ export default function CommunityDetailPage() {
     );
   }
 
-  if (!community) {
+  // Extract data from cached details
+  const community = details;
+  const tiers = details?.tiers || [];
+  const membershipStatus = details?.membershipStatus;
+
+  if (error || !details) {
     return (
       <div className="h-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
         <div className="text-center">
@@ -254,13 +331,9 @@ export default function CommunityDetailPage() {
                         )}
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setActiveTab('about')}
-                        className="btn btn-primary"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Join Community
-                      </button>
+                      <span className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-muted)' }}>
+                        Scroll down to view membership options
+                      </span>
                     )}
                   </>
                 )}
