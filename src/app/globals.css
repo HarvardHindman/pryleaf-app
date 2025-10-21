@@ -291,6 +291,30 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none; /* WebKit */
   }
+
+  /* Custom scrollbar for research panel */
+  .scrollbar-thin {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--border-subtle) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--border-subtle);
+    border-radius: 3px;
+    border: 1px solid transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--border-default);
+  }
 }
 
 /* Custom Message UI - Left-aligned for all messages */

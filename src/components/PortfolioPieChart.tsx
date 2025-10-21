@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
 
 // Bright, distinct colors for the pie chart
 const CHART_COLORS = [
@@ -71,13 +72,6 @@ export default function PortfolioPieChart({ holdings }: PortfolioPieChartProps) 
       color: CHART_COLORS[index % CHART_COLORS.length]
     };
   });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(value);
-  };
 
   // SVG donut chart parameters
   const size = 300;

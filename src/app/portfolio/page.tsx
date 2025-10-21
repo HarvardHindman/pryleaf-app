@@ -11,6 +11,7 @@ import TradingViewChart from '@/components/charts/TradingViewChart';
 import { ChartDataService } from '@/lib/chartDataService';
 import { ChartData } from '@/components/charts/TradingViewChart';
 import { useState, useEffect, useMemo } from 'react';
+import { formatCurrency } from '@/lib/formatters';
 
 export default function Portfolio() {
   const { user } = useAuth();
@@ -24,13 +25,6 @@ export default function Portfolio() {
 
   const [portfolioChartData, setPortfolioChartData] = useState<ChartData[]>([]);
   const [chartLoading, setChartLoading] = useState(true);
-
-  const formatCurrency = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
 
   const formatPercentage = (value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;

@@ -41,6 +41,41 @@ export interface TickerData {
   profitMargins?: number;
   exchange?: string;
   currency?: string;
+  
+  // Extended company statistics
+  sharesOutstanding?: number;
+  enterpriseValue?: number;
+  bookValue?: number;
+  priceToBook?: number;
+  evToRevenue?: number;
+  evToEbitda?: number;
+  priceToFreeCashFlow?: number;
+  evToGrossProfit?: number;
+  pegRatio?: number;
+  forwardPE?: number;
+  
+  // Returns
+  returnOnAssets?: number;
+  returnOnEquity?: number;
+  
+  // Growth metrics
+  quarterlyRevenueGrowthYOY?: number;
+  quarterlyEarningsGrowthYOY?: number;
+  
+  // Financial health
+  cash?: number;
+  totalDebt?: number;
+  netDebt?: number;
+  debtToEquity?: number;
+  ebitda?: number;
+  
+  // Dividends
+  dividendPerShare?: number;
+  payoutRatio?: number;
+  
+  // Margins (additional)
+  fcfMargin?: number;
+  preTaxMargin?: number;
 }
 
 interface TickerCacheContextType {

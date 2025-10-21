@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/hooks/usePortfolio';
-
+import { formatCurrency } from '@/lib/formatters';
 import TickerSearch from '@/components/TickerSearch';
 
 interface PortfolioStock {
@@ -140,15 +140,6 @@ export default function Home() {
 
   const getTotalPnL = () => {
     return portfolioMetrics?.totalGainLoss || 0;
-  };
-
-  const formatCurrency = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(price);
   };
 
   const formatCurrencyChange = (change: number) => {

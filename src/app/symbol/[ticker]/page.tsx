@@ -29,6 +29,8 @@ import TradingViewChart from '@/components/charts/TradingViewChart';
 import { ChartData, createMockChartData } from '@/components/charts/TradingViewChart';
 import FinancialChart from '@/components/charts/FinancialChart';
 import IncomeStatementTable from '@/components/financials/IncomeStatementTable';
+import { CompanyOverview, CompanyStatistics, SymbolChart, ChartType, ChartPeriod } from '@/components/research';
+import { formatCurrency, formatLargeNumber, formatNumber, formatPercent } from '@/lib/formatters';
 
 type FinancialTab = 'income-statement' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'segments-kpis';
 
@@ -61,9 +63,8 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   const [chartLoading, setChartLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'financials' | 'technicals' | 'valuation' | 'news'>('overview');
   const [financialTab, setFinancialTab] = useState<FinancialTab>('income-statement');
-  const [chartType, setChartType] = useState<'candlestick' | 'line' | 'area'>('candlestick');
-  const [chartPeriod, setChartPeriod] = useState<'1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '5Y'>('3M');
-  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [chartType, setChartType] = useState<ChartType>('candlestick');
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('3M');
   const [period, setPeriod] = useState<'annual' | 'quarterly'>('annual');
   const [expandedMetrics, setExpandedMetrics] = useState<Set<string>>(new Set());
   
@@ -103,34 +104,6 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
       loadChartData();
     }
   }, [ticker, chartPeriod]);
-
-  const formatCurrency = (value: number, currency = 'USD') => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatLargeNumber = (value: number) => {
-    if (!value) return 'N/A';
-    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
-    return `$${value.toFixed(2)}`;
-  };
-
-  const formatNumber = (value: number) => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('en-US').format(value);
-  };
-
-  const formatPercent = (value: number) => {
-    if (!value && value !== 0) return 'N/A';
-    return `${(value * 100).toFixed(2)}%`;
-  };
 
   const toggleMetricChart = (metricId: string) => {
     setExpandedMetrics(prev => {
@@ -245,200 +218,24 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
       <div className="max-w-[1800px] mx-auto px-6 py-6">
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Sidebar - Company Info & Statistics */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Company Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5" />
-                    Company Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }} className="text-sm">
-                      {showFullDescription ? data.description : data.description?.substring(0, 200) + '...'}
-                    </p>
-                    {data.description && data.description.length > 200 && (
-                      <button
-                        onClick={() => setShowFullDescription(!showFullDescription)}
-                        className="text-sm font-medium mt-2"
-                        style={{ color: 'var(--interactive-primary)' }}
-                      >
-                        {showFullDescription ? 'Show less' : 'Show more'}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Name</p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{data.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>CEO</p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{data.ceo || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Website</p>
-                      {data.website ? (
-                        <a href={data.website} target="_blank" rel="noopener noreferrer" className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--interactive-primary)' }}>
-                          {data.website.replace('https://', '').replace('http://', '')}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : (
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>N/A</p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Sector</p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{data.sector || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Year Founded</p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{data.founded || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Employees</p>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{data.employees ? formatNumber(data.employees) : 'N/A'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Company Statistics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Company Statistics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Profile */}
-                  <div>
-                    <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Profile</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Market Cap</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatLargeNumber(data.marketCap)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Revenue</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatLargeNumber(data.totalRevenue || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Employees</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatNumber(data.employees)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Margins */}
-                  <div className="pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Margins</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Gross</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPercent(data.grossMargins || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>EBITDA</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPercent(data.ebitdaMargins || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Operating</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPercent(data.operatingMargins || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Net</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPercent(data.profitMargins || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Valuation */}
-                  <div className="pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-                    <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>Valuation (TTM)</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>P/E</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.peRatio ? data.peRatio.toFixed(2) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>EPS</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.eps ? formatCurrency(data.eps) : 'N/A'}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span style={{ color: 'var(--text-muted)' }}>Dividend Yield</span>
-                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatPercent(data.dividendYield)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Side - Company Info & Statistics (Scrollable) */}
+            <div className="space-y-6 overflow-y-auto scrollbar-thin" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+              <CompanyOverview data={data} />
+              <CompanyStatistics data={data} />
             </div>
 
-            {/* Right Side - Chart */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <CardTitle className="flex items-center gap-2">
-                      <LineChart className="h-5 w-5" />
-                      Price Chart
-                    </CardTitle>
-                    <div className="flex items-center gap-4">
-                      {/* Chart Type Selector */}
-                      <div className="flex items-center gap-2">
-                        {(['candlestick', 'line', 'area'] as const).map((type) => (
-                          <Button
-                            key={type}
-                            variant={chartType === type ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setChartType(type)}
-                            className="capitalize"
-                          >
-                            {type}
-                          </Button>
-                        ))}
-                      </div>
-                      {/* Period Selector */}
-                      <div className="flex items-center gap-1">
-                        {(['1D', '5D', '1M', '3M', '6M', '1Y', '5Y'] as const).map((p) => (
-                          <Button
-                            key={p}
-                            variant={chartPeriod === p ? 'default' : 'ghost'}
-                            size="sm"
-                            onClick={() => setChartPeriod(p)}
-                          >
-                            {p}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {chartLoading ? (
-                    <div className="h-[600px] flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
-                        <p style={{ color: 'var(--text-muted)' }}>Loading chart...</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <TradingViewChart
-                      data={chartData}
-                      symbol={ticker}
-                      type={chartType}
-                      height={600}
-                      className="w-full"
-                      theme="dark"
-                      autoSize={true}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+            {/* Right Side - Chart (Fixed Height) */}
+            <div style={{ height: 'calc(100vh - 280px)' }}>
+              <SymbolChart
+                ticker={ticker}
+                chartData={chartData}
+                chartType={chartType}
+                chartPeriod={chartPeriod}
+                chartLoading={chartLoading}
+                onChartTypeChange={setChartType}
+                onChartPeriodChange={setChartPeriod}
+              />
             </div>
           </div>
         )}
