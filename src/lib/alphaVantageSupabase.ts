@@ -285,25 +285,39 @@ export class AlphaVantageSupabase {
     }
 
     try {
-      // This is where you would call the MCP function
-      const mockQuote: Quote = {
-        symbol: normalizedSymbol,
-        open: "150.00",
-        high: "155.00",
-        low: "148.00",
-        price: "152.50",
-        volume: "1000000",
-        latestDay: new Date().toISOString().split('T')[0],
-        previousClose: "150.00",
-        change: "2.50",
-        changePercent: "1.67%"
+      // Call Alpha Vantage GLOBAL_QUOTE API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/quote?symbol=${normalizedSymbol}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Quote API call failed: ${response.statusText}`);
+      }
+
+      const apiData = await response.json();
+      
+      // Transform the response to our Quote format
+      const quote: Quote = {
+        symbol: apiData.symbol || normalizedSymbol,
+        open: apiData.open || "0",
+        high: apiData.high || "0",
+        low: apiData.low || "0",
+        price: apiData.price || "0",
+        volume: apiData.volume || "0",
+        latestDay: apiData.latestTradingDay || new Date().toISOString().split('T')[0],
+        previousClose: apiData.previousClose || "0",
+        change: apiData.change || "0",
+        changePercent: apiData.changePercent || "0%"
       };
 
       // Cache the data for 5 minutes (quotes change more frequently)
-      await this.setCachedData(normalizedSymbol, dataType, mockQuote, 5);
+      await this.setCachedData(normalizedSymbol, dataType, quote, 5);
       
-      console.log(`API call made for ${normalizedSymbol} quote`);
-      return mockQuote;
+      console.log(`Real API call made for ${normalizedSymbol} quote`);
+      return quote;
 
     } catch (error) {
       console.error('Error fetching quote:', error);
@@ -313,13 +327,15 @@ export class AlphaVantageSupabase {
 
   /**
    * Get historical time series data with Supabase caching
+   * Caches data for 1 hour as requested
    */
   static async getTimeSeries(
     symbol: string, 
-    interval: 'daily' | 'weekly' | 'monthly' = 'daily'
+    interval: 'daily' | 'weekly' | 'monthly' | 'intraday' = 'daily',
+    outputsize: 'compact' | 'full' = 'compact'
   ): Promise<TimeSeriesData[] | null> {
     const normalizedSymbol = symbol.toUpperCase();
-    const dataType = `timeseries_${interval}`;
+    const dataType = `timeseries_${interval}_${outputsize}`;
 
     // Check cache first
     const cached = await this.getCachedData<TimeSeriesData[]>(normalizedSymbol, dataType);
@@ -336,31 +352,34 @@ export class AlphaVantageSupabase {
     }
 
     try {
-      // This is where you would call the MCP function
-      const mockTimeSeries: TimeSeriesData[] = [
+      // Call Alpha Vantage Time Series API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/time-series?symbol=${normalizedSymbol}&interval=${interval}&outputsize=${outputsize}`,
         {
-          timestamp: "2024-10-17",
-          open: "150.00",
-          high: "155.00",
-          low: "148.00",
-          close: "152.50",
-          volume: "1000000"
-        },
-        {
-          timestamp: "2024-10-16",
-          open: "148.00",
-          high: "151.00",
-          low: "147.00",
-          close: "150.00",
-          volume: "950000"
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
         }
-      ];
+      );
 
-      // Cache historical data for 1 hour (it doesn't change often)
-      await this.setCachedData(normalizedSymbol, dataType, mockTimeSeries, 60);
+      if (!response.ok) {
+        throw new Error(`Time series API call failed: ${response.statusText}`);
+      }
+
+      const apiData = await response.json();
       
-      console.log(`API call made for ${normalizedSymbol} ${dataType}`);
-      return mockTimeSeries;
+      if (!apiData.data || !Array.isArray(apiData.data)) {
+        throw new Error('Invalid time series data format');
+      }
+
+      const timeSeries: TimeSeriesData[] = apiData.data;
+
+      // Cache historical data for 1 hour (60 minutes) as requested
+      await this.setCachedData(normalizedSymbol, dataType, timeSeries, 60);
+      
+      console.log(`Real API call made for ${normalizedSymbol} ${dataType} - ${timeSeries.length} data points`);
+      return timeSeries;
 
     } catch (error) {
       console.error('Error fetching time series:', error);

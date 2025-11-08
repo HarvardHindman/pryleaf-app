@@ -24,38 +24,17 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { useTickerData } from '@/hooks/useTickerData';
+import { useFinancialData } from '@/hooks/useFinancialData';
 import { TickerData } from '@/contexts/TickerCacheContext';
 import TradingViewChart from '@/components/charts/TradingViewChart';
 import { ChartData, createMockChartData } from '@/components/charts/TradingViewChart';
 import FinancialChart from '@/components/charts/FinancialChart';
 import IncomeStatementTable from '@/components/financials/IncomeStatementTable';
 import { CompanyOverview, CompanyStatistics, SymbolChart, ChartType, ChartPeriod } from '@/components/research';
+import { IncomeStatement, BalanceSheet, CashFlowStatement } from '@/components/research/FinancialStatements';
 import { formatCurrency, formatLargeNumber, formatNumber, formatPercent } from '@/lib/formatters';
 
-type FinancialTab = 'income-statement' | 'balance-sheet' | 'cash-flow' | 'ratios' | 'segments-kpis';
-
-// Mock financial data - will be replaced with Alpha Vantage MCP calls
-const mockIncomeStatementData = {
-  periods: ['2024', '2023', '2022', '2021'],
-  data: [
-    { label: 'Total Revenues', values: [281720000000, 245122000000, 211915000000, 198270000000], isHeader: true, chartable: true },
-    { label: 'Cost of Sales', values: [87831000000, 74114000000, 65863000000, 62650000000], isSubItem: true, chartable: true },
-    { label: 'Gross Profit', values: [193889000000, 171008000000, 146052000000, 135620000000], isHeader: true, chartable: true },
-    { label: 'Gross Margin', values: [0.688, 0.698, 0.689, 0.684], formatAsPercent: true, chartable: true },
-    { label: 'Selling, General & Administrative', values: [32877000000, 32065000000, 30334000000, 27725000000], isSubItem: true, chartable: true },
-    { label: 'Research & Development', values: [32488000000, 29510000000, 27195000000, 24512000000], isSubItem: true, chartable: true },
-    { label: 'Operating Profit', values: [128528000000, 109433000000, 88523000000, 83383000000], isHeader: true, chartable: true },
-    { label: 'Operating Margin', values: [0.456, 0.446, 0.418, 0.421], formatAsPercent: true, chartable: true },
-    { label: 'Non-Operating Income', values: [-4901000000, -1646000000, 788000000, 333000000], isSubItem: true, chartable: true },
-    { label: 'Total Non-Operating Income', values: [-4901000000, -1646000000, 788000000, 333000000], isSubItem: true },
-    { label: 'Pre-Tax Income', values: [123627000000, 107787000000, 89311000000, 83716000000], isHeader: true, chartable: true },
-    { label: 'Income Tax', values: [21916000000, 19296000000, 17155000000, 15963000000], isSubItem: true, chartable: true },
-    { label: 'Net Income', values: [101711000000, 88491000000, 72156000000, 67753000000], isHeader: true, chartable: true },
-    { label: 'Net Margin', values: [0.361, 0.361, 0.341, 0.342], formatAsPercent: true, chartable: true },
-    { label: 'Diluted EPS', values: [13.45, 11.75, 9.70, 9.21], chartable: true },
-    { label: 'Diluted Shares Outstanding', values: [7563000000, 7531000000, 7440000000, 7356000000], chartable: true },
-  ]
-};
+type FinancialTab = 'income-statement' | 'balance-sheet' | 'cash-flow' | 'earnings';
 
 export default function SymbolPage({ params }: { params: Promise<{ ticker: string }> }) {
   const [ticker, setTicker] = useState<string>('');
@@ -70,6 +49,14 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   
   // Use cached ticker data
   const { data, loading, error } = useTickerData(ticker);
+  
+  // Fetch financial data based on selected tab
+  const financialType = financialTab === 'income-statement' ? 'income' :
+                       financialTab === 'balance-sheet' ? 'balance' :
+                       financialTab === 'cash-flow' ? 'cashflow' :
+                       financialTab === 'earnings' ? 'earnings' : 'income';
+  
+  const { data: financialData, loading: financialLoading } = useFinancialData(ticker, financialType);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -86,16 +73,75 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
       const loadChartData = async () => {
         setChartLoading(true);
         try {
-          const periodDays = chartPeriod === '1D' ? 1 : chartPeriod === '5D' ? 5 : chartPeriod === '1M' ? 30 : chartPeriod === '3M' ? 90 : chartPeriod === '6M' ? 180 : chartPeriod === '1Y' ? 365 : 1825;
-          
-          // For now, always use mock data until Alpha Vantage time series is fully integrated
           console.log(`Loading chart data for ${ticker} with period ${chartPeriod}`);
-          const mockData = createMockChartData(ticker, periodDays);
-          setChartData(mockData);
+          
+          // Determine interval and outputsize based on chart period
+          let interval: 'daily' | 'weekly' | 'monthly' | 'intraday' = 'daily';
+          let outputsize: 'compact' | 'full' = 'compact';
+          
+          if (chartPeriod === '1D' || chartPeriod === '5D') {
+            interval = 'intraday';
+            outputsize = 'compact';
+          } else if (chartPeriod === '1M' || chartPeriod === '3M') {
+            interval = 'daily';
+            outputsize = 'compact';
+          } else if (chartPeriod === '6M' || chartPeriod === '1Y') {
+            interval = 'daily';
+            outputsize = 'full';
+          } else if (chartPeriod === '5Y') {
+            interval = 'weekly';
+            outputsize = 'full';
+          }
+
+          // Call server-side API that handles ALL caching logic
+          const response = await fetch(`/api/ticker/${ticker}/time-series?interval=${interval}&outputsize=${outputsize}`);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch time series data');
+          }
+          
+          const result = await response.json();
+          const timeSeriesData = result.data;
+          
+          console.log('API Response:', { 
+            hasData: !!timeSeriesData, 
+            dataLength: timeSeriesData?.length, 
+            cached: result._cached,
+            sampleData: timeSeriesData?.slice(0, 2)
+          });
+          
+          if (timeSeriesData && timeSeriesData.length > 0) {
+            // Transform to chart format
+            const chartDataFormatted: ChartData[] = timeSeriesData.map((item: any) => ({
+              time: item.timestamp,
+              open: parseFloat(item.open),
+              high: parseFloat(item.high),
+              low: parseFloat(item.low),
+              close: parseFloat(item.close),
+            }));
+            
+            console.log('Transformed chart data:', {
+              length: chartDataFormatted.length,
+              first: chartDataFormatted[0],
+              last: chartDataFormatted[chartDataFormatted.length - 1]
+            });
+            
+            setChartData(chartDataFormatted);
+            console.log(`✅ Loaded ${chartDataFormatted.length} data points for ${ticker} (cached: ${result._cached})`);
+          } else {
+            // Fallback to mock data if API fails
+            console.warn('No data from API, using mock data');
+            const periodDays = chartPeriod === '1D' ? 1 : chartPeriod === '5D' ? 5 : chartPeriod === '1M' ? 30 : chartPeriod === '3M' ? 90 : chartPeriod === '6M' ? 180 : chartPeriod === '1Y' ? 365 : 1825;
+            const mockData = createMockChartData(ticker, periodDays);
+            setChartData(mockData);
+          }
+          
           setChartLoading(false);
         } catch (error) {
           console.error('Error loading chart data:', error);
-          const mockData = createMockChartData(ticker, 90);
+          // Fallback to mock data on error
+          const periodDays = chartPeriod === '1D' ? 1 : chartPeriod === '5D' ? 5 : chartPeriod === '1M' ? 30 : chartPeriod === '3M' ? 90 : chartPeriod === '6M' ? 180 : chartPeriod === '1Y' ? 365 : 1825;
+          const mockData = createMockChartData(ticker, periodDays);
           setChartData(mockData);
           setChartLoading(false);
         }
@@ -149,12 +195,17 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--surface-secondary)' }}>
-      {/* Header Section */}
-      <div className="border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
-        <div className="max-w-[1800px] mx-auto px-6 py-4">
+    <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+      {/* Header Section - Fixed at top, no scroll */}
+      <div className="flex-shrink-0 border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
+        <div className="max-w-[1800px] mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Link href="/research" className="mr-2">
+                <Button variant="ghost" size="sm">
+                  ← Back
+                </Button>
+              </Link>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded flex items-center justify-center text-xl font-bold" style={{ backgroundColor: 'var(--surface-tertiary)', color: 'var(--text-primary)' }}>
                   {ticker.charAt(0)}
@@ -192,7 +243,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 mt-6 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 mt-4 overflow-x-auto scrollbar-hide">
             {(['overview', 'financials', 'technicals', 'valuation', 'news'] as const).map((tab) => (
               <button
                 key={tab}
@@ -214,35 +265,36 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-6 py-6">
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Side - Company Info & Statistics (Scrollable) */}
-            <div className="space-y-6 overflow-y-auto scrollbar-thin" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-              <CompanyOverview data={data} />
-              <CompanyStatistics data={data} />
-            </div>
+      {/* Main Content - Takes remaining height */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="h-full max-w-[1800px] mx-auto px-6 py-4 flex gap-6">
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <>
+              {/* Left Side - Company Info & Statistics (Scrollable) */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-2 space-y-6">
+                <CompanyOverview data={data} />
+                <CompanyStatistics data={data} />
+              </div>
 
-            {/* Right Side - Chart (Fixed Height) */}
-            <div style={{ height: 'calc(100vh - 280px)' }}>
-              <SymbolChart
-                ticker={ticker}
-                chartData={chartData}
-                chartType={chartType}
-                chartPeriod={chartPeriod}
-                chartLoading={chartLoading}
-                onChartTypeChange={setChartType}
-                onChartPeriodChange={setChartPeriod}
-              />
-            </div>
-          </div>
-        )}
+              {/* Right Side - Chart (Fixed height, no scroll) */}
+              <div className="w-1/2 flex-shrink-0 overflow-hidden h-full">
+                <SymbolChart
+                  ticker={ticker}
+                  chartData={chartData}
+                  chartType={chartType}
+                  chartPeriod={chartPeriod}
+                  chartLoading={chartLoading}
+                  onChartTypeChange={setChartType}
+                  onChartPeriodChange={setChartPeriod}
+                />
+              </div>
+            </>
+          )}
 
-        {/* Financials Tab */}
-        {activeTab === 'financials' && (
-          <div className="space-y-6">
+          {/* Financials Tab */}
+          {activeTab === 'financials' && (
+            <div className="flex-1 overflow-y-auto space-y-6 w-full scrollbar-thin">
             {/* Financial Tab Navigation */}
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -250,8 +302,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                   { id: 'income-statement', label: 'Income Statement' },
                   { id: 'balance-sheet', label: 'Balance Sheet' },
                   { id: 'cash-flow', label: 'Cash Flow' },
-                  { id: 'ratios', label: 'Ratios' },
-                  { id: 'segments-kpis', label: 'Segments & KPIs' }
+                  { id: 'earnings', label: 'Earnings' }
                 ].map((tab) => (
                   <Button
                     key={tab.id}
@@ -281,59 +332,105 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               </div>
             </div>
 
-            {/* Income Statement */}
-            {financialTab === 'income-statement' && (
+            {/* Financial Data Display */}
+            {financialLoading ? (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      <span>Income Statement</span>
-                    </div>
-                    <Badge variant="secondary">{period === 'annual' ? 'Annual' : 'Quarterly'}</Badge>
-                  </CardTitle>
-                  <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                    Click the chart icon next to any metric to visualize trends
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <IncomeStatementTable 
-                    periods={mockIncomeStatementData.periods}
-                    data={mockIncomeStatementData.data}
-                    period={period}
-                  />
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
+                    <p style={{ color: 'var(--text-muted)' }}>Loading financial data...</p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-
-            {/* Other Financial Tabs - Placeholders */}
-            {financialTab !== 'income-statement' && (
+            ) : financialData ? (
+              <>
+                {/* Income Statement - Comprehensive 10-K Style */}
+                {financialTab === 'income-statement' && (
+                  <IncomeStatement data={financialData} period={period} />
+                )}
+                
+                {/* Balance Sheet - Comprehensive 10-K Style */}
+                {financialTab === 'balance-sheet' && (
+                  <BalanceSheet data={financialData} period={period} />
+                )}
+                
+                {/* Cash Flow Statement - Comprehensive 10-K Style */}
+                {financialTab === 'cash-flow' && (
+                  <CashFlowStatement data={financialData} period={period} />
+                )}
+                
+                {/* Earnings - Keep existing display */}
+                {financialTab === 'earnings' && financialData.annualEarnings && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          <span>Earnings</span>
+                        </div>
+                        <Badge variant="secondary">Historical Data</Badge>
+                      </CardTitle>
+                      <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                        EPS data • Cached server-side
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Annual Earnings</h3>
+                          <div className="grid grid-cols-4 gap-4">
+                            {financialData.annualEarnings.map((earning: any, idx: number) => (
+                              <div key={idx} className="p-3 rounded-lg text-center" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+                                <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{earning.fiscalDateEnding}</div>
+                                <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>${earning.reportedEPS}</div>
+                                <div className="text-xs" style={{ color: 'var(--text-muted)' }}>EPS</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Quarterly Earnings</h3>
+                          <div className="space-y-2">
+                            {financialData.quarterlyEarnings?.map((earning: any, idx: number) => (
+                              <div key={idx} className="p-3 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+                                <div>
+                                  <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{earning.fiscalDateEnding}</div>
+                                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                                    Estimated: ${earning.estimatedEPS}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-bold" style={{ color: 'var(--text-primary)' }}>${earning.reportedEPS}</div>
+                                  <div className={`text-xs ${parseFloat(earning.surprise) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {parseFloat(earning.surprise) >= 0 ? '+' : ''}{earning.surprise} ({earning.surprisePercentage}%)
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            ) : (
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{financialTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span>
-                    <Badge variant="secondary">{period === 'annual' ? 'Annual' : 'Quarterly'}</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
+                <CardContent className="py-12">
+                  <div className="text-center">
                     <FileText className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-                    <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-                      Coming Soon
-                    </p>
-                    <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-                      {financialTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} with interactive charting
-                    </p>
+                    <p style={{ color: 'var(--text-primary)' }}>No financial data available</p>
                   </div>
                 </CardContent>
               </Card>
             )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Technicals Tab (Placeholder) */}
-        {activeTab === 'technicals' && (
-          <Card>
+          {/* Technicals Tab (Placeholder) */}
+          {activeTab === 'technicals' && (
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <Card>
             <CardHeader>
               <CardTitle>Technical Analysis</CardTitle>
             </CardHeader>
@@ -345,11 +442,13 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               </div>
             </CardContent>
           </Card>
+          </div>
         )}
 
-        {/* Valuation Tab (Placeholder) */}
-        {activeTab === 'valuation' && (
-          <Card>
+          {/* Valuation Tab (Placeholder) */}
+          {activeTab === 'valuation' && (
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <Card>
             <CardHeader>
               <CardTitle>Valuation Metrics</CardTitle>
             </CardHeader>
@@ -361,11 +460,13 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               </div>
             </CardContent>
           </Card>
+          </div>
         )}
 
-        {/* News Tab (Placeholder) */}
-        {activeTab === 'news' && (
-          <Card>
+          {/* News Tab (Placeholder) */}
+          {activeTab === 'news' && (
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <Card>
             <CardHeader>
               <CardTitle>Latest News</CardTitle>
             </CardHeader>
@@ -377,7 +478,9 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               </div>
             </CardContent>
           </Card>
-        )}
+          </div>
+          )}
+        </div>
       </div>
     </div>
   );

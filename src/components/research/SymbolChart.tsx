@@ -28,8 +28,8 @@ export function SymbolChart({
   onChartPeriodChange,
 }: SymbolChartProps) {
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="flex-shrink-0">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardHeader className="flex-shrink-0 pb-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <CardTitle className="flex items-center gap-2">
             <LineChart className="h-5 w-5" />
@@ -66,7 +66,7 @@ export function SymbolChart({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-6 flex-1 flex flex-col min-h-0">
+      <CardContent className="p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
         {chartLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
@@ -74,17 +74,27 @@ export function SymbolChart({
               <p style={{ color: 'var(--text-muted)' }}>Loading chart...</p>
             </div>
           </div>
-        ) : (
-          <div className="flex-1 min-h-0">
+        ) : chartData && chartData.length > 0 ? (
+          <div className="flex-1 min-h-0 w-full">
             <TradingViewChart
               data={chartData}
               symbol={ticker}
               type={chartType}
-              height="100%"
-              className="w-full h-full"
+              height={450}
+              className="w-full"
               theme="dark"
               autoSize={true}
             />
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <LineChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p style={{ color: 'var(--text-muted)' }}>No chart data available</p>
+              <p className="text-sm mt-2" style={{ color: 'var(--text-subtle)' }}>
+                Chart data will appear when available
+              </p>
+            </div>
           </div>
         )}
       </CardContent>

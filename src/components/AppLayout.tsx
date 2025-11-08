@@ -24,7 +24,6 @@ import {
   Compass,
   Zap,
   Activity,
-  PieChart,
   LineChart,
   Globe,
   Building2,
@@ -46,6 +45,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const pathname = usePathname();
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -104,7 +104,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }, [urlCommunityId]);
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: PieChart, current: currentPath === '/' },
+    { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
     { name: 'Research', href: '/research', icon: Building2, current: currentPath === '/research' },
     { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
     { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
@@ -146,15 +146,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           }}
         >
           {/* Logo Section */}
-          <div className="flex-shrink-0 px-3 py-3">
+          <div className="flex-shrink-0 px-3 py-4">
             <div className="flex flex-col items-center">
               <Link href="/" className="flex flex-col items-center group">
-                <img 
-                  src="/pryleaf.PNG" 
-                  alt="Pryleaf" 
-                  className="h-7 w-auto group-hover:opacity-80 transition-opacity mb-0.5"
-                />
-                <span className="text-xs font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
+                <span className="text-lg font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
                   Pryleaf
                 </span>
               </Link>
@@ -273,14 +268,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Mobile logo section */}
             <div className="flex-shrink-0 px-6 py-6">
               <div className="flex flex-col items-center">
-                <img 
-                  src="/pryleaf.PNG" 
-                  alt="Pryleaf" 
-                  className="h-20 w-auto mb-2"
-                />
-                <span className="text-sm font-bold text-gray-600 text-center">
-                  Pryleaf
-                </span>
+                <Link href="/" className="group">
+                  <span className="text-2xl font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
+                    Pryleaf
+                  </span>
+                </Link>
               </div>
             </div>
             
@@ -468,7 +460,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
         {/* Page content */}
         <main
-          className="flex-1 overflow-y-auto scrollbar-hidden"
+          className={`flex-1 scrollbar-hidden ${pathname?.startsWith('/symbol/') ? 'overflow-hidden' : 'overflow-y-auto'}`}
           style={{
             backgroundColor: 'var(--surface-secondary)',
             scrollbarWidth: 'none', /* Firefox */

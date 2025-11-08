@@ -20,30 +20,37 @@ export function usePortfolio() {
   const pendingActions = useRef<PendingAction[]>([]);
   const optimisticUpdateCount = useRef(0);
 
-  // Helper to fetch prices and update portfolio stocks
+  // Helper to fetch prices and update portfolio stocks using bulk quotes API
   const fetchPricesAndUpdateStocks = useCallback(async (holdings: PortfolioHolding[]) => {
-    // Fetch current prices for all holdings
+    // Fetch current prices for all holdings using bulk quotes
     const symbols = holdings.map(h => h.symbol);
     const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
     
-    // Fetch prices for all symbols
+    // Fetch prices for all symbols in one request
     if (symbols.length > 0) {
       try {
-        const pricesResponse = await fetch(`/api/prices?symbols=${symbols.join(',')}`);
-        if (pricesResponse.ok) {
-          const pricesData = await pricesResponse.json();
-          // pricesData is an object with symbol keys
-          Object.keys(pricesData).forEach(symbol => {
-            const data = pricesData[symbol];
+        const response = await fetch('/api/quotes/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbols })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const quotes = data.quotes || {};
+          
+          // Map quotes to market prices format
+          Object.keys(quotes).forEach(symbol => {
+            const quote = quotes[symbol];
             marketPrices[symbol] = {
-              price: data.price || 0,
-              change: data.change || 0,
-              changePercent: data.changePercent || 0
+              price: quote.price || 0,
+              change: quote.change || 0,
+              changePercent: quote.changePercent || 0
             };
           });
         }
       } catch (error) {
-        console.error('Failed to fetch market prices:', error);
+        console.error('Failed to fetch bulk quotes:', error);
         // Fall back to using cost basis as price
         holdings.forEach(h => {
           marketPrices[h.symbol] = {

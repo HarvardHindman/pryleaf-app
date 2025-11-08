@@ -157,15 +157,22 @@ export default function TradingViewChart({
             }
           }).sort((a, b) => a.time.localeCompare(b.time)); // Sort by date string
 
-          console.log('Setting chart data:', formattedData.slice(0, 3), '...', formattedData.slice(-3));
+          console.log('📊 Setting chart data:', {
+            symbol,
+            type,
+            dataPoints: formattedData.length,
+            firstPoint: formattedData[0],
+            lastPoint: formattedData[formattedData.length - 1]
+          });
           series.setData(formattedData);
+          chart.timeScale().fitContent();
           setIsLoading(false);
         } catch (dataError) {
           console.error('Error setting chart data:', dataError);
           setIsLoading(false);
         }
       } else {
-        console.log('No data available for chart');
+        console.warn('⚠️ No data available for chart', { dataLength: data?.length, symbol });
         setIsLoading(false);
       }
 
@@ -194,7 +201,7 @@ export default function TradingViewChart({
 
   // Update data when it changes
   useEffect(() => {
-    if (seriesRef.current && data && data.length > 0) {
+    if (seriesRef.current && chartRef.current && data && data.length > 0) {
       try {
         const formattedData = data.map(d => {
           // Convert time to YYYY-MM-DD format for lightweight-charts
@@ -224,14 +231,19 @@ export default function TradingViewChart({
           }
         }).sort((a, b) => a.time.localeCompare(b.time)); // Sort by date string
 
+        console.log('🔄 Updating chart data:', {
+          symbol,
+          dataPoints: formattedData.length
+        });
         seriesRef.current.setData(formattedData);
+        chartRef.current.timeScale().fitContent();
         setIsLoading(false);
       } catch (error) {
         console.error('Error updating chart data:', error);
         setIsLoading(false);
       }
     }
-  }, [data, type]);
+  }, [data, type, symbol]);
 
 
   return (

@@ -48,3 +48,21 @@ export interface PortfolioStock {
   costBasis?: number;
   addedAt: string;
 }
+
+// Alias for Holding to make it clearer in context
+export type PortfolioHolding = Holding;
+
+// Stock quote cache type
+export interface StockQuote {
+  symbol: string;
+  price: number;
+  open: number;
+  high: number;
+  low: number;
+  volume: number;
+  latest_trading_day: string;
+  previous_close: number;
+  change: number;
+  change_percent: string;
+  last_updated: string;
+}
