@@ -175,7 +175,7 @@ export async function getCommunityVideos(
     .select(`
       *,
       video_metadata(*),
-      creator:creator_id(id, email)
+      creator:user_profiles!creator_id(id, username, display_name, avatar_url)
     `)
     .eq('community_id', communityId)
     .eq('content_type', 'video');
@@ -242,8 +242,8 @@ export async function getVideo(videoId: string, userId?: string) {
     .select(`
       *,
       video_metadata(*),
-      creator:creator_id(id, email),
-      community:community_id(id, name, handle, avatar_url)
+      creator:user_profiles!creator_id(id, username, display_name, avatar_url),
+      community:communities!community_id(id, name, handle, avatar_url)
     `)
     .eq('id', videoId)
     .eq('content_type', 'video')

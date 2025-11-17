@@ -272,7 +272,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           {activeTab === 'overview' && (
             <>
               {/* Left Side - Company Info & Statistics (Scrollable) */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-2 space-y-6">
+              <div className="flex-1 overflow-y-auto scrollbar-thin pr-2 space-y-6 pb-16">
                 <CompanyOverview data={data} />
                 <CompanyStatistics data={data} />
               </div>
@@ -294,7 +294,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
           {/* Financials Tab */}
           {activeTab === 'financials' && (
-            <div className="flex-1 overflow-y-auto space-y-6 w-full scrollbar-thin">
+            <div className="flex-1 overflow-y-auto space-y-6 w-full scrollbar-thin pb-16">
             {/* Financial Tab Navigation */}
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex gap-2 overflow-x-auto scrollbar-hide">

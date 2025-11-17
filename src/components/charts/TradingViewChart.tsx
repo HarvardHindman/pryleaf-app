@@ -133,8 +133,9 @@ export default function TradingViewChart({
             // Convert time to YYYY-MM-DD format for lightweight-charts
             let timeValue: string;
             if (typeof d.time === 'string') {
-              // If it's already a string, use it (assuming YYYY-MM-DD format)
-              timeValue = d.time;
+              // If it's already a string, extract just the date part (YYYY-MM-DD)
+              // Handle formats like "2025-11-17 04:24" or "2025-11-17T04:24:00Z"
+              timeValue = d.time.split(' ')[0].split('T')[0];
             } else {
               // If it's a Unix timestamp, convert to YYYY-MM-DD
               const date = new Date(d.time * 1000);
@@ -207,8 +208,9 @@ export default function TradingViewChart({
           // Convert time to YYYY-MM-DD format for lightweight-charts
           let timeValue: string;
           if (typeof d.time === 'string') {
-            // If it's already a string, use it (assuming YYYY-MM-DD format)
-            timeValue = d.time;
+            // If it's already a string, extract just the date part (YYYY-MM-DD)
+            // Handle formats like "2025-11-17 04:24" or "2025-11-17T04:24:00Z"
+            timeValue = d.time.split(' ')[0].split('T')[0];
           } else {
             // If it's a Unix timestamp, convert to YYYY-MM-DD
             const date = new Date(d.time * 1000);
@@ -297,8 +299,15 @@ export function convertAlphaVantageToTradingView(
 ): ChartData[] {
   return data.map(item => {
     // Convert to YYYY-MM-DD format
-    const date = new Date(item.timestamp);
-    const timeStr = date.toISOString().split('T')[0];
+    // Handle both date strings with and without time components
+    let timeStr: string;
+    if (item.timestamp.includes(' ') || item.timestamp.includes('T')) {
+      // Extract just the date part if timestamp includes time
+      timeStr = item.timestamp.split(' ')[0].split('T')[0];
+    } else {
+      // If it's already in YYYY-MM-DD format, use it directly
+      timeStr = item.timestamp;
+    }
     
     return {
       time: timeStr,

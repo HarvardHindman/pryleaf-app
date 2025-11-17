@@ -19,8 +19,8 @@ export default async function VideoPlayerPage({
     .select(`
       *,
       video_metadata(*),
-      creator:creator_id(id, email),
-      community:community_id(id, name, handle, avatar_url, owner_id)
+      creator:user_profiles!creator_id(id, username, display_name, avatar_url),
+      community:communities!community_id(id, name, handle, avatar_url, owner_id)
     `)
     .eq('id', videoId)
     .eq('content_type', 'video')
