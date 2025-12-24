@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Users, DollarSign, BarChart3, Lock, Zap, Video, MessageSquare, TrendingUp, Shield, Star, Crown } from 'lucide-react';
+import { ArrowRight, Users, DollarSign, BarChart3, Lock, Zap, MessageSquare, TrendingUp, Shield, Star, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LandingPage() {
@@ -76,93 +76,101 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="relative z-10 px-6 py-20 md:py-32">
         <div className="max-w-5xl mx-auto text-center">
+          {/* Trust Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              The modern platform for creator communities
+            </span>
+          </div>
+          
           <h1 
             className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
             style={{ color: 'var(--text-primary)' }}
           >
-            Your community,
+            Turn your expertise
             <br />
-            <span style={{ color: 'var(--interactive-primary)' }}>monetized.</span>
+            <span style={{ color: 'var(--interactive-primary)' }}>into income.</span>
           </h1>
           <p 
             className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto"
             style={{ color: 'var(--text-secondary)' }}
           >
-            Create, share, earn. All in one platform.
+            Share premium content. Build your community. Get paid.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col items-center gap-4">
             {user ? (
-              <>
-                <Link href="/">
-                  <button 
-                    className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 shadow-xl flex items-center gap-2 justify-center"
-                    style={{ 
-                      backgroundColor: 'var(--interactive-primary)', 
-                      color: 'white' 
-                    }}
-                  >
-                    Go to Dashboard
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-                </Link>
-                <Link href="/community">
-                  <button 
-                    className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 border-2"
-                    style={{ 
-                      borderColor: 'var(--interactive-primary)',
-                      color: 'var(--interactive-primary)',
-                      backgroundColor: 'transparent'
-                    }}
-                  >
-                    Explore Communities
-                  </button>
-                </Link>
-              </>
+              <Link href="/">
+                <button 
+                  className="px-10 py-5 text-xl font-semibold rounded-xl transition-all hover:scale-105 shadow-xl inline-flex items-center gap-2"
+                  style={{ 
+                    backgroundColor: 'var(--interactive-primary)', 
+                    color: 'white' 
+                  }}
+                >
+                  Go to Dashboard
+                  <ArrowRight className="h-6 w-6" />
+                </button>
+              </Link>
             ) : (
               <>
                 <Link href="/register">
                   <button 
-                    className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 shadow-xl flex items-center gap-2 justify-center"
+                    className="px-10 py-5 text-xl font-semibold rounded-xl transition-all hover:scale-105 shadow-xl inline-flex items-center gap-2"
                     style={{ 
                       backgroundColor: 'var(--interactive-primary)', 
                       color: 'white' 
                     }}
                   >
-                    Start Creating
-                    <ArrowRight className="h-5 w-5" />
+                    Start Free — No Credit Card
+                    <ArrowRight className="h-6 w-6" />
                   </button>
                 </Link>
-                <Link href="/community">
-                  <button 
-                    className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 border-2"
-                    style={{ 
-                      borderColor: 'var(--interactive-primary)',
-                      color: 'var(--interactive-primary)',
-                      backgroundColor: 'transparent'
-                    }}
-                  >
-                    Explore Communities
-                  </button>
-                </Link>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Create your first community in under 2 minutes
+                </p>
               </>
             )}
+          </div>
+
+          {/* Key Benefits */}
+          <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+            <div>
+              <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
+                2 min
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Setup Time
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
+                Free
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                To Start
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
+                80%
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Revenue Share
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* For Creators Section */}
+      {/* How It Works Section */}
       <section className="relative z-10 px-6 py-20" style={{ backgroundColor: 'var(--surface-primary)' }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: 'var(--interactive-bg-muted)' }}>
-              <Crown className="h-5 w-5" style={{ color: 'var(--interactive-primary)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--interactive-primary)' }}>For Creators</span>
-            </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              Build your empire
+              Everything you need to succeed
             </h2>
             <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>
-              Monetize your expertise. Grow your audience.
+              All the tools. One platform. Simple pricing.
             </p>
           </div>
 
@@ -177,9 +185,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <Video className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <Star className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Premium Content
@@ -199,9 +207,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <DollarSign className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <DollarSign className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Flexible Monetization
@@ -221,9 +229,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <BarChart3 className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <BarChart3 className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Analytics & Insights
@@ -243,9 +251,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <MessageSquare className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <MessageSquare className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Direct Communication
@@ -265,9 +273,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <TrendingUp className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <TrendingUp className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Market Research Tools
@@ -287,9 +295,9 @@ export default function LandingPage() {
             >
               <div 
                 className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
               >
-                <Shield className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                <Shield className="h-7 w-7" style={{ color: 'var(--text-secondary)' }} />
               </div>
               <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                 Full Control
@@ -300,142 +308,145 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="text-center mt-12">
-            <Link href={user ? "/" : "/register"}>
-              <button 
-                className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 shadow-xl inline-flex items-center gap-2"
-                style={{ 
-                  backgroundColor: 'var(--interactive-primary)', 
-                  color: 'white' 
-                }}
-              >
-                {user ? "Go to Dashboard" : "Start Your Community"}
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            </Link>
-          </div>
         </div>
       </section>
 
       {/* For Members Section */}
       <section className="relative z-10 px-6 py-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4" style={{ backgroundColor: 'var(--interactive-bg-muted)' }}>
-              <Users className="h-5 w-5" style={{ color: 'var(--interactive-primary)' }} />
-              <span className="text-sm font-semibold" style={{ color: 'var(--interactive-primary)' }}>For Members</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              Learn from the best
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+              For serious investors
             </h2>
             <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>
-              Exclusive content from top creators.
+              Everything you need to level up.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Member Benefit 1 */}
+          
+          <div className="grid md:grid-cols-2 gap-6">
             <div 
-              className="p-8 rounded-2xl border transition-all hover:scale-105"
+              className="p-6 rounded-xl border"
               style={{ 
                 backgroundColor: 'var(--surface-primary)',
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
-              >
-                <Star className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
-              </div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Exclusive Content
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Premium video library
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Premium insights you won't find elsewhere.
+                Exclusive analysis and breakdowns.
               </p>
             </div>
 
-            {/* Member Benefit 2 */}
             <div 
-              className="p-8 rounded-2xl border transition-all hover:scale-105"
+              className="p-6 rounded-xl border"
               style={{ 
                 backgroundColor: 'var(--surface-primary)',
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
-              >
-                <Users className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
-              </div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Join Communities
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Research and watchlists
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Connect and grow with like-minded people.
+                See what experts are tracking.
               </p>
             </div>
 
-            {/* Member Benefit 3 */}
             <div 
-              className="p-8 rounded-2xl border transition-all hover:scale-105"
+              className="p-6 rounded-xl border"
               style={{ 
                 backgroundColor: 'var(--surface-primary)',
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
-              >
-                <Lock className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
-              </div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Tiered Access
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Live chat access
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Choose your level. Upgrade anytime.
+                Real-time discussions with creators.
               </p>
             </div>
 
-            {/* Member Benefit 4 */}
             <div 
-              className="p-8 rounded-2xl border transition-all hover:scale-105"
+              className="p-6 rounded-xl border"
               style={{ 
                 backgroundColor: 'var(--surface-primary)',
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div 
-                className="w-14 h-14 rounded-xl flex items-center justify-center mb-6"
-                style={{ backgroundColor: 'var(--interactive-bg-muted)' }}
-              >
-                <Zap className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
-              </div>
-              <h3 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-                Real-Time Updates
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+                Community feed
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Instant notifications for new content.
+                Stay updated on latest insights.
               </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="text-center mt-12">
-            <Link href="/community">
-              <button 
-                className="px-8 py-4 text-lg font-semibold rounded-xl transition-all hover:scale-105 shadow-xl inline-flex items-center gap-2"
-                style={{ 
-                  backgroundColor: 'var(--interactive-primary)', 
-                  color: 'white' 
-                }}
-              >
-                Explore Communities
-                <ArrowRight className="h-5 w-5" />
-              </button>
-            </Link>
+      {/* Why Pryleaf Section */}
+      <section className="relative z-10 px-6 py-20" style={{ backgroundColor: 'var(--surface-primary)' }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+              Built for creators who mean business
+            </h2>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Reason 1 */}
+            <div 
+              className="p-6 rounded-xl border text-center"
+              style={{ 
+                backgroundColor: 'var(--surface-primary)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                Launch in Minutes
+              </h3>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                No technical skills needed. Set up your community and start earning today.
+              </p>
+            </div>
+
+            {/* Reason 2 */}
+            <div 
+              className="p-6 rounded-xl border text-center"
+              style={{ 
+                backgroundColor: 'var(--surface-primary)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              <div className="text-4xl mb-4">💰</div>
+              <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                Keep More Earnings
+              </h3>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Fair revenue split. No hidden fees. You keep 80% of what you earn.
+              </p>
+            </div>
+
+            {/* Reason 3 */}
+            <div 
+              className="p-6 rounded-xl border text-center"
+              style={{ 
+                backgroundColor: 'var(--surface-primary)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
+                All-in-One Platform
+              </h3>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Videos, chat, analytics, payments. Everything you need in one place.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -443,27 +454,26 @@ export default function LandingPage() {
       {/* Final CTA Section */}
       <section className="relative z-10 px-6 py-20">
         <div 
-          className="max-w-5xl mx-auto rounded-3xl p-12 md:p-20 text-center border"
+          className="max-w-4xl mx-auto rounded-3xl p-12 md:p-16 text-center"
           style={{ 
-            backgroundColor: 'var(--surface-primary)',
-            borderColor: 'var(--interactive-border)'
+            backgroundColor: 'var(--interactive-primary)',
           }}
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-            Ready to get started?
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
+            Start earning today
           </h2>
-          <p className="text-xl mb-10 max-w-2xl mx-auto" style={{ color: 'var(--text-secondary)' }}>
-            Join thousands building the future.
+          <p className="text-xl mb-8 text-white/90">
+            No credit card required. Cancel anytime.
           </p>
           <Link href={user ? "/" : "/register"}>
             <button 
               className="px-10 py-5 text-xl font-semibold rounded-xl transition-all hover:scale-105 shadow-xl inline-flex items-center gap-2"
               style={{ 
-                backgroundColor: 'var(--interactive-primary)', 
-                color: 'white' 
+                backgroundColor: 'white', 
+                color: 'var(--interactive-primary)' 
               }}
             >
-              {user ? "Go to Dashboard" : "Sign Up Free"}
+              {user ? "Go to Dashboard" : "Create Free Account"}
               <ArrowRight className="h-6 w-6" />
             </button>
           </Link>
