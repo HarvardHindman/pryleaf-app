@@ -8,8 +8,8 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-// Routes that should not show the main app layout (e.g., login, register)
-const AUTH_ROUTES = ['/login', '/register'];
+// Routes that should not show the main app layout (e.g., login, register, landing)
+const AUTH_ROUTES = ['/login', '/register', '/landing'];
 
 // Routes that need authentication but show a different layout (if any)
 const SPECIAL_ROUTES: string[] = [];

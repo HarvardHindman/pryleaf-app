@@ -16,8 +16,6 @@ import {
   X,
   LogOut,
   MessageSquare,
-  Sun,
-  Moon,
   Plus,
   Hash,
   Users,
@@ -34,7 +32,6 @@ import {
 import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 import CommunityNavigation from '@/components/CommunityNavigation';
 
@@ -46,10 +43,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const pathname = usePathname();
-  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null);
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { ownedCommunities, isUserOwner, communityDetailsCache, getCommunityById } = useCommunityCache();
+  const { 
+    ownedCommunities, 
+    isUserOwner, 
+    getCommunityById, 
+    selectedCommunityId, 
+    setSelectedCommunityId 
+  } = useCommunityCache();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Close user menu when clicking outside
@@ -82,26 +83,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const currentCommunity = communityId ? getCommunityById(communityId) : null;
   const communityDisplayName = currentCommunity ? currentCommunity.name : 'Community';
 
-  // Load last active community from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('lastActiveCommunity');
-      if (stored) {
-        setSelectedCommunityId(stored);
-      } else if (ownedCommunities.length > 0) {
-        // Set to owned community if exists
-        setSelectedCommunityId(ownedCommunities[0].community.id);
-      }
-    }
-  }, [ownedCommunities]);
-
   // Update selected community when URL changes
   useEffect(() => {
-    if (urlCommunityId && urlCommunityId !== 'create') {
+    if (urlCommunityId && urlCommunityId !== 'create' && urlCommunityId !== selectedCommunityId) {
       setSelectedCommunityId(urlCommunityId);
-      localStorage.setItem('lastSelectedCommunity', urlCommunityId);
     }
-  }, [urlCommunityId]);
+  }, [urlCommunityId, selectedCommunityId, setSelectedCommunityId]);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
@@ -148,7 +135,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Logo Section */}
           <div className="flex-shrink-0 px-3 py-4">
             <div className="flex flex-col items-center">
-              <Link href="/" className="flex flex-col items-center group">
+              <Link href="/landing" className="flex flex-col items-center group">
                 <span className="text-lg font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
                   Pryleaf
                 </span>
@@ -162,29 +149,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium ${
-                  item.current
-                    ? 'shadow-sm'
-                    : 'hover:shadow-sm'
-                }`}
+                className="flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium hover:shadow-sm active:scale-95"
                 style={{
-                  backgroundColor: item.current ? 'var(--interactive-primary)' : 'transparent',
-                  color: item.current ? 'var(--surface-primary)' : 'var(--text-muted)',
-                  border: item.current ? '1px solid var(--interactive-primary)' : '1px solid transparent'
+                  backgroundColor: 'transparent',
+                  color: 'var(--text-muted)',
+                  border: '1px solid transparent'
                 }}
                 onMouseEnter={(e) => {
-                  if (!item.current) {
-                    e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                    e.currentTarget.style.borderColor = 'var(--border-default)';
-                  }
+                  e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.borderColor = 'var(--border-default)';
                 }}
                 onMouseLeave={(e) => {
-                  if (!item.current) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = 'var(--text-muted)';
-                    e.currentTarget.style.borderColor = 'transparent';
-                  }
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                  e.currentTarget.style.borderColor = 'transparent';
                 }}
               >
                 <item.icon className="h-5 w-5 mb-1 flex-shrink-0" />
@@ -218,29 +197,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <Link
                     key={tab.name}
                     href={tab.href}
-                    className={`flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium ${
-                      tab.current
-                        ? 'shadow-sm'
-                        : 'hover:shadow-sm'
-                    }`}
+                    className="flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium hover:shadow-sm active:scale-95"
                     style={{
-                      backgroundColor: tab.current ? 'var(--success-background)' : 'transparent',
-                      color: tab.current ? 'var(--success-text)' : 'var(--text-muted)',
-                      border: tab.current ? '1px solid var(--success-border)' : '1px solid transparent'
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-muted)',
+                      border: '1px solid transparent'
                     }}
                     onMouseEnter={(e) => {
-                      if (!tab.current) {
-                        e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                        e.currentTarget.style.borderColor = 'var(--border-default)';
-                      }
+                      e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                      e.currentTarget.style.borderColor = 'var(--border-default)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!tab.current) {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = 'var(--text-muted)';
-                        e.currentTarget.style.borderColor = 'transparent';
-                      }
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                      e.currentTarget.style.borderColor = 'transparent';
                     }}
                   >
                     <tab.icon className="h-5 w-5 mb-1 flex-shrink-0" />
@@ -268,7 +239,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Mobile logo section */}
             <div className="flex-shrink-0 px-6 py-6">
               <div className="flex flex-col items-center">
-                <Link href="/" className="group">
+                <Link href="/landing" className="group">
                   <span className="text-2xl font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
                     Pryleaf
                   </span>
@@ -282,16 +253,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
-                    item.current
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                  className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all text-gray-600 hover:bg-gray-50 hover:text-gray-900 active:scale-95"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className={`flex-shrink-0 h-5 w-5 mr-3 ${
-                    item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
-                  }`} />
+                  <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
                   <span>{item.name}</span>
                 </Link>
               ))}
@@ -316,7 +281,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         {communityDisplayName}
                       </div>
                       <Link href="/community">
-                        <span className="text-xs text-blue-600 hover:text-blue-800 ml-2">
+                        <span className="text-xs ml-2 transition-colors" style={{ color: 'var(--interactive-primary)' }}>
                           Browse
                         </span>
                       </Link>
@@ -374,8 +339,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center px-2 py-1 text-xs text-gray-600 hover:text-blue-600 transition-colors"
+                  className="flex items-center px-2 py-1 text-xs text-gray-600 transition-colors hover-interactive"
                   title={item.name}
+                  style={{
+                    ['--hover-color' as any]: 'var(--interactive-primary)'
+                  } as React.CSSProperties}
                 >
                   <item.icon className="h-4 w-4 mr-1" />
                   <span className="hidden sm:inline">{item.name}</span>
@@ -390,24 +358,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Settings & Account icons */}
             <div className="flex items-center space-x-2 ml-4">
-              {/* Quick Theme Toggle */}
-              <button 
-                onClick={toggleTheme}
-                className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" 
-                title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+              <Link 
+                href="/settings" 
+                className="p-2 rounded-full text-gray-400 transition-colors group" 
+                title="Settings"
               >
-                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-              
-              <Link href="/settings" className="p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors" title="Settings">
-                <Settings className="h-5 w-5" />
+                <Settings className="h-5 w-5 group-hover:opacity-80" style={{ ['--hover-color' as any]: 'var(--interactive-primary)' } as React.CSSProperties} />
               </Link>
               
               {user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button 
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center space-x-2 p-2 rounded-full text-gray-400 hover:text-blue-600 transition-colors"
+                    className="flex items-center space-x-2 p-2 rounded-full text-gray-400 transition-colors group"
                     title="Account"
                   >
                     <User className="h-5 w-5" />

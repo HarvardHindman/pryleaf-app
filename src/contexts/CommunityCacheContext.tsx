@@ -55,12 +55,14 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-interface CommunityCacheContextType {
+export interface CommunityCacheContextType {
   // Cached data
   allCommunities: Community[];
   ownedCommunities: CommunityWithChannels[];
   userMemberships: CommunityWithChannels[];
   communityDetailsCache: Map<string, CommunityDetails>;
+  communityStatsCache: Map<string, any>;
+  communityActivityCache: Map<string, any[]>;
   
   // Loading states
   loading: boolean;
@@ -70,15 +72,21 @@ interface CommunityCacheContextType {
   fetchAllCommunities: (force?: boolean) => Promise<void>;
   fetchUserMemberships: (force?: boolean) => Promise<void>;
   fetchCommunityDetails: (communityId: string, force?: boolean) => Promise<CommunityDetails | null>;
+  fetchCommunityStats: (communityId: string, force?: boolean) => Promise<any>;
+  fetchCommunityActivity: (communityId: string, force?: boolean) => Promise<any[]>;
   
   // Cache management
-  invalidateCache: (type?: 'all' | 'communities' | 'memberships' | 'details') => void;
+  invalidateCache: (type?: 'all' | 'communities' | 'memberships' | 'details' | 'stats' | 'activity') => void;
   invalidateCommunityDetails: (communityId: string) => void;
   
   // Helper methods
   getCommunityById: (communityId: string) => Community | undefined;
   isUserOwner: (communityId: string) => boolean;
   getUserMembershipForCommunity: (communityId: string) => CommunityWithChannels | undefined;
+  
+  // Selection state
+  selectedCommunityId: string | null;
+  setSelectedCommunityId: (id: string | null) => void;
 }
 
 const CommunityCacheContext = createContext<CommunityCacheContextType | undefined>(undefined);
@@ -94,6 +102,9 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
   const [ownedCommunities, setOwnedCommunities] = useState<CommunityWithChannels[]>([]);
   const [userMemberships, setUserMemberships] = useState<CommunityWithChannels[]>([]);
   const [communityDetailsCache, setCommunityDetailsCache] = useState<Map<string, CommunityDetails>>(new Map());
+  const [communityStatsCache, setCommunityStatsCache] = useState<Map<string, any>>(new Map());
+  const [communityActivityCache, setCommunityActivityCache] = useState<Map<string, any[]>>(new Map());
+  const [selectedCommunityId, setSelectedCommunityIdState] = useState<string | null>(null);
   
   // Loading states
   const [loading, setLoading] = useState(true);
@@ -103,7 +114,9 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
   const cacheTimestamps = useRef({
     allCommunities: 0,
     userMemberships: 0,
-    communityDetails: new Map<string, number>()
+    communityDetails: new Map<string, number>(),
+    communityStats: new Map<string, number>(),
+    communityActivity: new Map<string, number>()
   });
 
   // Check if cache is fresh
@@ -215,13 +228,62 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     }
   }, [isCacheFresh, communityDetailsCache]);
 
+  // Fetch community stats
+  const fetchCommunityStats = useCallback(async (communityId: string, force = false): Promise<any> => {
+    const cachedTimestamp = cacheTimestamps.current.communityStats.get(communityId) || 0;
+    
+    if (!force && isCacheFresh(cachedTimestamp)) {
+      return communityStatsCache.get(communityId) || {};
+    }
+
+    try {
+      const response = await fetch(`/api/communities/${communityId}/analytics`);
+      if (response.ok) {
+        const data = await response.json();
+        setCommunityStatsCache(prev => new Map(prev).set(communityId, data));
+        cacheTimestamps.current.communityStats.set(communityId, Date.now());
+        return data;
+      }
+      return {};
+    } catch (error) {
+      console.error(`Error fetching stats for ${communityId}:`, error);
+      return {};
+    }
+  }, [isCacheFresh, communityStatsCache]);
+
+  // Fetch community activity
+  const fetchCommunityActivity = useCallback(async (communityId: string, force = false): Promise<any[]> => {
+    const cachedTimestamp = cacheTimestamps.current.communityActivity.get(communityId) || 0;
+    
+    if (!force && isCacheFresh(cachedTimestamp)) {
+      return communityActivityCache.get(communityId) || [];
+    }
+
+    try {
+      const response = await fetch(`/api/communities/${communityId}/activity`);
+      if (response.ok) {
+        const data = await response.json();
+        const activities = data.activities || [];
+        setCommunityActivityCache(prev => new Map(prev).set(communityId, activities));
+        cacheTimestamps.current.communityActivity.set(communityId, Date.now());
+        return activities;
+      }
+      return [];
+    } catch (error) {
+      console.error(`Error fetching activity for ${communityId}:`, error);
+      return [];
+    }
+  }, [isCacheFresh, communityActivityCache]);
+
   // Invalidate cache
-  const invalidateCache = useCallback((type: 'all' | 'communities' | 'memberships' | 'details' = 'all') => {
+  const invalidateCache = useCallback((type: 'all' | 'communities' | 'memberships' | 'details' | 'stats' | 'activity' = 'all') => {
     switch (type) {
       case 'all':
         cacheTimestamps.current.allCommunities = 0;
         cacheTimestamps.current.userMemberships = 0;
         cacheTimestamps.current.communityDetails.clear();
+        cacheTimestamps.current.communityStats.clear();
+        cacheTimestamps.current.communityActivity.clear();
         break;
       case 'communities':
         cacheTimestamps.current.allCommunities = 0;
@@ -231,6 +293,12 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
         break;
       case 'details':
         cacheTimestamps.current.communityDetails.clear();
+        break;
+      case 'stats':
+        cacheTimestamps.current.communityStats.clear();
+        break;
+      case 'activity':
+        cacheTimestamps.current.communityActivity.clear();
         break;
     }
   }, []);
@@ -260,6 +328,38 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
   const getUserMembershipForCommunity = useCallback((communityId: string): CommunityWithChannels | undefined => {
     return userMemberships.find(m => m.community.id === communityId);
   }, [userMemberships]);
+
+  // Selection wrapper with persistence
+  const setSelectedCommunityId = useCallback((id: string | null) => {
+    setSelectedCommunityIdState(id);
+    if (id) {
+      localStorage.setItem('lastSelectedCommunity', id);
+    } else {
+      localStorage.removeItem('lastSelectedCommunity');
+    }
+  }, []);
+
+  // Load selected community from storage or default
+  useEffect(() => {
+    if (user && !loading) {
+      const stored = localStorage.getItem('lastSelectedCommunity');
+      
+      if (stored && (
+        ownedCommunities.some(c => c.community.id === stored) || 
+        userMemberships.some(c => c.community.id === stored) ||
+        allCommunities.some(c => c.id === stored)
+      )) {
+        setSelectedCommunityIdState(stored);
+      } else if (!selectedCommunityId) {
+        // Default to first owned or joined community
+        if (ownedCommunities.length > 0) {
+          setSelectedCommunityId(ownedCommunities[0].community.id);
+        } else if (userMemberships.length > 0) {
+          setSelectedCommunityId(userMemberships[0].community.id);
+        }
+      }
+    }
+  }, [user, loading, ownedCommunities, userMemberships, allCommunities, selectedCommunityId, setSelectedCommunityId]);
 
   // Initial load
   useEffect(() => {
@@ -303,7 +403,13 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     invalidateCommunityDetails,
     getCommunityById,
     isUserOwner,
-    getUserMembershipForCommunity
+    getUserMembershipForCommunity,
+    selectedCommunityId,
+    setSelectedCommunityId,
+    communityStatsCache,
+    communityActivityCache,
+    fetchCommunityStats,
+    fetchCommunityActivity
   };
 
   return (

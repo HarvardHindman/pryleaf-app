@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Price updates are now handled by the optimistic portfolio hook
 import Link from 'next/link';
@@ -26,6 +27,7 @@ interface PortfolioStock {
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const { 
     portfolioStocks, 
     portfolio, 
@@ -41,6 +43,13 @@ export default function Home() {
   } = usePortfolio();
   
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Redirect to landing page if not logged in
+  useEffect(() => {
+    if (!user) {
+      router.push('/landing');
+    }
+  }, [user, router]);
 
 
   // Note: Real-time price updates would be handled by the portfolio service

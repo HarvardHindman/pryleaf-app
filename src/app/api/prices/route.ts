@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AlphaVantageSupabase } from '@/lib/alphaVantageSupabase';
+import { StockCacheService } from '@/cache';
+import { priceCache } from '@/cache';
 
 /**
  * Batch Price Quotes API Route
  * Uses Alpha Vantage with Supabase caching
  * Replaces Yahoo Finance with cached Alpha Vantage data
  */
-
-// Supabase cache for batch quotes
-const priceCache: Record<string, { data: any; timestamp: number }> = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,15 +19,14 @@ export async function GET(req: NextRequest) {
 
     const tickers = symbolsParam.split(',').map(s => s.trim().toUpperCase());
     
-    const now = Date.now();
     const results: Record<string, any> = {};
     const toFetch: string[] = [];
 
     // Check in-memory cache first
     for (const ticker of tickers) {
-      const cached = priceCache[ticker];
-      if (cached && now - cached.timestamp < CACHE_TTL) {
-        results[ticker] = cached.data;
+      const cached = priceCache.get(ticker);
+      if (cached) {
+        results[ticker] = cached;
       } else {
         toFetch.push(ticker);
       }
@@ -42,7 +38,7 @@ export async function GET(req: NextRequest) {
         toFetch.map(async (ticker) => {
           try {
             // Get quote from Alpha Vantage with Supabase caching
-            const quote = await AlphaVantageSupabase.getQuote(ticker);
+            const quote = await StockCacheService.getQuote(ticker);
             
             if (quote) {
               const quoteData = {
@@ -58,7 +54,7 @@ export async function GET(req: NextRequest) {
               };
 
               // Update in-memory cache
-              priceCache[ticker] = { data: quoteData, timestamp: Date.now() };
+              priceCache.set(ticker, quoteData);
               return { ticker, data: quoteData };
             } else {
               return { ticker, data: null };
@@ -89,15 +85,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No tickers provided' }, { status: 400 });
     }
 
-    const now = Date.now();
     const results: Record<string, any> = {};
     const toFetch: string[] = [];
 
     // Check in-memory cache first
     for (const ticker of tickers) {
-      const cached = priceCache[ticker];
-      if (cached && now - cached.timestamp < CACHE_TTL) {
-        results[ticker] = cached.data;
+      const cached = priceCache.get(ticker);
+      if (cached) {
+        results[ticker] = cached;
       } else {
         toFetch.push(ticker);
       }
@@ -109,7 +104,7 @@ export async function POST(req: NextRequest) {
         toFetch.map(async (ticker) => {
           try {
             // Get quote from Alpha Vantage with Supabase caching
-            const quote = await AlphaVantageSupabase.getQuote(ticker);
+            const quote = await StockCacheService.getQuote(ticker);
             
             if (quote) {
               const quoteData = {
@@ -125,7 +120,7 @@ export async function POST(req: NextRequest) {
               };
 
               // Update in-memory cache
-              priceCache[ticker] = { data: quoteData, timestamp: Date.now() };
+              priceCache.set(ticker, quoteData);
               return { ticker, data: quoteData };
             } else {
               return { ticker, data: null };

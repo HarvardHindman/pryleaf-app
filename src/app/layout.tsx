@@ -23,9 +23,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pryleaf - Professional Financial Analysis Platform",
-  description: "Advanced stock ticker analysis and market intelligence platform for professional investors and traders.",
-  keywords: "stocks, finance, investment, trading, market analysis, ticker search",
+  title: "Pryleaf - Your Community, Monetized",
+  description: "Build a thriving creator community with premium content, exclusive insights, and powerful monetization tools. Connect with top creators and investors.",
+  keywords: "creator platform, community, monetization, premium content, subscriptions, investment community, financial creators",
   authors: [{ name: "Pryleaf" }],
   icons: {
     icon: '/pryleaf.PNG',

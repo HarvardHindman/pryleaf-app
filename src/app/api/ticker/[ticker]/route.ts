@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AlphaVantageSupabase, CompanyOverview, Quote } from '@/lib/alphaVantageSupabase';
+import { StockCacheService, CompanyOverview, Quote } from '@/cache';
 
 /**
  * Ticker API Route - Uses Alpha Vantage with Supabase caching
@@ -15,8 +15,8 @@ export async function GET(
 
     // Fetch company overview and quote from Alpha Vantage (with caching)
     const [overview, quote] = await Promise.all([
-      AlphaVantageSupabase.getCompanyOverview(ticker),
-      AlphaVantageSupabase.getQuote(ticker)
+      StockCacheService.getCompanyOverview(ticker),
+      StockCacheService.getQuote(ticker)
     ]);
 
     if (!overview && !quote) {

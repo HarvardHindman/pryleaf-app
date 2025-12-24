@@ -33,19 +33,37 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
+
 type DashboardTab = 'overview' | 'content' | 'members' | 'tiers' | 'analytics' | 'appearance' | 'settings';
 
 export default function CommunityDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { 
+    fetchCommunityStats, 
+    communityStatsCache,
+    selectedCommunityId
+  } = useCommunityCache();
   const communityId = params.id as string;
   
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState<any>(null);
-  const [stats, setStats] = useState<any>({});
+  const [stats, setStats] = useState<any>(communityStatsCache.get(communityId) || {});
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
+  const [visitedTabs, setVisitedTabs] = useState<Set<DashboardTab>>(new Set(['overview']));
   const [isOwner, setIsOwner] = useState(false);
+
+  const handleTabChange = (tab: DashboardTab) => {
+    setActiveTab(tab);
+    setVisitedTabs(prev => {
+      if (prev.has(tab)) return prev;
+      const newSet = new Set(prev);
+      newSet.add(tab);
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -70,12 +88,10 @@ export default function CommunityDashboardPage() {
         setCommunity(communityData.community);
         setIsOwner(true);
 
-        // Fetch analytics
-        const statsResponse = await fetch(`/api/communities/${communityId}/analytics`);
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setStats(statsData);
-        }
+        // Fetch analytics using cache context
+        const statsData = await fetchCommunityStats(communityId);
+        setStats(statsData);
+        
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -86,7 +102,7 @@ export default function CommunityDashboardPage() {
     if (communityId && user) {
       fetchDashboardData();
     }
-  }, [communityId, user, router]);
+  }, [communityId, user, router, fetchCommunityStats]);
 
   if (loading) {
     return (
@@ -145,43 +161,43 @@ export default function CommunityDashboardPage() {
         <div className="max-w-7xl mx-auto flex gap-1 overflow-x-auto">
           <DashboardTabButton
             active={activeTab === 'overview'}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabChange('overview')}
             icon={<BarChart3 className="h-4 w-4" />}
             label="Overview"
           />
           <DashboardTabButton
             active={activeTab === 'content'}
-            onClick={() => setActiveTab('content')}
+            onClick={() => handleTabChange('content')}
             icon={<MessageSquare className="h-4 w-4" />}
             label="Content"
           />
           <DashboardTabButton
             active={activeTab === 'members'}
-            onClick={() => setActiveTab('members')}
+            onClick={() => handleTabChange('members')}
             icon={<Users className="h-4 w-4" />}
             label="Members"
           />
           <DashboardTabButton
             active={activeTab === 'tiers'}
-            onClick={() => setActiveTab('tiers')}
+            onClick={() => handleTabChange('tiers')}
             icon={<Crown className="h-4 w-4" />}
             label="Tiers"
           />
           <DashboardTabButton
             active={activeTab === 'analytics'}
-            onClick={() => setActiveTab('analytics')}
+            onClick={() => handleTabChange('analytics')}
             icon={<TrendingUp className="h-4 w-4" />}
             label="Analytics"
           />
           <DashboardTabButton
             active={activeTab === 'appearance'}
-            onClick={() => setActiveTab('appearance')}
+            onClick={() => handleTabChange('appearance')}
             icon={<Palette className="h-4 w-4" />}
             label="Appearance"
           />
           <DashboardTabButton
             active={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => handleTabChange('settings')}
             icon={<Settings className="h-4 w-4" />}
             label="Settings"
           />
@@ -190,13 +206,27 @@ export default function CommunityDashboardPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        {activeTab === 'overview' && <OverviewTab community={community} stats={stats} communityId={communityId} />}
-        {activeTab === 'content' && <ContentTab communityId={communityId} />}
-        {activeTab === 'members' && <MembersManagementTab communityId={communityId} />}
-        {activeTab === 'tiers' && <TiersTab communityId={communityId} />}
-        {activeTab === 'analytics' && <AnalyticsTab communityId={communityId} stats={stats} />}
-        {activeTab === 'appearance' && <AppearanceTab community={community} communityId={communityId} />}
-        {activeTab === 'settings' && <SettingsTab community={community} communityId={communityId} />}
+        <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
+          {visitedTabs.has('overview') && <OverviewTab community={community} stats={stats} communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'content' ? 'block' : 'hidden'}>
+          {visitedTabs.has('content') && <ContentTab communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'members' ? 'block' : 'hidden'}>
+          {visitedTabs.has('members') && <MembersManagementTab communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'tiers' ? 'block' : 'hidden'}>
+          {visitedTabs.has('tiers') && <TiersTab communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'analytics' ? 'block' : 'hidden'}>
+          {visitedTabs.has('analytics') && <AnalyticsTab communityId={communityId} stats={stats} />}
+        </div>
+        <div className={activeTab === 'appearance' ? 'block' : 'hidden'}>
+          {visitedTabs.has('appearance') && <AppearanceTab community={community} communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
+          {visitedTabs.has('settings') && <SettingsTab community={community} communityId={communityId} />}
+        </div>
       </div>
     </div>
   );
@@ -223,21 +253,19 @@ function DashboardTabButton({ active, onClick, icon, label }: any) {
 // Content and Tiers tabs now render inline instead of redirecting
 
 function OverviewTab({ community, stats, communityId }: any) {
-  const [activities, setActivities] = useState<any[]>([]);
+  const { fetchCommunityActivity, communityActivityCache } = useCommunityCache();
+  const [activities, setActivities] = useState<any[]>(communityActivityCache.get(communityId) || []);
   const [loadingActivities, setLoadingActivities] = useState(false);
 
   useEffect(() => {
     fetchRecentActivities();
-  }, [communityId]);
+  }, [communityId, fetchCommunityActivity]);
 
   async function fetchRecentActivities() {
     setLoadingActivities(true);
     try {
-      const response = await fetch(`/api/communities/${communityId}/activity`);
-      if (response.ok) {
-        const data = await response.json();
-        setActivities(data.activities || []);
-      }
+      const activitiesData = await fetchCommunityActivity(communityId);
+      setActivities(activitiesData);
     } catch (error) {
       console.error('Error fetching activities:', error);
     } finally {

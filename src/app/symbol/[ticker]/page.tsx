@@ -30,7 +30,7 @@ import TradingViewChart from '@/components/charts/TradingViewChart';
 import { ChartData, createMockChartData } from '@/components/charts/TradingViewChart';
 import FinancialChart from '@/components/charts/FinancialChart';
 import IncomeStatementTable from '@/components/financials/IncomeStatementTable';
-import { CompanyOverview, CompanyStatistics, SymbolChart, ChartType, ChartPeriod } from '@/components/research';
+import { CompanyOverview, CompanyStatistics, SymbolChart, ChartType, ChartPeriod, NewsTab } from '@/components/research';
 import { IncomeStatement, BalanceSheet, CashFlowStatement } from '@/components/research/FinancialStatements';
 import { formatCurrency, formatLargeNumber, formatNumber, formatPercent } from '@/lib/formatters';
 
@@ -463,21 +463,10 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
           </div>
         )}
 
-          {/* News Tab (Placeholder) */}
+          {/* News Tab - Live with Sentiment Analysis */}
           {activeTab === 'news' && (
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
-            <Card>
-            <CardHeader>
-              <CardTitle>Latest News</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>Coming Soon</p>
-                <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>Company news and sentiment analysis</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex-1 overflow-y-auto scrollbar-thin pb-16">
+            <NewsTab ticker={ticker} />
           </div>
           )}
         </div>

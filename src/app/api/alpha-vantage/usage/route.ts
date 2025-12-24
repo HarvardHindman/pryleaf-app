@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AlphaVantageSupabase } from '@/lib/alphaVantageSupabase';
+import { StockCacheService } from '@/cache';
 
 export async function GET(request: NextRequest) {
   try {
-    const usageStats = await AlphaVantageSupabase.getUsageStats();
+    const usageStats = await StockCacheService.getUsageStats();
 
     if (!usageStats) {
       return NextResponse.json(

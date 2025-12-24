@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AlphaVantageSupabase } from '@/lib/alphaVantageSupabase';
+import { StockCacheService } from '@/cache';
 
 export async function GET(
   request: NextRequest,

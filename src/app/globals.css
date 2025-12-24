@@ -289,6 +289,15 @@
     }
   }
 
+  /* Interactive hover utilities */
+  .hover-interactive:hover {
+    color: var(--interactive-primary);
+  }
+
+  .hover-interactive-bg:hover {
+    background-color: var(--interactive-bg-subtle);
+  }
+
   /* Hide scrollbar utility */
   .scrollbar-hide {
     scrollbar-width: none; /* Firefox */

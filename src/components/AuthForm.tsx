@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -55,10 +56,60 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ backgroundColor: 'var(--clr-surface-a10)' }}
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: 'var(--surface-secondary)' }}
     >
-      <Card className="w-full max-w-md">
+      {/* Navigation */}
+      <nav className="px-6 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link href="/landing" className="flex items-center gap-2 group">
+            <span 
+              className="text-2xl font-bold transition-opacity group-hover:opacity-80" 
+              style={{ color: 'var(--interactive-primary)' }}
+            >
+              Pryleaf
+            </span>
+          </Link>
+          
+          <div className="flex items-center gap-3">
+            {mode === "register" ? (
+              <>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Already have an account?
+                </span>
+                <Link href="/login">
+                  <button 
+                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
+                    style={{ color: 'var(--interactive-primary)' }}
+                  >
+                    Log In
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  New to Pryleaf?
+                </span>
+                <Link href="/register">
+                  <button 
+                    className="px-6 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105 shadow-lg"
+                    style={{ 
+                      backgroundColor: 'var(--interactive-primary)', 
+                      color: 'white' 
+                    }}
+                  >
+                    Sign Up
+                  </button>
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex-1 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <User 
@@ -199,6 +250,7 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

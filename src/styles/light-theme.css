@@ -100,10 +100,16 @@
   --border-default: #e5e7eb;      /* Default border, balanced */
   --border-strong: #d1d5db;       /* Stronger border for emphasis */
 
-  /* Interactive Colors */
-  --interactive-primary: #3b82f6;  /* Primary actions, links */
-  --interactive-hover: #2563eb;    /* Hover state */
-  --interactive-active: #1d4ed8;   /* Active/pressed state */
+  /* Interactive Colors - Brand Green */
+  --interactive-primary: #16a34a;  /* Primary actions, links - green-600 */
+  --interactive-hover: #15803d;    /* Hover state - green-700 */
+  --interactive-active: #166534;   /* Active/pressed state - green-800 */
+  
+  /* Interactive Color Variants for UI Elements */
+  --interactive-bg-subtle: #dcfce7;   /* Light green background - green-100 (lighter) */
+  --interactive-bg-muted: #bbf7d0;    /* Muted green background - green-200 */
+  --interactive-border: #86efac;      /* Green border - green-300 (lighter) */
+  --interactive-text-on-bg: #15803d;  /* Text on green backgrounds - green-700 (lighter) */
 
   /* Status Colors - Semantic meaning */
   --success-background: #ecfdf5;    /* Success backgrounds */
