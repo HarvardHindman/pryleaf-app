@@ -12,7 +12,7 @@ import CustomMessageInput from "@/components/ui/CustomMessageInput";
 
 
 export default function GeneralChat() {
-  const { client, loading } = useStreamChat();
+  const { client, loading, isDemoMode } = useStreamChat();
   const { user } = useAuth();
   const { theme } = useTheme();
   const [channel, setChannel] = useState<StreamChannel | null>(null);
@@ -107,41 +107,171 @@ export default function GeneralChat() {
     );
   }
 
-  if (!client || !channel) {
+  // Show demo mode UI when in demo mode
+  if (isDemoMode || !client || !channel) {
     return (
       <div
-        className="h-full flex items-center justify-center"
+        className="h-full flex flex-col"
         style={{ backgroundColor: 'var(--surface-secondary)' }}
       >
-        <div className="text-center">
-          <p
-            className="mb-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Failed to load chat.
-          </p>
-          <p
-            className="text-sm mb-4"
-            style={{ color: 'var(--text-subtle)' }}
-          >
-            {!client ? 'Chat client not connected' : 'Channel not available'}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center px-4 py-2 rounded-md transition-colors"
+        {/* Demo Mode Banner */}
+        {isDemoMode && (
+          <div
+            className="px-4 py-3 text-center border-b"
             style={{
-              backgroundColor: 'var(--interactive-primary)',
-              color: 'var(--surface-primary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--interactive-hover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--interactive-primary)';
+              backgroundColor: 'var(--surface-tertiary)',
+              borderColor: 'var(--border-default)',
+              color: 'var(--text-secondary)'
             }}
           >
-            Refresh Page
-          </button>
+            <p className="text-sm">
+              💬 <strong>Demo Mode</strong> - Configure StreamChat credentials to enable live chat
+            </p>
+          </div>
+        )}
+
+        {/* Demo Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Example Message 1 */}
+          <div className="flex gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'var(--interactive-primary)', color: 'white' }}
+            >
+              A
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Alice
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  2 hours ago
+                </span>
+              </div>
+              <div
+                className="rounded-lg px-3 py-2 inline-block"
+                style={{ backgroundColor: 'var(--surface-primary)', color: 'var(--text-primary)' }}
+              >
+                Hey everyone! Just saw some interesting movement in the market today 📈
+              </div>
+            </div>
+          </div>
+
+          {/* Example Message 2 */}
+          <div className="flex gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: '#10b981', color: 'white' }}
+            >
+              B
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Bob
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  1 hour ago
+                </span>
+              </div>
+              <div
+                className="rounded-lg px-3 py-2 inline-block"
+                style={{ backgroundColor: 'var(--surface-primary)', color: 'var(--text-primary)' }}
+              >
+                Yeah! What are your thoughts on $NVDA?
+              </div>
+            </div>
+          </div>
+
+          {/* Example Message 3 */}
+          <div className="flex gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: '#f59e0b', color: 'white' }}
+            >
+              C
+            </div>
+            <div className="flex-1">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Charlie
+                </span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  30 minutes ago
+                </span>
+              </div>
+              <div
+                className="rounded-lg px-3 py-2 inline-block"
+                style={{ backgroundColor: 'var(--surface-primary)', color: 'var(--text-primary)' }}
+              >
+                Looking strong! I'm keeping an eye on the tech sector this week.
+              </div>
+            </div>
+          </div>
+
+          {/* Your Message Example */}
+          <div className="flex gap-3 justify-end">
+            <div className="flex-1 flex flex-col items-end">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Just now
+                </span>
+                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+                  You
+                </span>
+              </div>
+              <div
+                className="rounded-lg px-3 py-2 inline-block"
+                style={{ backgroundColor: 'var(--interactive-primary)', color: 'white' }}
+              >
+                This is a demo message. Configure StreamChat to enable real chat! 🚀
+              </div>
+            </div>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: 'var(--interactive-primary)', color: 'white' }}
+            >
+              {user?.email?.[0].toUpperCase() || 'U'}
+            </div>
+          </div>
+        </div>
+
+        {/* Demo Input */}
+        <div
+          className="border-t p-4"
+          style={{ borderColor: 'var(--border-default)' }}
+        >
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Messages are disabled in demo mode..."
+              disabled
+              className="flex-1 px-4 py-2 rounded-lg border"
+              style={{
+                backgroundColor: 'var(--surface-tertiary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-muted)',
+                cursor: 'not-allowed'
+              }}
+            />
+            <button
+              disabled
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: 'var(--surface-tertiary)',
+                color: 'var(--text-muted)',
+                cursor: 'not-allowed'
+              }}
+            >
+              Send
+            </button>
+          </div>
+          {!isDemoMode && (
+            <p className="text-xs mt-2 text-center" style={{ color: 'var(--text-muted)' }}>
+              Chat unavailable. Please refresh or check your connection.
+            </p>
+          )}
         </div>
       </div>
     );

@@ -4,10 +4,18 @@ import { createSupabaseServerClient } from '@/lib/supabaseServer'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if StreamChat credentials are configured
+    if (!process.env.NEXT_PUBLIC_STREAM_API_KEY || !process.env.STREAM_API_SECRET) {
+      console.warn('StreamChat credentials not configured. Set NEXT_PUBLIC_STREAM_API_KEY and STREAM_API_SECRET in .env.local');
+      return NextResponse.json({ 
+        error: 'StreamChat not configured. Chat features are disabled.' 
+      }, { status: 503 })
+    }
+
     // Initialize StreamChat server client
     const serverClient = StreamChat.getInstance(
-      process.env.NEXT_PUBLIC_STREAM_API_KEY!,
-      process.env.STREAM_API_SECRET!
+      process.env.NEXT_PUBLIC_STREAM_API_KEY,
+      process.env.STREAM_API_SECRET
     )
 
     // Get the current user from Supabase

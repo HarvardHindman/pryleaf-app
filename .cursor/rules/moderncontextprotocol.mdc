@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+/**
+ * When implementing new functionality or modifying request-handling, caching, or API access code,
+ * always check the Modern Context Protocol (MCP) for the correct, up-to-date way of doing things.
+ * MCP is the source of truth for context handling best practices—do not rely solely on documentation
+ * or prior patterns (including code comments or legacy approaches), as those may be outdated.
+ * Before proceeding, consult the MCP and follow its prescribed methods, especially for
+ * permission checks (e.g. canMakeRequest), caching, and API access flows.
+ * If it is unclear how to proceed per the MCP, consult a lead or MCP maintainer for clarification.
+ */
+
+
+

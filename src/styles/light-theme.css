@@ -94,6 +94,7 @@
   --surface-secondary: #f9fafb;   /* Secondary backgrounds */
   --surface-tertiary: #f3f4f6;    /* Tertiary, subtle differences */
   --surface-elevated: #ffffff;    /* Elevated surfaces like modals */
+  --surface-sidebar: #eff2f8;     /* Sidebar with subtle blue tint */
 
   /* Border Colors - Subtle to prominent */
   --border-subtle: #f3f4f6;       /* Very subtle, almost invisible */

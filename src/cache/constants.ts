@@ -13,6 +13,7 @@ export const CACHE_TTL = {
   TIME_SERIES_DAILY: 60 * 60 * 1000,    // 1 hour - daily time series
   TIME_SERIES_WEEKLY: 60 * 60 * 1000,   // 1 hour - weekly time series
   TIME_SERIES_MONTHLY: 60 * 60 * 1000,  // 1 hour - monthly time series
+  FINANCIALS: 24 * 60 * 60 * 1000,      // 24 hours - financial statements
   
   // Community data
   COMMUNITY_LIST: 5 * 60 * 1000,        // 5 minutes - all communities
@@ -70,6 +71,10 @@ export const DATA_TYPES = {
   TIMESERIES_MONTHLY_COMPACT: 'timeseries_monthly_compact',
   TIMESERIES_MONTHLY_FULL: 'timeseries_monthly_full',
   TIMESERIES_INTRADAY: 'timeseries_intraday',
+  FINANCIALS_INCOME: 'financials_income_statement',
+  FINANCIALS_BALANCE: 'financials_balance_sheet',
+  FINANCIALS_CASHFLOW: 'financials_cash_flow',
+  FINANCIALS_EARNINGS: 'financials_earnings',
 } as const;
 
 // ============================================================================

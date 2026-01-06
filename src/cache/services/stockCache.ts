@@ -20,22 +20,45 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export class StockCacheService {
   /**
-   * Check if we can make an API request (within daily limit)
+   * Fetch JSON with a small retry to handle transient upstream failures.
+   */
+  private static async fetchJsonWithRetry(
+    url: string,
+    validate: (data: any) => void,
+    attempts: number = 3,
+    delayMs: number = 600
+  ): Promise<any | null> {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        }
+        const json = await response.json();
+        if (json && json.error) {
+          throw new Error(json.error);
+        }
+        validate(json);
+        return json;
+      } catch (err) {
+        if (i === attempts - 1) {
+          console.warn(`fetchJsonWithRetry failed for ${url}:`, err instanceof Error ? err.message : err);
+          return null;
+        }
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Decide if we can make a live request (Alpha Vantage key present)
    */
   static async canMakeRequest(): Promise<boolean> {
-    try {
-      const { data, error } = await supabase.rpc('increment_api_usage');
-      
-      if (error) {
-        console.error('Error checking API usage:', error);
-        return false;
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error checking API usage:', error);
-      return false;
-    }
+    return Boolean(process.env.ALPHA_VANTAGE_API_KEY);
   }
 
   /**
@@ -85,6 +108,32 @@ export class StockCacheService {
     }
   }
 
+  // API usage tracking disabled
+  static async checkApiUsage(): Promise<{ remaining: number; used: number; limit: number } | null> {
+    return { remaining: 0, used: 0, limit: 0 };
+  }
+
+  /**
+   * Get ANY cached data (even expired) as last resort
+   */
+  static async getAnyCachedData<T>(symbol: string, dataType: string): Promise<T | null> {
+    try {
+      const { data, error } = await supabase
+        .from('stock_quotes_cache')
+        .select('data')
+        .eq('symbol', symbol.toUpperCase())
+        .eq('data_type', dataType)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) return null;
+      return data.data as T;
+    } catch (error) {
+      return null;
+    }
+  }
+
   /**
    * Get company overview with Supabase caching
    * This is our main method - gets comprehensive data in 1 API call
@@ -93,91 +142,96 @@ export class StockCacheService {
     const normalizedSymbol = symbol.toUpperCase();
     const dataType = DATA_TYPES.OVERVIEW;
 
-    // Check cache first
     const cached = await this.getCachedData<CompanyOverview>(normalizedSymbol, dataType);
     if (cached) {
-      console.log(`Cache hit for ${normalizedSymbol} overview`);
+      console.log(`✅ Cache hit for ${normalizedSymbol} overview`);
       return cached;
     }
 
-    // Check if we can make API request
+    // No cache; attempt live fetch if allowed
     const canRequest = await this.canMakeRequest();
     if (!canRequest) {
-      console.warn('Daily API limit reached (25 requests)');
+      console.warn(`⚠️ No cached overview for ${normalizedSymbol} and live fetch disabled (missing API key)`);
       return null;
     }
 
     try {
-      // Call the real Alpha Vantage API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/company-overview?symbol=${normalizedSymbol}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`MCP API call failed: ${response.statusText}`);
+      const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/company-overview?symbol=${normalizedSymbol}`;
+      const apiData = await this.fetchJsonWithRetry(
+        apiUrl,
+        (d) => {
+          if (!d.Symbol) {
+            throw new Error('Missing Symbol in overview payload');
+          }
+        }
+      );
+      if (!apiData) {
+        // Try stale cache as a last resort to avoid an empty first load
+        const stale = await this.getAnyCachedData<CompanyOverview>(normalizedSymbol, dataType);
+        if (stale) {
+          console.warn(`Using stale overview cache for ${normalizedSymbol} after live fetch failure`);
+          return stale;
+        }
+        return null;
       }
-
-      const mcpData = await response.json();
       
-      // Transform the MCP response to our CompanyOverview format
+      const safe = (value: any, fallback: string = 'N/A') =>
+        value === undefined || value === null || value === '' ? fallback : value;
+
       const overviewData: CompanyOverview = {
-        Symbol: mcpData.Symbol || normalizedSymbol,
-        AssetType: mcpData.AssetType || "Common Stock",
-        Name: mcpData.Name || `${normalizedSymbol} Inc.`,
-        Description: mcpData.Description || "Company description not available.",
-        CIK: mcpData.CIK || "0000000000",
-        Exchange: mcpData.Exchange || "NASDAQ",
-        Currency: mcpData.Currency || "USD",
-        Country: mcpData.Country || "USA",
-        Sector: mcpData.Sector || "TECHNOLOGY",
-        Industry: mcpData.Industry || "SOFTWARE",
-        Address: mcpData.Address || "Address not available",
-        FiscalYearEnd: mcpData.FiscalYearEnd || "December",
-        LatestQuarter: mcpData.LatestQuarter || new Date().toISOString().split('T')[0],
-        MarketCapitalization: mcpData.MarketCapitalization || "0",
-        EBITDA: mcpData.EBITDA || "0",
-        PERatio: mcpData.PERatio || "0",
-        PEGRatio: mcpData.PEGRatio || "0",
-        BookValue: mcpData.BookValue || "0",
-        DividendPerShare: mcpData.DividendPerShare || "0",
-        DividendYield: mcpData.DividendYield || "0",
-        EPS: mcpData.EPS || "0",
-        RevenuePerShareTTM: mcpData.RevenuePerShareTTM || "0",
-        ProfitMargin: mcpData.ProfitMargin || "0",
-        OperatingMarginTTM: mcpData.OperatingMarginTTM || "0",
-        ReturnOnAssetsTTM: mcpData.ReturnOnAssetsTTM || "0",
-        ReturnOnEquityTTM: mcpData.ReturnOnEquityTTM || "0",
-        RevenueTTM: mcpData.RevenueTTM || "0",
-        GrossProfitTTM: mcpData.GrossProfitTTM || "0",
-        DilutedEPSTTM: mcpData.DilutedEPSTTM || "0",
-        QuarterlyEarningsGrowthYOY: mcpData.QuarterlyEarningsGrowthYOY || "0",
-        QuarterlyRevenueGrowthYOY: mcpData.QuarterlyRevenueGrowthYOY || "0",
-        AnalystTargetPrice: mcpData.AnalystTargetPrice || "0",
-        TrailingPE: mcpData.TrailingPE || "0",
-        ForwardPE: mcpData.ForwardPE || "0",
-        PriceToSalesRatioTTM: mcpData.PriceToSalesRatioTTM || "0",
-        PriceToBookRatio: mcpData.PriceToBookRatio || "0",
-        EVToRevenue: mcpData.EVToRevenue || "0",
-        EVToEBITDA: mcpData.EVToEBITDA || "0",
-        Beta: mcpData.Beta || "0",
-        "52WeekHigh": mcpData["52WeekHigh"] || "0",
-        "52WeekLow": mcpData["52WeekLow"] || "0",
-        "50DayMovingAverage": mcpData["50DayMovingAverage"] || "0",
-        "200DayMovingAverage": mcpData["200DayMovingAverage"] || "0",
-        SharesOutstanding: mcpData.SharesOutstanding || "0",
-        SharesFloat: mcpData.SharesFloat || "0",
-        PercentInsiders: mcpData.PercentInsiders || "0",
-        PercentInstitutions: mcpData.PercentInstitutions || "0",
-        DividendDate: mcpData.DividendDate || "",
-        ExDividendDate: mcpData.ExDividendDate || ""
+        Symbol: normalizedSymbol,
+        AssetType: safe(apiData.AssetType),
+        Name: safe(apiData.Name, `${normalizedSymbol} Inc.`),
+        Description: safe(apiData.Description),
+        CIK: safe(apiData.CIK),
+        Exchange: safe(apiData.Exchange),
+        Currency: safe(apiData.Currency, 'USD'),
+        Country: safe(apiData.Country),
+        Sector: safe(apiData.Sector),
+        Industry: safe(apiData.Industry),
+        Address: safe(apiData.Address),
+        FiscalYearEnd: safe(apiData.FiscalYearEnd, 'December'),
+        LatestQuarter: safe(apiData.LatestQuarter, new Date().toISOString().split('T')[0]),
+        MarketCapitalization: safe(apiData.MarketCapitalization),
+        EBITDA: safe(apiData.EBITDA),
+        PERatio: safe(apiData.PERatio),
+        PEGRatio: safe(apiData.PEGRatio),
+        BookValue: safe(apiData.BookValue),
+        DividendPerShare: safe(apiData.DividendPerShare),
+        DividendYield: safe(apiData.DividendYield),
+        EPS: safe(apiData.EPS),
+        RevenuePerShareTTM: safe(apiData.RevenuePerShareTTM),
+        ProfitMargin: safe(apiData.ProfitMargin),
+        OperatingMarginTTM: safe(apiData.OperatingMarginTTM),
+        ReturnOnAssetsTTM: safe(apiData.ReturnOnAssetsTTM),
+        ReturnOnEquityTTM: safe(apiData.ReturnOnEquityTTM),
+        RevenueTTM: safe(apiData.RevenueTTM),
+        GrossProfitTTM: safe(apiData.GrossProfitTTM),
+        DilutedEPSTTM: safe(apiData.DilutedEPSTTM),
+        QuarterlyEarningsGrowthYOY: safe(apiData.QuarterlyEarningsGrowthYOY),
+        QuarterlyRevenueGrowthYOY: safe(apiData.QuarterlyRevenueGrowthYOY),
+        AnalystTargetPrice: safe(apiData.AnalystTargetPrice),
+        TrailingPE: safe(apiData.TrailingPE),
+        ForwardPE: safe(apiData.ForwardPE),
+        PriceToSalesRatioTTM: safe(apiData.PriceToSalesRatioTTM),
+        PriceToBookRatio: safe(apiData.PriceToBookRatio),
+        EVToRevenue: safe(apiData.EVToRevenue),
+        EVToEBITDA: safe(apiData.EVToEBITDA),
+        Beta: safe(apiData.Beta),
+        "52WeekHigh": safe(apiData["52WeekHigh"]),
+        "52WeekLow": safe(apiData["52WeekLow"]),
+        "50DayMovingAverage": safe(apiData["50DayMovingAverage"]),
+        "200DayMovingAverage": safe(apiData["200DayMovingAverage"]),
+        SharesOutstanding: safe(apiData.SharesOutstanding),
+        SharesFloat: safe(apiData.SharesFloat),
+        PercentInsiders: safe(apiData.PercentInsiders),
+        PercentInstitutions: safe(apiData.PercentInstitutions),
+        DividendDate: safe(apiData.DividendDate, 'N/A'),
+        ExDividendDate: safe(apiData.ExDividendDate, 'N/A')
       };
 
-      // Cache the data for 15 minutes
-      await this.setCachedData(normalizedSymbol, dataType, overviewData, 15);
-      
+      // Cache overview for 24 hours (slow-changing)
+      await this.setCachedData(normalizedSymbol, dataType, overviewData, 24 * 60);
       console.log(`Real API call made for ${normalizedSymbol} overview`);
       return overviewData;
 
@@ -194,52 +248,53 @@ export class StockCacheService {
     const normalizedSymbol = symbol.toUpperCase();
     const dataType = DATA_TYPES.QUOTE;
 
-    // Check cache first
     const cached = await this.getCachedData<Quote>(normalizedSymbol, dataType);
     if (cached) {
-      console.log(`Cache hit for ${normalizedSymbol} quote`);
+      console.log(`✅ Cache hit for ${normalizedSymbol} quote`);
       return cached;
     }
 
-    // Check if we can make API request
     const canRequest = await this.canMakeRequest();
     if (!canRequest) {
-      console.warn('Daily API limit reached (25 requests)');
+      console.warn(`⚠️ No cached quote for ${normalizedSymbol} and live fetch disabled (missing API key)`);
       return null;
     }
 
     try {
-      // Call Alpha Vantage GLOBAL_QUOTE API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/quote?symbol=${normalizedSymbol}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Quote API call failed: ${response.statusText}`);
+      const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/quote?symbol=${normalizedSymbol}`;
+      const apiData = await this.fetchJsonWithRetry(
+        apiUrl,
+        (d) => {
+          if (!d.symbol) {
+            throw new Error('Missing symbol in quote payload');
+          }
+        }
+      );
+      if (!apiData) {
+        // Try stale cache as a last resort to avoid an empty first load
+        const stale = await this.getAnyCachedData<Quote>(normalizedSymbol, dataType);
+        if (stale) {
+          console.warn(`Using stale quote cache for ${normalizedSymbol} after live fetch failure`);
+          return stale;
+        }
+        return null;
       }
-
-      const apiData = await response.json();
       
-      // Transform the response to our Quote format
       const quote: Quote = {
         symbol: apiData.symbol || normalizedSymbol,
-        open: apiData.open || "0",
-        high: apiData.high || "0",
-        low: apiData.low || "0",
-        price: apiData.price || "0",
-        volume: apiData.volume || "0",
-        latestDay: apiData.latestTradingDay || new Date().toISOString().split('T')[0],
-        previousClose: apiData.previousClose || "0",
-        change: apiData.change || "0",
-        changePercent: apiData.changePercent || "0%"
+        open: apiData.open ?? 'N/A',
+        high: apiData.high ?? 'N/A',
+        low: apiData.low ?? 'N/A',
+        price: apiData.price ?? 'N/A',
+        volume: apiData.volume ?? 'N/A',
+        latestDay: apiData.latestTradingDay ?? new Date().toISOString().split('T')[0],
+        previousClose: apiData.previousClose ?? 'N/A',
+        change: apiData.change ?? 'N/A',
+        changePercent: apiData.changePercent ?? 'N/A'
       };
 
-      // Cache the data for 5 minutes (quotes change more frequently)
+      // Cache quote briefly to keep price-driven stats (e.g., market cap) fresh
       await this.setCachedData(normalizedSymbol, dataType, quote, 5);
-      
       console.log(`Real API call made for ${normalizedSymbol} quote`);
       return quote;
 

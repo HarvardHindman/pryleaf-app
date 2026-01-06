@@ -22,129 +22,77 @@ export async function GET(request: NextRequest) {
     const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
     
     if (!apiKey) {
-      console.warn('Alpha Vantage API key not found, using fallback data');
-      return NextResponse.json({
-        data: getFallbackTimeSeriesData(symbol, interval),
-        _realAPIData: false,
-        _fallback: true,
-        _reason: 'API key not configured',
-        _timestamp: new Date().toISOString()
-      });
+      console.warn('Alpha Vantage API key not found');
+      return NextResponse.json(
+        { error: 'Alpha Vantage API key missing' },
+        { status: 503 }
+      );
     }
 
+    // Direct Alpha Vantage API call (no MCP)
+    const { fn, timeSeriesKey, queryParams } = getFunctionConfig(interval, outputsize);
+    const url = `https://www.alphavantage.co/query?function=${fn}&symbol=${symbol}&apikey=${apiKey}${queryParams}`;
+
     try {
-      // Use MCP Alpha Vantage tools for API calls
-      console.log(`Using MCP Alpha Vantage tool for ${symbol} ${interval}`);
-      
-      let mcpResponse;
-      
-      if (interval === 'intraday') {
-        // Call MCP TIME_SERIES_INTRADAY
-        mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/mcp/alpha-vantage/time-series-intraday`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol,
-            interval: '5min',
-            outputsize
-          })
-        });
-      } else if (interval === 'daily') {
-        // Call MCP TIME_SERIES_DAILY
-        mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/mcp/alpha-vantage/time-series-daily`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            symbol,
-            outputsize
-          })
-        });
-      } else if (interval === 'weekly') {
-        // Call MCP TIME_SERIES_WEEKLY
-        mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/mcp/alpha-vantage/time-series-weekly`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ symbol })
-        });
-      } else if (interval === 'monthly') {
-        // Call MCP TIME_SERIES_MONTHLY
-        mcpResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/mcp/alpha-vantage/time-series-monthly`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ symbol })
-        });
+      const apiResponse = await fetch(url);
+      if (!apiResponse.ok) {
+        return NextResponse.json(
+          { error: `Alpha Vantage HTTP error: ${apiResponse.statusText}` },
+          { status: 502 }
+        );
       }
 
-      if (!mcpResponse || !mcpResponse.ok) {
-        throw new Error(`MCP API call failed: ${mcpResponse?.statusText || 'Unknown error'}`);
-      }
+      const data = await apiResponse.json();
 
-      const data = await mcpResponse.json();
-      
-      // Check if Alpha Vantage returned an error
       if (data['Error Message']) {
-        throw new Error(`Alpha Vantage API error: ${data['Error Message']}`);
+        return NextResponse.json(
+          { error: `Alpha Vantage API error: ${data['Error Message']}` },
+          { status: 502 }
+        );
       }
-      
       if (data['Note']) {
-        throw new Error(`Alpha Vantage API rate limit: ${data['Note']}`);
-      }
-
-      // Extract time series data based on the function
-      let timeSeriesKey = 'Time Series (Daily)';
-      if (interval === 'weekly') {
-        timeSeriesKey = 'Weekly Time Series';
-      } else if (interval === 'monthly') {
-        timeSeriesKey = 'Monthly Time Series';
-      } else if (interval === 'intraday') {
-        timeSeriesKey = 'Time Series (5min)';
+        return NextResponse.json(
+          { error: `Alpha Vantage API rate limit: ${data['Note']}` },
+          { status: 502 }
+        );
       }
 
       const timeSeries = data[timeSeriesKey] || data.data;
       if (!timeSeries) {
-        throw new Error('No time series data returned');
+        return NextResponse.json(
+          { error: 'No time series data returned' },
+          { status: 502 }
+        );
       }
 
-      // Transform to our format
-      let transformedData;
-      if (Array.isArray(timeSeries)) {
-        // Already in array format
-        transformedData = timeSeries;
-      } else {
-        // Object format from Alpha Vantage
-        transformedData = Object.entries(timeSeries).map(([timestamp, values]: [string, any]) => ({
-          timestamp,
-          open: values['1. open'],
-          high: values['2. high'],
-          low: values['3. low'],
-          close: values['4. close'],
-          volume: values['5. volume']
-        }));
-      }
-      
+      const transformedData = Array.isArray(timeSeries)
+        ? timeSeries
+        : Object.entries(timeSeries).map(([timestamp, values]: [string, any]) => ({
+            timestamp,
+            open: values['1. open'],
+            high: values['2. high'],
+            low: values['3. low'],
+            close: values['4. close'],
+            volume: values['5. volume'],
+          }));
+
       transformedData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-      console.log(`Successfully fetched ${transformedData.length} time series data points for ${symbol} via MCP`);
-      
+      console.log(`Successfully fetched ${transformedData.length} time series data points for ${symbol}`);
+
       return NextResponse.json({
         data: transformedData,
         metadata: data['Meta Data'] || {},
         _realAPIData: true,
         _timestamp: new Date().toISOString(),
-        _source: 'Alpha Vantage MCP'
+        _source: 'Alpha Vantage',
       });
-
     } catch (apiError) {
-      console.error('Alpha Vantage API call failed:', apiError);
-      
-      // Fallback to mock data if API fails
-      return NextResponse.json({
-        data: getFallbackTimeSeriesData(symbol, interval),
-        _realAPIData: false,
-        _fallback: true,
-        _reason: apiError instanceof Error ? apiError.message : 'API call failed',
-        _timestamp: new Date().toISOString()
-      });
+      console.warn('Alpha Vantage API call failed:', apiError);
+      return NextResponse.json(
+        { error: apiError instanceof Error ? apiError.message : 'Alpha Vantage time series fetch failed' },
+        { status: 502 }
+      );
     }
 
   } catch (error) {
@@ -156,75 +104,38 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * Fallback time series data when Alpha Vantage API is not available
- */
-function getFallbackTimeSeriesData(symbol: string, interval: string) {
-  const data: Array<{
-    timestamp: string;
-    open: string;
-    high: string;
-    low: string;
-    close: string;
-    volume: string;
-  }> = [];
-
-  // Generate realistic price data based on symbol
-  const basePrice = getBasePrice(symbol);
-  const days = interval === 'intraday' ? 100 : interval === 'weekly' ? 52 : interval === 'monthly' ? 24 : 100;
-  
-  for (let i = days; i >= 0; i--) {
-    const date = new Date();
-    
-    if (interval === 'intraday') {
-      date.setMinutes(date.getMinutes() - (i * 5));
-    } else if (interval === 'weekly') {
-      date.setDate(date.getDate() - (i * 7));
-    } else if (interval === 'monthly') {
-      date.setMonth(date.getMonth() - i);
-    } else {
-      date.setDate(date.getDate() - i);
-    }
-    
-    const timestamp = interval === 'intraday' 
-      ? date.toISOString().slice(0, 16).replace('T', ' ')
-      : date.toISOString().split('T')[0];
-    
-    const volatility = 0.02; // 2% daily volatility
-    const trend = 0.001; // Slight upward trend
-    
-    const open = basePrice * (1 + (Math.random() - 0.5) * volatility);
-    const close = open * (1 + (Math.random() - 0.5) * volatility + trend);
-    const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5);
-    const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5);
-    const volume = Math.floor(1000000 + Math.random() * 5000000);
-    
-    data.push({
-      timestamp,
-      open: open.toFixed(2),
-      high: high.toFixed(2),
-      low: low.toFixed(2),
-      close: close.toFixed(2),
-      volume: volume.toString()
-    });
+function getFunctionConfig(interval: string, outputsize: string) {
+  if (interval === 'intraday') {
+    return {
+      fn: 'TIME_SERIES_INTRADAY',
+      timeSeriesKey: 'Time Series (5min)',
+      queryParams: `&interval=5min&outputsize=${outputsize}`,
+    };
   }
-  
-  return data;
+
+  if (interval === 'weekly') {
+    return {
+      fn: 'TIME_SERIES_WEEKLY',
+      timeSeriesKey: 'Weekly Time Series',
+      queryParams: '',
+    };
+  }
+
+  if (interval === 'monthly') {
+    return {
+      fn: 'TIME_SERIES_MONTHLY',
+      timeSeriesKey: 'Monthly Time Series',
+      queryParams: '',
+    };
+  }
+
+  // default to daily
+  return {
+    fn: 'TIME_SERIES_DAILY',
+    timeSeriesKey: 'Time Series (Daily)',
+    queryParams: `&outputsize=${outputsize}`,
+  };
 }
 
-function getBasePrice(symbol: string): number {
-  const prices: Record<string, number> = {
-    'AAPL': 175.00,
-    'GOOGL': 140.00,
-    'MSFT': 370.00,
-    'AMZN': 145.00,
-    'TSLA': 240.00,
-    'META': 330.00,
-    'NVDA': 480.00,
-    'NFLX': 450.00,
-    'AMD': 140.00,
-    'INTC': 45.00
-  };
-  return prices[symbol] || 150.00;
-}
+// No synthetic fallback helpers; if Alpha Vantage returns nothing, we send a 502 JSON with an error.
 

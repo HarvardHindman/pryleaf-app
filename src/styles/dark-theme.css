@@ -17,6 +17,7 @@
   --surface-secondary: #09090b;    /* Main background - zinc-950 */
   --surface-tertiary: #27272a;     /* Hover states, tertiary - zinc-800 */
   --surface-elevated: #27272a;     /* Modals, popovers - zinc-800 */
+  --surface-sidebar: #1a1d28;      /* Sidebar with subtle blue tint */
 
   /* Border Colors - Subtle zinc tones */
   --border-subtle: #27272a;        /* Very subtle - zinc-800 */

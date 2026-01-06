@@ -126,10 +126,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Sidebar */}
       <div className="hidden md:flex md:w-28 md:flex-col">
         <div
-          className="flex flex-col h-full border-r"
+          className="flex flex-col h-full"
           style={{
-            backgroundColor: 'var(--surface-primary)',
-            borderColor: 'var(--border-default)'
+            backgroundColor: 'var(--surface-sidebar)'
           }}
         >
           {/* Logo Section */}
@@ -224,7 +223,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           {/* Community Switcher - Bottom Section */}
           {user && (
-            <div className="flex-shrink-0 px-2 py-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
+            <div className="flex-shrink-0 px-2 py-2">
               <CommunityNavigation />
             </div>
           )}
@@ -235,7 +234,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+          <div className="relative flex-1 flex flex-col max-w-xs w-full" style={{ backgroundColor: 'var(--surface-sidebar)' }}>
             {/* Mobile logo section */}
             <div className="flex-shrink-0 px-6 py-6">
               <div className="flex flex-col items-center">

@@ -279,6 +279,8 @@ export class NewsService {
     const startTime = Date.now();
 
     try {
+      console.log('📰 Starting news refresh (rate limiting disabled)');
+
       // Create refresh log entry
       const { data: logEntry, error: logError } = await this.supabase
         .from('news_refresh_log')

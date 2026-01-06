@@ -9,6 +9,20 @@ interface CompanyStatisticsProps {
 }
 
 export function CompanyStatistics({ data }: CompanyStatisticsProps) {
+  const asNum = (v: any): number | null => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
+  const displayLarge = (v: any) => {
+    const num = asNum(v);
+    return num !== null ? formatLargeNumber(num) : 'N/A';
+  };
+  const displayNumber = (v: any, digits = 1) => {
+    const num = asNum(v);
+    return num !== null ? formatNumber(num, digits) : 'N/A';
+  };
+  const displayPercent = (v: any) => {
+    const num = asNum(v);
+    return num !== null ? formatPercent(num) : 'N/A';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -24,23 +38,25 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Market Cap</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatLargeNumber(data.marketCap)}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayLarge(data.marketCap)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EV</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.enterpriseValue ? formatLargeNumber(data.enterpriseValue) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayLarge(data.enterpriseValue)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Shares Out</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.sharesOutstanding ? (data.sharesOutstanding / 1e9).toFixed(2) + 'B' : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {asNum(data.sharesOutstanding) !== null ? (data.sharesOutstanding / 1e9).toFixed(2) + 'B' : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Revenue</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.totalRevenue ? formatLargeNumber(data.totalRevenue) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayLarge(data.totalRevenue)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Employees</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.employees ? formatNumber(data.employees) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayNumber(data.employees, 0)}</span>
                 </div>
               </div>
             </div>
@@ -51,27 +67,27 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Gross</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.grossMargins ? formatPercent(data.grossMargins) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.grossMargins)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EBITDA</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.ebitdaMargins ? formatPercent(data.ebitdaMargins) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.ebitdaMargins)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Operating</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.operatingMargins ? formatPercent(data.operatingMargins) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.operatingMargins)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Pre-Tax</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.preTaxMargin ? formatPercent(data.preTaxMargin) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.preTaxMargin)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Net</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.profitMargins ? formatPercent(data.profitMargins) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.profitMargins)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>FCF</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.fcfMargin ? formatPercent(data.fcfMargin) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.fcfMargin)}</span>
                 </div>
               </div>
             </div>
@@ -82,7 +98,7 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>ROA</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.returnOnAssets ? formatPercent(data.returnOnAssets) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.returnOnAssets)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>ROTA</span>
@@ -90,7 +106,7 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>ROE</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.returnOnEquity ? formatPercent(data.returnOnEquity) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayPercent(data.returnOnEquity)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>ROCE</span>
@@ -112,27 +128,27 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>P/E</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.peRatio ? data.peRatio.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.peRatio) !== null ? data.peRatio.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>P/B</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.priceToBook ? data.priceToBook.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.priceToBook) !== null ? data.priceToBook.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EV/Sales</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.evToRevenue ? data.evToRevenue.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.evToRevenue) !== null ? data.evToRevenue.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EV/EBITDA</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.evToEbitda ? data.evToEbitda.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.evToEbitda) !== null ? data.evToEbitda.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>P/FCF</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.priceToFreeCashFlow ? data.priceToFreeCashFlow.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.priceToFreeCashFlow) !== null ? data.priceToFreeCashFlow.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EV/Gross Profit</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.evToGrossProfit ? data.evToGrossProfit.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.evToGrossProfit) !== null ? data.evToGrossProfit.toFixed(1) : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -143,15 +159,15 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Price Target</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.targetPrice ? formatCurrency(data.targetPrice) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.targetPrice) !== null ? formatCurrency(data.targetPrice) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>P/E</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.forwardPE ? data.forwardPE.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.forwardPE) !== null ? data.forwardPE.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>PEG</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.pegRatio ? data.pegRatio.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{asNum(data.pegRatio) !== null ? data.pegRatio.toFixed(1) : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EV/Sales</span>
@@ -174,15 +190,17 @@ export function CompanyStatistics({ data }: CompanyStatisticsProps) {
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Cash</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.cash ? formatLargeNumber(data.cash) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayLarge(data.cash)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Net Debt</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.netDebt ? formatLargeNumber(data.netDebt) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayLarge(data.netDebt)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>Debt/Equity</span>
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{data.debtToEquity !== undefined ? data.debtToEquity.toFixed(1) : 'N/A'}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {asNum(data.debtToEquity) !== null ? data.debtToEquity.toFixed(1) : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span style={{ color: 'var(--text-muted)' }}>EBIT/Interest</span>

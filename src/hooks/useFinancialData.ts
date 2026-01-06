@@ -37,7 +37,12 @@ export function useFinancialData(ticker: string, type: 'income' | 'balance' | 'c
         setCached(result._cached || false);
         setLoading(false);
         
-        console.log(`✅ Loaded ${type} data for ${ticker} (cached: ${result._cached})`);
+        // Log status
+        if ((result as any)._placeholder) {
+          console.log(`⚠️ ${type} data for ${ticker} not cached (showing placeholder)`);
+        } else {
+          console.log(`✅ Loaded ${type} data for ${ticker} (cached: ${result._cached})`);
+        }
       } catch (err) {
         console.error(`Error fetching ${type} data:`, err);
         setError(err instanceof Error ? err.message : 'Failed to fetch financial data');

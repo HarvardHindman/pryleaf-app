@@ -31,7 +31,7 @@ import { ChartData, createMockChartData } from '@/components/charts/TradingViewC
 import FinancialChart from '@/components/charts/FinancialChart';
 import IncomeStatementTable from '@/components/financials/IncomeStatementTable';
 import { CompanyOverview, CompanyStatistics, SymbolChart, ChartType, ChartPeriod, NewsTab } from '@/components/research';
-import { IncomeStatement, BalanceSheet, CashFlowStatement } from '@/components/research/FinancialStatements';
+import { IncomeStatement, BalanceSheet, CashFlowStatement, FinancialSkeletonTable } from '@/components/research/FinancialStatements';
 import { formatCurrency, formatLargeNumber, formatNumber, formatPercent } from '@/lib/formatters';
 
 type FinancialTab = 'income-statement' | 'balance-sheet' | 'cash-flow' | 'earnings';
@@ -50,6 +50,9 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   // Use cached ticker data
   const { data, loading, error } = useTickerData(ticker);
   
+  // Check if we have placeholder data
+  const isPlaceholder = data && (data as any)._placeholder === true;
+  
   // Fetch financial data based on selected tab
   const financialType = financialTab === 'income-statement' ? 'income' :
                        financialTab === 'balance-sheet' ? 'balance' :
@@ -57,6 +60,24 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                        financialTab === 'earnings' ? 'earnings' : 'income';
   
   const { data: financialData, loading: financialLoading } = useFinancialData(ticker, financialType);
+
+  const renderFinancialSkeleton = () => {
+    const periodLabel = period === 'annual' ? 'Annual' : 'Quarterly';
+    const commonProps = { periodLabel, columns: 8 };
+
+    switch (financialTab) {
+      case 'income-statement':
+        return <FinancialSkeletonTable title="Income Statement" rows={14} {...commonProps} />;
+      case 'balance-sheet':
+        return <FinancialSkeletonTable title="Balance Sheet" rows={16} {...commonProps} />;
+      case 'cash-flow':
+        return <FinancialSkeletonTable title="Cash Flow Statement" rows={14} {...commonProps} />;
+      case 'earnings':
+        return <FinancialSkeletonTable title="Earnings" rows={8} {...commonProps} />;
+      default:
+        return <FinancialSkeletonTable title="Financials" rows={12} {...commonProps} />;
+    }
+  };
 
   useEffect(() => {
     const initializePage = async () => {
@@ -196,6 +217,22 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+      {/* Placeholder Data Banner */}
+      {isPlaceholder && (
+        <div className="flex-shrink-0 px-6 py-3 border-b" style={{ backgroundColor: 'var(--warning-background)', borderColor: 'var(--border-default)' }}>
+          <div className="max-w-[1800px] mx-auto flex items-center gap-3">
+            <FileText className="h-5 w-5" style={{ color: 'var(--warning-text)' }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: 'var(--warning-text)' }}>
+                Data Not Cached
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {(data as any)._message || 'This ticker has not been cached yet. Showing placeholder data until real data is available.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header Section - Fixed at top, no scroll */}
       <div className="flex-shrink-0 border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
         <div className="max-w-[1800px] mx-auto px-6 py-3">
@@ -334,16 +371,27 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
             {/* Financial Data Display */}
             {financialLoading ? (
-              <Card>
-                <CardContent className="py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
-                    <p style={{ color: 'var(--text-muted)' }}>Loading financial data...</p>
-                  </div>
-                </CardContent>
-              </Card>
+              renderFinancialSkeleton()
             ) : financialData ? (
               <>
+                {/* Mock Data Warning Banner */}
+                {(financialData as any)._mock && (
+                  <Card className="mb-4" style={{ backgroundColor: 'var(--warning-background)', borderColor: 'var(--warning-border)' }}>
+                    <CardContent className="py-3">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5" style={{ color: 'var(--warning-text)' }} />
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--warning-text)' }}>
+                            Example Financial Data
+                          </p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            Showing mock financial statements for layout preview. Real {ticker} data not cached yet.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
                 {/* Income Statement - Comprehensive 10-K Style */}
                 {financialTab === 'income-statement' && (
                   <IncomeStatement data={financialData} period={period} />
@@ -420,6 +468,11 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                   <div className="text-center">
                     <FileText className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
                     <p style={{ color: 'var(--text-primary)' }}>No financial data available</p>
+                    {error && (
+                      <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
+                        {error}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

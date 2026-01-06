@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔄 Starting news refresh...');
+    console.log('🔄 Starting news refresh... (rate limiting disabled)');
 
     // Parse request body (optional filters)
     let body: any = {};

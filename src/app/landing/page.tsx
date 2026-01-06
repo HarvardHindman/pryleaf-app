@@ -136,15 +136,7 @@ export default function LandingPage() {
           <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div>
               <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
-                2 min
-              </div>
-              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Setup Time
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
-                Free
+                $0
               </div>
               <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 To Start
@@ -156,6 +148,14 @@ export default function LandingPage() {
               </div>
               <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 Revenue Share
+              </div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-4xl font-bold mb-2" style={{ color: 'var(--interactive-primary)' }}>
+                10K+
+              </div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Assets Tracked
               </div>
             </div>
           </div>
@@ -311,15 +311,124 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Value Proposition for Creators */}
+      <section className="relative z-10 px-6 py-20">
+        <div className="max-w-4xl mx-auto">
+          <div 
+            className="p-10 rounded-2xl border-2"
+            style={{ 
+              backgroundColor: 'var(--surface-tertiary)',
+              borderColor: 'var(--interactive-primary)'
+            }}
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+                Give your subscribers more value
+              </h2>
+              <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>
+                Unlike Patreon or YouTube memberships, Pryleaf gives you professional tools to deliver serious value.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--interactive-primary)' }}
+                  >
+                    <TrendingUp className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Share live stock data
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Post tickers with real-time prices. Create watchlists. No screenshots needed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--interactive-primary)' }}
+                  >
+                    <BarChart3 className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Interactive charts
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Members can explore the same data you're analyzing. All built-in.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--interactive-primary)' }}
+                  >
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Portfolio transparency
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Share your holdings and performance. Build trust through transparency.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: 'var(--interactive-primary)' }}
+                  >
+                    <MessageSquare className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                    Context-rich discussions
+                  </h3>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Chat about specific stocks with data right there. Not just text messages.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div 
+              className="mt-8 p-4 rounded-lg text-center"
+              style={{ backgroundColor: 'var(--surface-primary)' }}
+            >
+              <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Your subscribers get a research platform, not just a content feed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* For Members Section */}
       <section className="relative z-10 px-6 py-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
-              For serious investors
+              Join investment communities
             </h2>
             <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>
-              Everything you need to level up.
+              Learn from experts with tools built for sharing insights.
             </p>
           </div>
           
@@ -331,11 +440,17 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
+              >
+                <TrendingUp className="h-6 w-6" style={{ color: 'var(--interactive-primary)' }} />
+              </div>
               <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                Premium video library
+                Built-in market tools
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Exclusive analysis and breakdowns.
+                Live stock data, charts, and watchlists. No switching between apps.
               </p>
             </div>
 
@@ -346,11 +461,17 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
+              >
+                <Users className="h-6 w-6" style={{ color: 'var(--interactive-primary)' }} />
+              </div>
               <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                Research and watchlists
+                Share insights easily
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                See what experts are tracking.
+                Post analysis, discuss trades, share research. Purpose-built for investors.
               </p>
             </div>
 
@@ -361,11 +482,17 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
+              >
+                <MessageSquare className="h-6 w-6" style={{ color: 'var(--interactive-primary)' }} />
+              </div>
               <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                Live chat access
+                Real-time discussions
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Real-time discussions with creators.
+                Chat during market hours. Learn from the community's strategies.
               </p>
             </div>
 
@@ -376,11 +503,17 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
+              >
+                <Star className="h-6 w-6" style={{ color: 'var(--interactive-primary)' }} />
+              </div>
               <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                Community feed
+                Premium content
               </h3>
               <p style={{ color: 'var(--text-secondary)' }}>
-                Stay updated on latest insights.
+                Exclusive videos and analysis from creators you trust.
               </p>
             </div>
           </div>
@@ -405,7 +538,14 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div className="text-4xl mb-4">⚡</div>
+              <div className="flex justify-center mb-4">
+                <div 
+                  className="w-14 h-14 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--surface-tertiary)' }}
+                >
+                  <Zap className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                </div>
+              </div>
               <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Launch in Minutes
               </h3>
@@ -422,7 +562,14 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div className="text-4xl mb-4">💰</div>
+              <div className="flex justify-center mb-4">
+                <div 
+                  className="w-14 h-14 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--surface-tertiary)' }}
+                >
+                  <DollarSign className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                </div>
+              </div>
               <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Keep More Earnings
               </h3>
@@ -439,7 +586,14 @@ export default function LandingPage() {
                 borderColor: 'var(--border-default)'
               }}
             >
-              <div className="text-4xl mb-4">🚀</div>
+              <div className="flex justify-center mb-4">
+                <div 
+                  className="w-14 h-14 rounded-lg flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--surface-tertiary)' }}
+                >
+                  <BarChart3 className="h-7 w-7" style={{ color: 'var(--interactive-primary)' }} />
+                </div>
+              </div>
               <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                 All-in-One Platform
               </h3>
@@ -460,10 +614,13 @@ export default function LandingPage() {
           }}
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
-            Start earning today
+            Start building your community today
           </h2>
-          <p className="text-xl mb-8 text-white/90">
-            No credit card required. Cancel anytime.
+          <p className="text-xl mb-3 text-white/90">
+            Setup takes 2 minutes. Start monetizing your expertise today.
+          </p>
+          <p className="text-base mb-8 text-white/80">
+            Free forever • Keep 80% of revenue • Cancel anytime
           </p>
           <Link href={user ? "/" : "/register"}>
             <button 
@@ -473,7 +630,7 @@ export default function LandingPage() {
                 color: 'var(--interactive-primary)' 
               }}
             >
-              {user ? "Go to Dashboard" : "Create Free Account"}
+              {user ? "Go to Your Dashboard" : "Start Building Your Community"}
               <ArrowRight className="h-6 w-6" />
             </button>
           </Link>
