@@ -234,9 +234,9 @@ export default function CommunityDetailPage() {
           <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
             Community not found
           </h2>
-          <Link href="/community">
+          <Link href="/">
             <button className="btn btn-primary mt-4">
-              Browse Communities
+              Go to Dashboard
             </button>
           </Link>
         </div>
@@ -266,10 +266,10 @@ export default function CommunityDetailPage() {
         }}
       >
         <div className="max-w-7xl mx-auto">
-          <Link href="/community">
+          <Link href="/">
             <button className="btn btn-ghost btn-sm mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Back to Communities
+              Back to Dashboard
             </button>
           </Link>
 

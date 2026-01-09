@@ -9,7 +9,7 @@ import {
   Plus,
   ChevronUp,
   Check,
-  Search,
+  Link2,
   Users,
   Globe
 } from 'lucide-react';
@@ -181,10 +181,10 @@ export default function CommunityNavigation() {
                 Create Community
               </button>
             </Link>
-            <Link href="/community" onClick={() => setIsOpen(false)}>
+            <Link href="/invite" onClick={() => setIsOpen(false)}>
               <button className="w-full px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 rounded-md transition-colors flex items-center gap-2">
-                <Search className="h-3 w-3" />
-                Browse All
+                <Link2 className="h-3 w-3" />
+                Join via Invite
               </button>
             </Link>
           </div>

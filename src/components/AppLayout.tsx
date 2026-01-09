@@ -94,25 +94,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
     { name: 'Research', href: '/research', icon: Building2, current: currentPath === '/research' },
     { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
-    { name: 'Community', href: '/community', icon: Video, current: currentPath.startsWith('/community') && !isOnCommunityDetail },
   ];
 
   // Check if user is owner using cache
   const isOwner = communityId ? isUserOwner(communityId) : false;
 
   // Community-specific tabs - Simplified!
-  // If no community is selected, redirect to /community page
-  const fallbackHref = '/community';
+  // Only show community tabs if a community is selected
   const communityTabs = communityId ? [
     ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
     { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
-  ] : [
-    // No community selected - all tabs redirect to /community page
-    { name: 'Dashboard', href: fallbackHref, icon: BarChart3, current: false },
-    { name: 'Videos', href: fallbackHref, icon: Play, current: false },
-    { name: 'Chat', href: fallbackHref, icon: MessageSquare, current: false },
-  ];
+  ] : [];
   const headerNav = [
     { name: 'News', href: '/news', icon: Globe },
     { name: 'Tools', href: '/tools', icon: Settings },
@@ -279,11 +272,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       >
                         {communityDisplayName}
                       </div>
-                      <Link href="/community">
-                        <span className="text-xs ml-2 transition-colors" style={{ color: 'var(--interactive-primary)' }}>
-                          Browse
-                        </span>
-                      </Link>
                     </div>
                   </div>
                   <div className="px-2">

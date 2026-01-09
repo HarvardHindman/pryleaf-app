@@ -53,14 +53,27 @@ export async function GET(
 
     console.log(`[Ticker API] Fetching data for ${ticker}`);
 
-    // Fetch company overview and quote with cache; tolerate partial failures
-    const [overviewResult, quoteResult] = await Promise.allSettled([
-      StockCacheService.getCompanyOverview(ticker),
-      StockCacheService.getQuote(ticker)
-    ]);
+    // Fetch overview first, then quote to avoid bursting Alpha Vantage on cold loads
+    let overview: CompanyOverview | null = null;
+    try {
+      overview = await StockCacheService.getCompanyOverview(ticker);
+    } catch (err) {
+      console.warn(`[Ticker API] Overview fetch failed for ${ticker}:`, err);
+    }
 
-    const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
-    const quote = quoteResult.status === 'fulfilled' ? quoteResult.value : null;
+    // Longer stagger to reduce concurrent upstream pressure when the cache is cold
+    // Alpha Vantage free tier: 5 calls/min, so we need ~12s between calls to be safe
+    // But that's too slow for UX, so we use 800ms and accept occasional rate limits
+    if (!overview) {
+      await new Promise((r) => setTimeout(r, 800));
+    }
+
+    let quote: Quote | null = null;
+    try {
+      quote = await StockCacheService.getQuote(ticker);
+    } catch (err) {
+      console.warn(`[Ticker API] Quote fetch failed for ${ticker}:`, err);
+    }
 
     // If no data at all (not even cached), return placeholder data
     if (!overview && !quote) {

@@ -21,21 +21,26 @@ import {
   Loader2,
   Check,
   X,
-  Sparkles,
+  Star,
   Search,
   Shield,
+  Info,
   Filter,
   EyeOff,
   Palette,
   Image as ImageIcon,
   Upload,
-  Camera
+  Camera,
+  Link2,
+  Copy,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { useCommunityCache } from '@/contexts/CommunityCacheContext';
 
-type DashboardTab = 'overview' | 'content' | 'members' | 'tiers' | 'analytics' | 'appearance' | 'settings';
+type DashboardTab = 'overview' | 'content' | 'members' | 'invites' | 'tiers' | 'analytics' | 'appearance' | 'settings';
 
 export default function CommunityDashboardPage() {
   const params = useParams();
@@ -75,7 +80,7 @@ export default function CommunityDashboardPage() {
         const communityData = await communityResponse.json();
         
         if (!communityData.community) {
-          router.push('/community');
+          router.push('/');
           return;
         }
 
@@ -178,6 +183,12 @@ export default function CommunityDashboardPage() {
             label="Members"
           />
           <DashboardTabButton
+            active={activeTab === 'invites'}
+            onClick={() => handleTabChange('invites')}
+            icon={<Link2 className="h-4 w-4" />}
+            label="Invites"
+          />
+          <DashboardTabButton
             active={activeTab === 'tiers'}
             onClick={() => handleTabChange('tiers')}
             icon={<Crown className="h-4 w-4" />}
@@ -214,6 +225,9 @@ export default function CommunityDashboardPage() {
         </div>
         <div className={activeTab === 'members' ? 'block' : 'hidden'}>
           {visitedTabs.has('members') && <MembersManagementTab communityId={communityId} />}
+        </div>
+        <div className={activeTab === 'invites' ? 'block' : 'hidden'}>
+          {visitedTabs.has('invites') && <InvitesTab communityId={communityId} />}
         </div>
         <div className={activeTab === 'tiers' ? 'block' : 'hidden'}>
           {visitedTabs.has('tiers') && <TiersTab communityId={communityId} />}
@@ -449,7 +463,7 @@ function OverviewTab({ community, stats, communityId }: any) {
             percentage={stats.totalMembers > 0 ? Math.round(((stats.membersByTier?.elite || 0) / stats.totalMembers) * 100) : 0}
             revenue="Premium"
             color="warning"
-            icon={Sparkles}
+            icon={Star}
           />
         </div>
       </div>
@@ -1084,6 +1098,540 @@ function TiersTab({ communityId }: any) {
   );
 }
 
+interface Invite {
+  id: string;
+  code: string;
+  name: string | null;
+  max_uses: number | null;
+  use_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+  tier: {
+    id: string;
+    name: string;
+    tier_level: number;
+  } | null;
+}
+
+function InvitesTab({ communityId }: { communityId: string }) {
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [tiers, setTiers] = useState<any[]>([]);
+
+  // Form state
+  const [newInvite, setNewInvite] = useState({
+    name: '',
+    tier_id: '',
+    max_uses: '',
+    expires_in_days: ''
+  });
+
+  useEffect(() => {
+    fetchInvites();
+    fetchTiers();
+  }, [communityId]);
+
+  async function fetchInvites() {
+    try {
+      const response = await fetch(`/api/communities/${communityId}/invites`);
+      if (response.ok) {
+        const data = await response.json();
+        setInvites(data.invites || []);
+      }
+    } catch (error) {
+      console.error('Error fetching invites:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchTiers() {
+    try {
+      const response = await fetch(`/api/communities/${communityId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTiers(data.tiers || []);
+      }
+    } catch (error) {
+      console.error('Error fetching tiers:', error);
+    }
+  }
+
+  async function createInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+
+    try {
+      const response = await fetch(`/api/communities/${communityId}/invites`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newInvite.name || null,
+          tier_id: newInvite.tier_id || null,
+          max_uses: newInvite.max_uses ? parseInt(newInvite.max_uses) : null,
+          expires_in_days: newInvite.expires_in_days ? parseInt(newInvite.expires_in_days) : null
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setInvites([data.invite, ...invites]);
+        setShowCreateModal(false);
+        setNewInvite({ name: '', tier_id: '', max_uses: '', expires_in_days: '' });
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to create invite');
+      }
+    } catch (error) {
+      console.error('Error creating invite:', error);
+      alert('Failed to create invite');
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function deactivateInvite(inviteId: string) {
+    if (!confirm('Are you sure you want to deactivate this invite?')) return;
+
+    try {
+      const response = await fetch(`/api/communities/${communityId}/invites/${inviteId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: false })
+      });
+
+      if (response.ok) {
+        setInvites(invites.map(inv => 
+          inv.id === inviteId ? { ...inv, is_active: false } : inv
+        ));
+      }
+    } catch (error) {
+      console.error('Error deactivating invite:', error);
+    }
+  }
+
+  function copyInviteLink(code: string) {
+    const link = `${window.location.origin}/invite/${code}`;
+    navigator.clipboard.writeText(link);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  }
+
+  function getInviteStatus(invite: Invite): { label: string; color: string } {
+    if (!invite.is_active) {
+      return { label: 'Deactivated', color: 'danger' };
+    }
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      return { label: 'Expired', color: 'warning' };
+    }
+    if (invite.max_uses && invite.use_count >= invite.max_uses) {
+      return { label: 'Max Uses Reached', color: 'warning' };
+    }
+    return { label: 'Active', color: 'success' };
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
+      </div>
+    );
+  }
+
+  const activeInvites = invites.filter(inv => inv.is_active);
+  const inactiveInvites = invites.filter(inv => !inv.is_active);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+            Invite Links
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Create and manage invite links for your community
+          </p>
+        </div>
+        <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+          <Plus className="h-4 w-4" />
+          Create Invite
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div 
+          className="p-4 rounded-lg border"
+          style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--success-background)' }}>
+              <Link2 className="h-5 w-5" style={{ color: 'var(--success-text)' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {activeInvites.length}
+              </p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Active Invites</p>
+            </div>
+          </div>
+        </div>
+        <div 
+          className="p-4 rounded-lg border"
+          style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--info-background)' }}>
+              <Users className="h-5 w-5" style={{ color: 'var(--info-text)' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {invites.reduce((sum, inv) => sum + inv.use_count, 0)}
+              </p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Uses</p>
+            </div>
+          </div>
+        </div>
+        <div 
+          className="p-4 rounded-lg border"
+          style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: 'var(--warning-background)' }}>
+              <Clock className="h-5 w-5" style={{ color: 'var(--warning-text)' }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                {inactiveInvites.length}
+              </p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Expired/Deactivated</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Invites List */}
+      {invites.length === 0 ? (
+        <div 
+          className="p-12 rounded-lg border text-center"
+          style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}
+        >
+          <Link2 className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            No invite links yet
+          </h3>
+          <p className="mb-4" style={{ color: 'var(--text-muted)' }}>
+            Create your first invite link to start growing your community
+          </p>
+          <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Create Your First Invite
+          </button>
+        </div>
+      ) : (
+        <div 
+          className="rounded-lg border overflow-hidden"
+          style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}
+        >
+          <table className="w-full">
+            <thead style={{ backgroundColor: 'var(--surface-secondary)' }}>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  Invite Code
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  Tier
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  Uses
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  Status
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {invites.map((invite) => {
+                const status = getInviteStatus(invite);
+                return (
+                  <tr 
+                    key={invite.id} 
+                    className="border-t"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="font-mono text-lg px-3 py-1 rounded"
+                          style={{ backgroundColor: 'var(--surface-secondary)' }}
+                        >
+                          {invite.code}
+                        </div>
+                        {invite.name && (
+                          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                            {invite.name}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span 
+                        className="px-2 py-1 rounded text-xs font-medium"
+                        style={{ 
+                          backgroundColor: invite.tier ? 'var(--info-background)' : 'var(--surface-secondary)',
+                          color: invite.tier ? 'var(--info-text)' : 'var(--text-muted)'
+                        }}
+                      >
+                        {invite.tier?.name || 'Default (Free)'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
+                      {invite.use_count}
+                      {invite.max_uses && ` / ${invite.max_uses}`}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span 
+                        className="px-2 py-1 rounded-full text-xs font-medium"
+                        style={{ 
+                          backgroundColor: `var(--${status.color}-background)`,
+                          color: `var(--${status.color}-text)`
+                        }}
+                      >
+                        {status.label}
+                      </span>
+                      {invite.expires_at && invite.is_active && (
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                          Expires {new Date(invite.expires_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => copyInviteLink(invite.code)}
+                          className="btn btn-ghost btn-sm"
+                          title="Copy invite link"
+                        >
+                          {copiedCode === invite.code ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </button>
+                        <a
+                          href={`/invite/${invite.code}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-ghost btn-sm"
+                          title="Open invite page"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                        {invite.is_active && (
+                          <button
+                            onClick={() => deactivateInvite(invite.id)}
+                            className="btn btn-ghost btn-sm text-red-500"
+                            title="Deactivate invite"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Create Invite Modal */}
+      {showCreateModal && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center p-4 z-50"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={(e) => e.target === e.currentTarget && setShowCreateModal(false)}
+        >
+          <div 
+            className="rounded-2xl max-w-md w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            style={{ 
+              backgroundColor: 'var(--surface-primary)',
+              border: '1px solid var(--border-default)'
+            }}
+          >
+            {/* Modal Header */}
+            <div 
+              className="px-6 py-5 border-b flex items-center gap-4" 
+              style={{ borderColor: 'var(--border-default)' }}
+            >
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ 
+                  background: 'linear-gradient(135deg, var(--interactive-primary) 0%, var(--interactive-hover) 100%)'
+                }}
+              >
+                <Link2 className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                  Create Invite Link
+                </h2>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Share this link to grow your community
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowCreateModal(false)} 
+                className="p-2 rounded-lg transition-colors hover:bg-opacity-80"
+                style={{ backgroundColor: 'var(--surface-secondary)' }}
+              >
+                <X className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
+
+            <form onSubmit={createInvite} className="p-6 space-y-5">
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                  Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={newInvite.name}
+                  onChange={(e) => setNewInvite({ ...newInvite, name: e.target.value })}
+                  placeholder="e.g., Twitter Launch, Discord Collab"
+                  className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--surface-secondary)',
+                    borderColor: 'var(--border-default)',
+                    color: 'var(--text-primary)'
+                  }}
+                />
+                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                  A friendly name to help you track where members came from
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                  Tier
+                </label>
+                <select
+                  value={newInvite.tier_id}
+                  onChange={(e) => setNewInvite({ ...newInvite, tier_id: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: 'var(--surface-secondary)',
+                    borderColor: 'var(--border-default)',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  <option value="">Default (Free Tier)</option>
+                  {tiers.map((tier) => (
+                    <option key={tier.id} value={tier.id}>
+                      {tier.name} {tier.price_monthly > 0 ? `($${tier.price_monthly / 100}/mo)` : '(Free)'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Max Uses
+                  </label>
+                  <input
+                    type="number"
+                    value={newInvite.max_uses}
+                    onChange={(e) => setNewInvite({ ...newInvite, max_uses: e.target.value })}
+                    placeholder="Unlimited"
+                    min="1"
+                    className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--surface-secondary)',
+                      borderColor: 'var(--border-default)',
+                      color: 'var(--text-primary)'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    Expires In
+                  </label>
+                  <select
+                    value={newInvite.expires_in_days}
+                    onChange={(e) => setNewInvite({ ...newInvite, expires_in_days: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2"
+                    style={{
+                      backgroundColor: 'var(--surface-secondary)',
+                      borderColor: 'var(--border-default)',
+                      color: 'var(--text-primary)'
+                    }}
+                  >
+                    <option value="">Never</option>
+                    <option value="1">1 day</option>
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="90">90 days</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div 
+                className="flex gap-3 pt-5 mt-2 border-t"
+                style={{ borderColor: 'var(--border-default)' }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-3 rounded-xl font-medium transition-colors"
+                  style={{ 
+                    backgroundColor: 'var(--surface-secondary)',
+                    color: 'var(--text-primary)'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all disabled:opacity-50"
+                  style={{ 
+                    background: 'linear-gradient(135deg, var(--interactive-primary) 0%, var(--interactive-hover) 100%)',
+                    color: 'white'
+                  }}
+                >
+                  {creating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="h-4 w-4" />
+                      Create Invite
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AnalyticsTab({ communityId, stats }: any) {
   const [selectedPeriod, setSelectedPeriod] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
@@ -1417,12 +1965,12 @@ function InsightCard({ type, title, message }: any) {
   
   const iconMap: any = {
     success: Check,
-    info: Sparkles,
+    info: Info,
     warning: TrendingUp,
     danger: X
   };
 
-  const Icon = iconMap[type] || Sparkles;
+  const Icon = iconMap[type] || Info;
   const color = colorMap[type] || 'info';
 
   return (

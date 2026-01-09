@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Users, Globe, Plus, Search, X, Briefcase, ArrowRight, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { formatCurrency } from '@/lib/formatters';
@@ -43,6 +43,28 @@ export default function Home() {
   } = usePortfolio();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [shareInputs, setShareInputs] = useState<Record<string, string>>({});
+  const [costInputs, setCostInputs] = useState<Record<string, string>>({});
+  const [openMenuSymbol, setOpenMenuSymbol] = useState<string | null>(null);
+
+  // Sync input fields with latest portfolio data
+  useEffect(() => {
+    const newShares: Record<string, string> = {};
+    const newCosts: Record<string, string> = {};
+    portfolioStocks.forEach((s) => {
+      newShares[s.symbol] = (s.shares ?? 0).toString();
+      newCosts[s.symbol] = (s.costBasis ?? 0).toString();
+    });
+    setShareInputs(newShares);
+    setCostInputs(newCosts);
+  }, [portfolioStocks]);
+
+  // Close action menu on any document click
+  useEffect(() => {
+    const handleDocClick = () => setOpenMenuSymbol(null);
+    document.addEventListener('click', handleDocClick);
+    return () => document.removeEventListener('click', handleDocClick);
+  }, []);
 
   // Redirect to landing page if not logged in
   useEffect(() => {
@@ -115,21 +137,25 @@ export default function Home() {
     return (calculateTotalValue(stock) / totalValue) * 100;
   };
 
-  // Optimistic update handlers - immediate UI updates
-  const handleSharesChange = async (symbol: string, newShares: string) => {
-    const shares = parseFloat(newShares) || 0;
+  // Commit changes only on blur or Enter
+  const commitSharesChange = async (symbol: string) => {
     const holding = findHoldingBySymbol(symbol);
-    if (holding) {
-      await updateHolding(holding.id, shares, holding.average_cost);
-    }
+    if (!holding) return;
+    const raw = (shareInputs[symbol] ?? '').trim();
+    if (raw === '') return;
+    const parsed = parseFloat(raw);
+    if (Number.isNaN(parsed) || parsed === holding.shares) return;
+    await updateHolding(holding.id, parsed, holding.average_cost);
   };
 
-  const handleCostBasisChange = async (symbol: string, newCostBasis: string) => {
-    const costBasis = parseFloat(newCostBasis) || 0;
+  const commitCostChange = async (symbol: string) => {
     const holding = findHoldingBySymbol(symbol);
-    if (holding) {
-      await updateHolding(holding.id, holding.shares, costBasis);
-    }
+    if (!holding) return;
+    const raw = (costInputs[symbol] ?? '').trim();
+    if (raw === '') return;
+    const parsed = parseFloat(raw);
+    if (Number.isNaN(parsed) || parsed === holding.average_cost) return;
+    await updateHolding(holding.id, holding.shares, parsed);
   };
 
   const calculatePnL = (stock: PortfolioStock) => {
@@ -357,16 +383,21 @@ export default function Home() {
                       <div className="flex items-center relative">
                         <Input
                           type="number"
-                          value={stock.shares?.toString() || '0'}
-                          onChange={(e) => handleSharesChange(stock.symbol, e.target.value)}
-                          className="portfolio-input w-12"
+                          value={shareInputs[stock.symbol] ?? stock.shares?.toString() ?? '0'}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setShareInputs((prev) => ({ ...prev, [stock.symbol]: e.target.value }));
+                          }}
+                          onBlur={() => commitSharesChange(stock.symbol)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              commitSharesChange(stock.symbol);
+                            }
+                          }}
+                          className="portfolio-input w-16"
                           disabled={isUpdating}
                         />
-                        {isUpdating && hasPendingActions() && (
-                          <div className="absolute right-1 top-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                          </div>
-                        )}
                       </div>
 
                       {/* Average Cost Basis - Always Editable Input with optimistic updates */}
@@ -374,16 +405,21 @@ export default function Home() {
                         <Input
                           type="number"
                           step="0.01"
-                          value={stock.costBasis?.toString() || '0'}
-                          onChange={(e) => handleCostBasisChange(stock.symbol, e.target.value)}
-                          className="portfolio-input w-14"
+                          value={costInputs[stock.symbol] ?? stock.costBasis?.toString() ?? '0'}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setCostInputs((prev) => ({ ...prev, [stock.symbol]: e.target.value }));
+                          }}
+                          onBlur={() => commitCostChange(stock.symbol)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              commitCostChange(stock.symbol);
+                            }
+                          }}
+                          className="portfolio-input w-20"
                           disabled={isUpdating}
                         />
-                        {isUpdating && hasPendingActions() && (
-                          <div className="absolute right-1 top-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                          </div>
-                        )}
                       </div>
 
                       {/* Market Value */}
@@ -446,16 +482,36 @@ export default function Home() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center">
+                      <div className="flex items-center relative">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRemoveStock(stock.symbol)}
-                          className="text-text-muted hover:text-danger-text text-xs p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuSymbol((prev) => (prev === stock.symbol ? null : stock.symbol));
+                          }}
+                          className="text-text-muted hover:text-text-primary p-1"
                           disabled={portfolioLoading || isUpdating}
                         >
-                          ×
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
+                        {openMenuSymbol === stock.symbol && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-6 z-10 w-32 rounded-md border border-border-subtle bg-background shadow-lg"
+                          >
+                            <button
+                              className="w-full text-left px-3 py-2 text-sm text-danger-text hover:bg-background-subtle"
+                              onClick={() => {
+                                setOpenMenuSymbol(null);
+                                handleRemoveStock(stock.symbol);
+                              }}
+                              disabled={portfolioLoading || isUpdating}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

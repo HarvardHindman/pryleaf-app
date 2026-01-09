@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   Video,
   Loader2,
-  Sparkles
+  Lightbulb
 } from 'lucide-react';
 
 const categories = [
@@ -120,10 +120,10 @@ export default function CreateCommunityPage() {
         }}
       >
         <div className="max-w-3xl mx-auto">
-          <Link href="/community">
+          <Link href="/">
             <button className="btn btn-ghost btn-sm mb-4">
               <ArrowLeft className="h-4 w-4" />
-              Back to Communities
+              Back to Dashboard to Communities
             </button>
           </Link>
 
@@ -132,7 +132,7 @@ export default function CreateCommunityPage() {
               className="p-3 rounded-lg"
               style={{ backgroundColor: 'var(--info-background)' }}
             >
-              <Sparkles className="h-6 w-6" style={{ color: 'var(--info-text)' }} />
+              <Lightbulb className="h-6 w-6" style={{ color: 'var(--info-text)' }} />
             </div>
             <div>
               <h1 className="text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>

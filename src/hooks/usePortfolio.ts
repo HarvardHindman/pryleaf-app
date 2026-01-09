@@ -14,51 +14,86 @@ export function usePortfolio() {
   const { user } = useAuth();
   const [portfolio, setPortfolio] = useState<PortfolioWithHoldings | null>(null);
   const [portfolioStocks, setPortfolioStocks] = useState<PortfolioStock[]>([]);
+  const latestStocksRef = useRef<PortfolioStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const pendingActions = useRef<PendingAction[]>([]);
   const optimisticUpdateCount = useRef(0);
 
-  // Helper to fetch prices and update portfolio stocks using bulk quotes API
-  const fetchPricesAndUpdateStocks = useCallback(async (holdings: PortfolioHolding[]) => {
-    // Fetch current prices for all holdings using bulk quotes
-    const symbols = holdings.map(h => h.symbol);
-    const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
-    
-    // Fetch prices for all symbols in one request
-    if (symbols.length > 0) {
-      try {
-        const response = await fetch('/api/quotes/bulk', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ symbols })
-        });
+  // Keep a ref of latest stocks to avoid flicker when doing optimistic updates
+  useEffect(() => {
+    latestStocksRef.current = portfolioStocks;
+  }, [portfolioStocks]);
 
-        if (response.ok) {
-          const data = await response.json();
-          const quotes = data.quotes || {};
-          
-          // Map quotes to market prices format
-          Object.keys(quotes).forEach(symbol => {
-            const quote = quotes[symbol];
-            marketPrices[symbol] = {
-              price: quote.price || 0,
-              change: quote.change || 0,
-              changePercent: quote.changePercent || 0
-            };
-          });
+  // Helper to fetch prices and update portfolio stocks; can target specific symbols
+  const fetchPricesAndUpdateStocks = useCallback(async (holdings: PortfolioHolding[], symbolsToFetch?: string[]) => {
+    const DAILY_CACHE_MINUTES = 24 * 60;
+    const targetSymbols = symbolsToFetch && symbolsToFetch.length > 0
+      ? Array.from(new Set(symbolsToFetch.map(s => s.toUpperCase())))
+      : Array.from(new Set(holdings.map(h => h.symbol.toUpperCase())));
+
+    // Start with existing prices to avoid flicker
+    const latestMap = latestStocksRef.current.reduce<Record<string, PortfolioStock>>((acc, s) => {
+      acc[s.symbol] = s;
+      return acc;
+    }, {});
+
+    const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
+    holdings.forEach(h => {
+      const existing = latestMap[h.symbol];
+      marketPrices[h.symbol] = {
+        price: existing?.price ?? h.average_cost,
+        change: existing?.change ?? 0,
+        changePercent: existing?.changePercent ?? 0
+      };
+    });
+    
+    if (targetSymbols.length > 0) {
+      try {
+        const params = new URLSearchParams({
+          symbols: targetSymbols.join(','),
+          cacheTtlMinutes: DAILY_CACHE_MINUTES.toString()
+        });
+        const response = await fetch(`/api/prices?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch cached prices');
         }
-      } catch (error) {
-        console.error('Failed to fetch bulk quotes:', error);
-        // Fall back to using cost basis as price
+
+        const data = await response.json();
+
         holdings.forEach(h => {
+          const key = h.symbol.toUpperCase();
+          if (!targetSymbols.includes(key)) return;
+          const quote = data[key] || data[h.symbol] || null;
+          
+          const price = typeof quote?.price === 'number'
+            ? quote.price
+            : typeof quote?.regularMarketPrice === 'number'
+              ? quote.regularMarketPrice
+              : marketPrices[h.symbol]?.price ?? h.average_cost;
+          
+          const change = typeof quote?.change === 'number'
+            ? quote.change
+            : typeof quote?.regularMarketChange === 'number'
+              ? quote.regularMarketChange
+              : marketPrices[h.symbol]?.change ?? 0;
+          
+          const changePercent = typeof quote?.changePercent === 'number'
+            ? quote.changePercent
+            : typeof quote?.regularMarketChangePercent === 'number'
+              ? quote.regularMarketChangePercent
+              : marketPrices[h.symbol]?.changePercent ?? 0;
+
           marketPrices[h.symbol] = {
-            price: h.average_cost,
-            change: 0,
-            changePercent: 0
+            price,
+            change,
+            changePercent
           };
         });
+      } catch (error) {
+        console.error('Failed to fetch cached prices:', error);
       }
     }
     
@@ -66,19 +101,25 @@ export function usePortfolio() {
     setPortfolioStocks(stocks);
   }, []);
 
-  // Helper to update portfolio stocks from holdings (synchronous, uses cost basis)
+  // Helper to update portfolio stocks from holdings (synchronous, preserves existing prices)
   const updatePortfolioStocksSync = useCallback((holdings: PortfolioHolding[]) => {
-    // Use cost basis as price for immediate updates
     const marketPrices: Record<string, { price: number; change: number; changePercent: number }> = {};
+    const latestMap = latestStocksRef.current.reduce<Record<string, PortfolioStock>>((acc, s) => {
+      acc[s.symbol] = s;
+      return acc;
+    }, {});
+
     holdings.forEach(h => {
+      const existing = latestMap[h.symbol];
       marketPrices[h.symbol] = {
-        price: h.average_cost, // Use cost basis as fallback
-        change: 0,
-        changePercent: 0
+        price: existing?.price ?? h.average_cost,
+        change: existing?.change ?? 0,
+        changePercent: existing?.changePercent ?? 0
       };
     });
+
     const stocks = PortfolioService.convertToPortfolioStocks(holdings, marketPrices);
-    setPortfolioStocks(stocks);
+      setPortfolioStocks(stocks);
   }, []);
 
   // Helper to create temporary ID for optimistic updates
@@ -181,8 +222,8 @@ export function usePortfolio() {
           )
         };
         updatePortfolioStocksSync(newPortfolio.holdings);
-        // Fetch real prices in background
-        fetchPricesAndUpdateStocks(newPortfolio.holdings);
+        // Fetch price for the new holding only in the background
+        fetchPricesAndUpdateStocks(newPortfolio.holdings, [holding.symbol]);
         return newPortfolio;
       });
       
@@ -269,8 +310,8 @@ export function usePortfolio() {
           holdings: prev.holdings.map(h => h.id === holdingId ? holding : h)
         };
         updatePortfolioStocksSync(newPortfolio.holdings);
-        // Fetch real prices in background
-        fetchPricesAndUpdateStocks(newPortfolio.holdings);
+        // Fetch price for this holding only in the background
+        fetchPricesAndUpdateStocks(newPortfolio.holdings, [holding.symbol]);
         return newPortfolio;
       });
       

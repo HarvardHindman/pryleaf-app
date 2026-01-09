@@ -140,11 +140,21 @@ export function TickerCacheProvider({ children }: { children: React.ReactNode })
         }
         
         const data: TickerData = await response.json();
-        
-        // Update cache
-        setCache(prev => new Map(prev).set(normalizedTicker, data));
-        cacheTimestamps.current.set(normalizedTicker, Date.now());
-        
+
+        // If we only have placeholder data, don't cache it—allow quick re-fetches.
+        if ((data as any)._placeholder) {
+          cacheTimestamps.current.delete(normalizedTicker);
+          setCache(prev => {
+            const next = new Map(prev);
+            next.delete(normalizedTicker);
+            return next;
+          });
+        } else {
+          // Update cache for real data
+          setCache(prev => new Map(prev).set(normalizedTicker, data));
+          cacheTimestamps.current.set(normalizedTicker, Date.now());
+        }
+
         return data;
       } catch (error) {
         console.error(`Error fetching ticker ${normalizedTicker}:`, error);

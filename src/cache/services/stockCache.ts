@@ -5,18 +5,26 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { 
-  CompanyOverview, 
-  Quote, 
-  TimeSeriesData, 
-  ApiUsageStats 
+import {
+  CompanyOverview,
+  Quote,
+  TimeSeriesData,
+  ApiUsageStats
 } from '../types';
 import { CACHE_TTL, DATA_TYPES } from '../constants';
+import { throttleAlphaVantage } from './alphaVantageThrottle';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const DEFAULT_QUOTE_CACHE_MINUTES = 24 * 60; // Daily cache by default
+
+type QuoteOptions = {
+  cacheMinutes?: number;
+  allowStaleFallback?: boolean;
+};
 
 export class StockCacheService {
   /**
@@ -25,7 +33,8 @@ export class StockCacheService {
   private static async fetchJsonWithRetry(
     url: string,
     validate: (data: any) => void,
-    attempts: number = 3,
+    // Keep attempts to 1 by default to stay under Alpha Vantage's strict 5 req/min limit
+    attempts: number = 1,
     delayMs: number = 600
   ): Promise<any | null> {
     for (let i = 0; i < attempts; i++) {
@@ -156,6 +165,9 @@ export class StockCacheService {
     }
 
     try {
+      // Throttle to avoid Alpha Vantage rate limits
+      await throttleAlphaVantage();
+      
       const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/company-overview?symbol=${normalizedSymbol}`;
       const apiData = await this.fetchJsonWithRetry(
         apiUrl,
@@ -244,9 +256,11 @@ export class StockCacheService {
   /**
    * Get real-time quote with Supabase caching
    */
-  static async getQuote(symbol: string): Promise<Quote | null> {
+  static async getQuote(symbol: string, options: QuoteOptions = {}): Promise<Quote | null> {
     const normalizedSymbol = symbol.toUpperCase();
     const dataType = DATA_TYPES.QUOTE;
+    const cacheMinutes = options.cacheMinutes ?? DEFAULT_QUOTE_CACHE_MINUTES;
+    const allowStaleFallback = options.allowStaleFallback ?? true;
 
     const cached = await this.getCachedData<Quote>(normalizedSymbol, dataType);
     if (cached) {
@@ -257,10 +271,20 @@ export class StockCacheService {
     const canRequest = await this.canMakeRequest();
     if (!canRequest) {
       console.warn(`⚠️ No cached quote for ${normalizedSymbol} and live fetch disabled (missing API key)`);
+      if (allowStaleFallback) {
+        const stale = await this.getAnyCachedData<Quote>(normalizedSymbol, dataType);
+        if (stale) {
+          console.warn(`Using stale quote cache for ${normalizedSymbol} because live fetch is unavailable`);
+          return stale;
+        }
+      }
       return null;
     }
 
     try {
+      // Throttle to avoid Alpha Vantage rate limits
+      await throttleAlphaVantage();
+      
       const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/quote?symbol=${normalizedSymbol}`;
       const apiData = await this.fetchJsonWithRetry(
         apiUrl,
@@ -272,10 +296,12 @@ export class StockCacheService {
       );
       if (!apiData) {
         // Try stale cache as a last resort to avoid an empty first load
-        const stale = await this.getAnyCachedData<Quote>(normalizedSymbol, dataType);
-        if (stale) {
-          console.warn(`Using stale quote cache for ${normalizedSymbol} after live fetch failure`);
-          return stale;
+        if (allowStaleFallback) {
+          const stale = await this.getAnyCachedData<Quote>(normalizedSymbol, dataType);
+          if (stale) {
+            console.warn(`Using stale quote cache for ${normalizedSymbol} after live fetch failure`);
+            return stale;
+          }
         }
         return null;
       }
@@ -293,8 +319,8 @@ export class StockCacheService {
         changePercent: apiData.changePercent ?? 'N/A'
       };
 
-      // Cache quote briefly to keep price-driven stats (e.g., market cap) fresh
-      await this.setCachedData(normalizedSymbol, dataType, quote, 5);
+      // Cache quote for the requested duration (default: daily)
+      await this.setCachedData(normalizedSymbol, dataType, quote, cacheMinutes);
       console.log(`Real API call made for ${normalizedSymbol} quote`);
       return quote;
 

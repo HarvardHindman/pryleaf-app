@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { CACHE_TTL } from '../constants';
+import { throttleAlphaVantage } from './alphaVantageThrottle';
 
 type Interval = 'intraday' | 'daily' | 'weekly' | 'monthly';
 type OutputSize = 'compact' | 'full';
@@ -23,7 +24,8 @@ export class TimeSeriesCacheService {
   private static async fetchJsonWithRetry(
     url: string,
     validate: (data: any) => void,
-    attempts: number = 3,
+    // Keep attempts low to avoid tripping Alpha Vantage 5 req/min limits when multiple endpoints fire together
+    attempts: number = 1,
     delayMs: number = 600
   ): Promise<any | null> {
     for (let i = 0; i < attempts; i++) {
@@ -99,6 +101,9 @@ export class TimeSeriesCacheService {
       console.warn('Alpha Vantage API key missing; skipping live time-series fetch');
       return null;
     }
+
+    // Throttle to avoid Alpha Vantage rate limits
+    await throttleAlphaVantage();
 
     const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/alpha-vantage-real/time-series?symbol=${symbol}&interval=${interval}&outputsize=${outputsize}`;
 

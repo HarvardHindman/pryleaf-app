@@ -476,3 +476,248 @@ export async function joinCommunity(
   return membership;
 }
 
+// ============================================================================
+// INVITE SYSTEM FUNCTIONS
+// ============================================================================
+
+export interface CommunityInvite {
+  id: string;
+  community_id: string;
+  created_by: string;
+  code: string;
+  tier_id?: string;
+  max_uses?: number;
+  use_count: number;
+  expires_at?: string;
+  is_active: boolean;
+  name?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Create a new invite code for a community
+ */
+export async function createCommunityInvite(
+  communityId: string,
+  createdBy: string,
+  options?: {
+    tierId?: string;
+    maxUses?: number;
+    expiresInDays?: number;
+    name?: string;
+  }
+) {
+  const supabase = await createSupabaseServerClient();
+
+  // Verify user is community owner
+  const isOwner = await isCommunityOwner(createdBy, communityId);
+  if (!isOwner) {
+    throw new Error('Only community owners can create invites');
+  }
+
+  // Use database function to create invite with auto-generated code
+  const { data: invite, error } = await supabase
+    .rpc('create_community_invite', {
+      p_community_id: communityId,
+      p_created_by: createdBy,
+      p_tier_id: options?.tierId || null,
+      p_max_uses: options?.maxUses || null,
+      p_expires_in_days: options?.expiresInDays || null,
+      p_name: options?.name || null
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return invite;
+}
+
+/**
+ * Validate an invite code
+ */
+export async function validateInviteCode(code: string): Promise<{
+  isValid: boolean;
+  inviteId?: string;
+  communityId?: string;
+  tierId?: string;
+  errorMessage?: string;
+}> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .rpc('validate_invite', { p_code: code })
+    .single();
+
+  if (error) {
+    return { isValid: false, errorMessage: 'Failed to validate invite' };
+  }
+
+  return {
+    isValid: data.is_valid,
+    inviteId: data.invite_id,
+    communityId: data.community_id,
+    tierId: data.tier_id,
+    errorMessage: data.error_message
+  };
+}
+
+/**
+ * Join a community via invite code
+ */
+export async function joinCommunityViaInvite(
+  userId: string,
+  inviteCode: string
+) {
+  const supabase = await createSupabaseServerClient();
+
+  // Validate the invite
+  const validation = await validateInviteCode(inviteCode);
+  
+  if (!validation.isValid) {
+    throw new Error(validation.errorMessage || 'Invalid invite code');
+  }
+
+  const { inviteId, communityId, tierId } = validation;
+
+  if (!communityId || !inviteId) {
+    throw new Error('Invalid invite data');
+  }
+
+  // Check if user is already a member
+  const { data: existing } = await supabase
+    .from('community_memberships')
+    .select('id, status')
+    .eq('community_id', communityId)
+    .eq('user_id', userId)
+    .single();
+
+  if (existing && existing.status === 'active') {
+    throw new Error('You are already a member of this community');
+  }
+
+  // Get the tier to use (from invite or default free tier)
+  let finalTierId = tierId;
+  if (!finalTierId) {
+    const { data: freeTier } = await supabase
+      .from('community_tiers')
+      .select('id')
+      .eq('community_id', communityId)
+      .eq('tier_level', 0)
+      .single();
+
+    if (!freeTier) {
+      throw new Error('No free tier available');
+    }
+    finalTierId = freeTier.id;
+  }
+
+  // Verify tier is free (paid tiers require Stripe integration)
+  const { data: tier } = await supabase
+    .from('community_tiers')
+    .select('price_monthly, tier_level')
+    .eq('id', finalTierId)
+    .single();
+
+  if (tier && tier.price_monthly > 0) {
+    throw new Error('This invite grants access to a paid tier. Payment integration coming soon.');
+  }
+
+  // Create membership
+  const { data: membership, error: membershipError } = await supabase
+    .from('community_memberships')
+    .insert({
+      community_id: communityId,
+      user_id: userId,
+      tier_id: finalTierId,
+      status: 'active',
+      subscribed_at: new Date().toISOString(),
+      current_period_start: new Date().toISOString(),
+      cancel_at_period_end: false,
+      total_messages_sent: 0,
+      total_content_viewed: 0
+    })
+    .select()
+    .single();
+
+  if (membershipError) {
+    throw new Error(membershipError.message);
+  }
+
+  // Log invite usage
+  await supabase
+    .from('invite_usage_log')
+    .insert({
+      invite_id: inviteId,
+      user_id: userId,
+      membership_id: membership.id
+    });
+
+  // Increment invite use count
+  await supabase.rpc('increment_invite_use_count', { p_invite_id: inviteId });
+
+  return {
+    membership,
+    communityId,
+    tierLevel: tier?.tier_level || 0
+  };
+}
+
+/**
+ * Get all invites for a community
+ */
+export async function getCommunityInvites(communityId: string, userId: string) {
+  const supabase = await createSupabaseServerClient();
+
+  // Verify user is owner
+  const isOwner = await isCommunityOwner(userId, communityId);
+  if (!isOwner) {
+    throw new Error('Only community owners can view invites');
+  }
+
+  const { data: invites, error } = await supabase
+    .from('community_invites')
+    .select(`
+      *,
+      tier:community_tiers(id, name, tier_level)
+    `)
+    .eq('community_id', communityId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return invites || [];
+}
+
+/**
+ * Deactivate an invite
+ */
+export async function deactivateInvite(
+  inviteId: string,
+  communityId: string,
+  userId: string
+) {
+  const supabase = await createSupabaseServerClient();
+
+  // Verify user is owner
+  const isOwner = await isCommunityOwner(userId, communityId);
+  if (!isOwner) {
+    throw new Error('Only community owners can deactivate invites');
+  }
+
+  const { error } = await supabase
+    .from('community_invites')
+    .update({ is_active: false })
+    .eq('id', inviteId)
+    .eq('community_id', communityId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return true;
+}
+

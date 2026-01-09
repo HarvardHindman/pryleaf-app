@@ -110,6 +110,25 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
   
+  // Use refs for cache data to avoid callback dependency issues
+  // This prevents infinite re-render loops when callbacks depend on cache state
+  const communityDetailsCacheRef = useRef<Map<string, CommunityDetails>>(new Map());
+  const communityStatsCacheRef = useRef<Map<string, any>>(new Map());
+  const communityActivityCacheRef = useRef<Map<string, any[]>>(new Map());
+  
+  // Keep refs in sync with state
+  useEffect(() => {
+    communityDetailsCacheRef.current = communityDetailsCache;
+  }, [communityDetailsCache]);
+  
+  useEffect(() => {
+    communityStatsCacheRef.current = communityStatsCache;
+  }, [communityStatsCache]);
+  
+  useEffect(() => {
+    communityActivityCacheRef.current = communityActivityCache;
+  }, [communityActivityCache]);
+  
   // Cache timestamps
   const cacheTimestamps = useRef({
     allCommunities: 0,
@@ -119,7 +138,7 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     communityActivity: new Map<string, number>()
   });
 
-  // Check if cache is fresh
+  // Check if cache is fresh (stable - no dependencies)
   const isCacheFresh = useCallback((timestamp: number) => {
     return Date.now() - timestamp < CACHE_DURATION;
   }, []);
@@ -187,12 +206,12 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     }
   }, [user, isCacheFresh]);
 
-  // Fetch specific community details
+  // Fetch specific community details (stable callback - uses refs for cache lookup)
   const fetchCommunityDetails = useCallback(async (communityId: string, force = false): Promise<CommunityDetails | null> => {
     const cachedTimestamp = cacheTimestamps.current.communityDetails.get(communityId) || 0;
     
     if (!force && isCacheFresh(cachedTimestamp)) {
-      return communityDetailsCache.get(communityId) || null; // Use cached data
+      return communityDetailsCacheRef.current.get(communityId) || null; // Use cached data via ref
     }
 
     // Mark as loading
@@ -209,7 +228,8 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
           tiers: data.tiers
         };
         
-        // Update cache
+        // Update cache (both ref and state)
+        communityDetailsCacheRef.current.set(communityId, details);
         setCommunityDetailsCache(prev => new Map(prev).set(communityId, details));
         cacheTimestamps.current.communityDetails.set(communityId, Date.now());
         
@@ -226,20 +246,22 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
         return newSet;
       });
     }
-  }, [isCacheFresh, communityDetailsCache]);
+  }, [isCacheFresh]); // Stable - no cache state dependency
 
-  // Fetch community stats
+  // Fetch community stats (stable callback - uses refs for cache lookup)
   const fetchCommunityStats = useCallback(async (communityId: string, force = false): Promise<any> => {
     const cachedTimestamp = cacheTimestamps.current.communityStats.get(communityId) || 0;
     
     if (!force && isCacheFresh(cachedTimestamp)) {
-      return communityStatsCache.get(communityId) || {};
+      return communityStatsCacheRef.current.get(communityId) || {}; // Use ref
     }
 
     try {
       const response = await fetch(`/api/communities/${communityId}/analytics`);
       if (response.ok) {
         const data = await response.json();
+        // Update cache (both ref and state)
+        communityStatsCacheRef.current.set(communityId, data);
         setCommunityStatsCache(prev => new Map(prev).set(communityId, data));
         cacheTimestamps.current.communityStats.set(communityId, Date.now());
         return data;
@@ -249,14 +271,14 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
       console.error(`Error fetching stats for ${communityId}:`, error);
       return {};
     }
-  }, [isCacheFresh, communityStatsCache]);
+  }, [isCacheFresh]); // Stable - no cache state dependency
 
-  // Fetch community activity
+  // Fetch community activity (stable callback - uses refs for cache lookup)
   const fetchCommunityActivity = useCallback(async (communityId: string, force = false): Promise<any[]> => {
     const cachedTimestamp = cacheTimestamps.current.communityActivity.get(communityId) || 0;
     
     if (!force && isCacheFresh(cachedTimestamp)) {
-      return communityActivityCache.get(communityId) || [];
+      return communityActivityCacheRef.current.get(communityId) || []; // Use ref
     }
 
     try {
@@ -264,6 +286,8 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
       if (response.ok) {
         const data = await response.json();
         const activities = data.activities || [];
+        // Update cache (both ref and state)
+        communityActivityCacheRef.current.set(communityId, activities);
         setCommunityActivityCache(prev => new Map(prev).set(communityId, activities));
         cacheTimestamps.current.communityActivity.set(communityId, Date.now());
         return activities;
@@ -273,7 +297,7 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
       console.error(`Error fetching activity for ${communityId}:`, error);
       return [];
     }
-  }, [isCacheFresh, communityActivityCache]);
+  }, [isCacheFresh]); // Stable - no cache state dependency
 
   // Invalidate cache
   const invalidateCache = useCallback((type: 'all' | 'communities' | 'memberships' | 'details' | 'stats' | 'activity' = 'all') => {

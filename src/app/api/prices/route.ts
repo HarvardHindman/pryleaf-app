@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StockCacheService } from '@/cache';
-import { priceCache } from '@/cache';
+import { StockCacheService, priceCache } from '@/cache';
+
+const DEFAULT_CACHE_MINUTES = 24 * 60; // Daily refresh
+const MAX_CACHE_MINUTES = 24 * 60; // Clamp to 1 day until we need finer granularity
+
+const parseCacheTtl = (value?: string | number | null) => {
+  const asNumber = Number(value);
+  if (Number.isFinite(asNumber) && asNumber > 0) {
+    return Math.min(asNumber, MAX_CACHE_MINUTES);
+  }
+  return DEFAULT_CACHE_MINUTES;
+};
+
+const toNumber = (value: any) => {
+  if (value === undefined || value === null) return null;
+  const parsed = typeof value === 'string' ? Number(value.replace('%', '')) : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 /**
  * Batch Price Quotes API Route
@@ -12,6 +28,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const symbolsParam = searchParams.get('symbols');
+    const cacheTtlMinutes = parseCacheTtl(searchParams.get('cacheTtlMinutes'));
     
     if (!symbolsParam) {
       return NextResponse.json({ error: 'No symbols provided' }, { status: 400 });
@@ -38,19 +55,19 @@ export async function GET(req: NextRequest) {
         toFetch.map(async (ticker) => {
           try {
             // Get quote from Alpha Vantage with Supabase caching
-            const quote = await StockCacheService.getQuote(ticker);
+            const quote = await StockCacheService.getQuote(ticker, { cacheMinutes: cacheTtlMinutes });
             
             if (quote) {
               const quoteData = {
                 symbol: quote.symbol,
-                price: parseFloat(quote.price),
-                change: parseFloat(quote.change),
-                changePercent: parseFloat(quote.changePercent.replace('%', '')),
-                volume: parseInt(quote.volume),
-                open: parseFloat(quote.open),
-                high: parseFloat(quote.high),
-                low: parseFloat(quote.low),
-                previousClose: parseFloat(quote.previousClose),
+                price: toNumber(quote.price) ?? 0,
+                change: toNumber(quote.change) ?? 0,
+                changePercent: toNumber(quote.changePercent) ?? 0,
+                volume: toNumber(quote.volume),
+                open: toNumber(quote.open),
+                high: toNumber(quote.high),
+                low: toNumber(quote.low),
+                previousClose: toNumber(quote.previousClose),
               };
 
               // Update in-memory cache
@@ -80,10 +97,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { tickers } = await req.json();
+    const body = await req.json();
+    const { tickers, cacheTtlMinutes: bodyCacheTtl } = body;
     if (!Array.isArray(tickers) || tickers.length === 0) {
       return NextResponse.json({ error: 'No tickers provided' }, { status: 400 });
     }
+
+    const cacheTtlMinutes = parseCacheTtl(bodyCacheTtl);
 
     const results: Record<string, any> = {};
     const toFetch: string[] = [];
@@ -104,19 +124,19 @@ export async function POST(req: NextRequest) {
         toFetch.map(async (ticker) => {
           try {
             // Get quote from Alpha Vantage with Supabase caching
-            const quote = await StockCacheService.getQuote(ticker);
+            const quote = await StockCacheService.getQuote(ticker, { cacheMinutes: cacheTtlMinutes });
             
             if (quote) {
               const quoteData = {
                 symbol: quote.symbol,
-                regularMarketPrice: parseFloat(quote.price),
-                regularMarketChange: parseFloat(quote.change),
-                regularMarketChangePercent: parseFloat(quote.changePercent.replace('%', '')),
-                regularMarketVolume: parseInt(quote.volume),
-                regularMarketOpen: parseFloat(quote.open),
-                regularMarketDayHigh: parseFloat(quote.high),
-                regularMarketDayLow: parseFloat(quote.low),
-                regularMarketPreviousClose: parseFloat(quote.previousClose),
+                regularMarketPrice: toNumber(quote.price),
+                regularMarketChange: toNumber(quote.change),
+                regularMarketChangePercent: toNumber(quote.changePercent),
+                regularMarketVolume: toNumber(quote.volume),
+                regularMarketOpen: toNumber(quote.open),
+                regularMarketDayHigh: toNumber(quote.high),
+                regularMarketDayLow: toNumber(quote.low),
+                regularMarketPreviousClose: toNumber(quote.previousClose),
               };
 
               // Update in-memory cache

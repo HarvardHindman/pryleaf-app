@@ -111,9 +111,9 @@ export default function PublicProfilePage() {
               </p>
             </>
           )}
-          <Link href="/community">
+          <Link href="/">
             <button className="btn btn-primary">
-              Browse Communities
+              Go to Dashboard
             </button>
           </Link>
         </div>
@@ -151,7 +151,7 @@ export default function PublicProfilePage() {
 
           {/* Action Buttons */}
           <div className="pt-4 pb-6 flex justify-end gap-3">
-            <Link href="/community">
+            <Link href="/">
               <button className="btn btn-outline btn-sm">
                 <ArrowLeft className="h-4 w-4" />
                 Back
