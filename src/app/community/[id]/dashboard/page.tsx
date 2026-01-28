@@ -111,8 +111,37 @@ export default function CommunityDashboardPage() {
 
   if (loading) {
     return (
-      <div className="h-full flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
+      <div className="h-full p-6" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="space-y-2">
+            <div className="h-8 w-48 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+            <div className="h-4 w-32 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+          </div>
+        </div>
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-lg p-4" style={{ backgroundColor: 'var(--surface-primary)', border: '1px solid var(--border-subtle)' }}>
+              <div className="h-4 w-20 rounded animate-pulse mb-2" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+              <div className="h-8 w-16 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+            </div>
+          ))}
+        </div>
+        {/* Content loading */}
+        <div className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center">
+            <div 
+              className="h-8 w-8 rounded-full animate-spin mb-3"
+              style={{
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: 'var(--border-subtle)',
+                borderTopColor: 'var(--interactive-primary)',
+              }}
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -676,9 +705,9 @@ function ContentTab({ communityId }: any) {
                   {new Date(post.created_at).toLocaleDateString()}
                 </p>
                 <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1">
                     <Eye className="h-4 w-4" />
-                    {post.view_count || 0} views
+                    {post.views || 0} views
                   </span>
                   <span className="flex items-center gap-1">
                     <Heart className="h-4 w-4" />
@@ -741,7 +770,7 @@ function MembersManagementTab({ communityId }: any) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(m => 
         m.name?.toLowerCase().includes(query) ||
-        m.email?.toLowerCase().includes(query)
+        m.username?.toLowerCase().includes(query)
       );
     }
 
@@ -915,7 +944,7 @@ function MembersManagementTab({ communityId }: any) {
                         {member.name}
                       </p>
                       <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {member.email}
+                        {member.username ? `@${member.username}` : 'No username'}
                       </p>
                     </div>
                   </div>
@@ -999,7 +1028,9 @@ function MemberDetailsModal({ member, onClose, onRefresh }: any) {
               <h3 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                 {member.name}
               </h3>
-              <p style={{ color: 'var(--text-muted)' }}>{member.email}</p>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {member.username ? `@${member.username}` : 'No username set'}
+              </p>
               <span 
                 className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
                   member.tier_level === 0 
@@ -1033,7 +1064,7 @@ function MemberDetailsModal({ member, onClose, onRefresh }: any) {
               <MessageSquare className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
               <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Messages</p>
               <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                --
+                {(member.total_messages_sent || 0).toLocaleString()}
               </p>
             </div>
             <div 
@@ -1043,7 +1074,7 @@ function MemberDetailsModal({ member, onClose, onRefresh }: any) {
               <Eye className="h-5 w-5 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
               <p className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Views</p>
               <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                --
+                {(member.total_content_viewed || 0).toLocaleString()}
               </p>
             </div>
           </div>
@@ -1067,33 +1098,133 @@ function MemberDetailsModal({ member, onClose, onRefresh }: any) {
 }
 
 function TiersTab({ communityId }: any) {
+  const [tiers, setTiers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTiers() {
+      try {
+        const response = await fetch(`/api/communities/${communityId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setTiers(data.tiers || []);
+        }
+      } catch (error) {
+        console.error('Error fetching tiers:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTiers();
+  }, [communityId]);
+
+  const formatPrice = (cents?: number | null) => {
+    if (cents === null || cents === undefined) return 'Free';
+    if (cents === 0) return 'Free';
+    return `$${(cents / 100).toFixed(0)}/mo`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--interactive-primary)' }} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Membership Tiers
         </h2>
-        <button className="btn btn-primary">
-          <Plus className="h-4 w-4" />
-          Add Tier
-        </button>
+        <Link href={`/community/${communityId}`}>
+          <button className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            Add Tier
+          </button>
+        </Link>
       </div>
 
-      <div 
-        className="p-8 rounded-lg border text-center"
-        style={{
-          backgroundColor: 'var(--surface-primary)',
-          borderColor: 'var(--border-default)'
-        }}
-      >
-        <Crown className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-        <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-          Tier Management Coming Soon
-        </h3>
-        <p style={{ color: 'var(--text-muted)' }}>
-          Ability to create, edit, and manage custom membership tiers will be available soon.
-        </p>
-      </div>
+      {tiers.length === 0 ? (
+        <div 
+          className="p-8 rounded-lg border text-center"
+          style={{
+            backgroundColor: 'var(--surface-primary)',
+            borderColor: 'var(--border-default)'
+          }}
+        >
+          <Crown className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
+          <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+            No tiers yet
+          </h3>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Create your first tier to start charging for access.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tiers.map((tier) => (
+            <div
+              key={tier.id}
+              className="p-6 rounded-lg border space-y-3"
+              style={{
+                backgroundColor: 'var(--surface-primary)',
+                borderColor: 'var(--border-default)'
+              }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {tier.name}
+                    </h3>
+                    {tier.tier_level === 0 && (
+                      <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: 'var(--info-background)', color: 'var(--info-text)' }}>
+                        Free
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {tier.description || 'No description provided'}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <span>{formatPrice(tier.price_monthly)}</span>
+                    {tier.price_yearly ? <span>• ${(tier.price_yearly / 100).toFixed(0)}/yr</span> : null}
+                    <span>• Tier level {tier.tier_level}</span>
+                    {tier.max_members ? <span>• {tier.max_members} slots</span> : null}
+                  </div>
+                </div>
+                <span 
+                  className={`text-xs px-2 py-1 rounded-full ${tier.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}
+                >
+                  {tier.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              {Array.isArray(tier.features) && tier.features.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>
+                    Included
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {tier.features.map((feature: any, idx: number) => (
+                      <span
+                        key={idx}
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{ backgroundColor: 'var(--surface-secondary)', color: 'var(--text-secondary)' }}
+                      >
+                        {feature.name || feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

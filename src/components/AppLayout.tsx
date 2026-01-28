@@ -4,11 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { 
-  Search, 
   Home, 
-  TrendingUp, 
   BarChart3, 
-  Bookmark, 
   Settings, 
   User, 
   ChevronDown,
@@ -16,17 +13,8 @@ import {
   X,
   LogOut,
   MessageSquare,
-  Plus,
-  Hash,
-  Users,
-  Compass,
-  Zap,
-  Activity,
-  LineChart,
   Globe,
   Building2,
-  Server,
-  Video,
   Play
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -93,7 +81,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
     { name: 'Research', href: '/research', icon: Building2, current: currentPath === '/research' },
-    { name: 'Watchlist', href: '/watchlist', icon: Bookmark, current: currentPath === '/watchlist' },
   ];
 
   // Check if user is owner using cache
@@ -102,7 +89,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Community-specific tabs - Simplified!
   // Only show community tabs if a community is selected
   const communityTabs = communityId ? [
-    ...(isOwner ? [{ name: 'Dashboard', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
+    ...(isOwner ? [{ name: 'Community', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
     { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
   ] : [];
@@ -163,26 +150,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </Link>
             ))}
 
-            {/* Community Banner - Visual separator */}
-            {user && communityTabs.length > 0 && (
-              <div 
-                className="mx-2 my-3 px-3 py-2 rounded-lg border"
-                style={{ 
-                  backgroundColor: 'var(--surface-tertiary)',
-                  borderColor: 'var(--border-default)'
-                }}
-              >
-                <div 
-                  className="text-xs font-semibold text-center truncate"
-                  style={{ color: 'var(--text-primary)' }}
-                  title={communityDisplayName}
-                >
-                  {communityDisplayName}
-                </div>
-              </div>
-            )}
-
-            {/* Community Tabs (always shown, redirect to /community if no community selected) */}
+            {/* Community Tabs */}
             {user && communityTabs.length > 0 && (
               <>
                 {communityTabs.map((tab) => (

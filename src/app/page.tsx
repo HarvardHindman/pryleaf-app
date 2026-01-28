@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { formatCurrency } from '@/lib/formatters';
 import TickerSearch from '@/components/TickerSearch';
+import NewsCarousel from '@/components/NewsCarousel';
+import ActivityFeed from '@/components/ActivityFeed';
 
 interface PortfolioStock {
   symbol: string;
@@ -234,15 +236,31 @@ export default function Home() {
         // Existing dashboard content for authenticated users
         <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-heading text-text-primary mb-2">Dashboard</h1>
-          <p className="text-caption">Track your investments and market performance</p>
+          <h1 
+            className="text-2xl font-semibold mb-1"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            Dashboard
+          </h1>
+          <p 
+            className="text-sm"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Track your investments and market performance
+          </p>
         </div>
 
-        {/* Market Overview - Row of Cards */}
-        <div className="mb-8">
-          <h2 className="text-heading text-text-primary mb-4">Market Overview</h2>
-          <div className="dashboard-grid">
-            {marketData.map((index) => {
+        {/* Market Overview - Terminal Strip Style */}
+        <div className="mb-4">
+          <div 
+            className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 px-1"
+            style={{ 
+              backgroundColor: 'var(--surface-primary)',
+              borderRadius: '0.5rem',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            {marketData.map((index, i) => {
               const isPositive = index.change >= 0;
               const formatPrice = (price: number) => {
                 return new Intl.NumberFormat('en-US', {
@@ -252,45 +270,55 @@ export default function Home() {
               };
 
               return (
-                <div key={index.symbol} className="market-card">
-                  <div>
-                    <h3 className="text-body text-text-primary text-xs mb-1 truncate font-semibold">{index.name}</h3>
-
-                    <div className="flex items-center space-x-2">
-                      <div className="text-sm font-bold text-text-primary">
-                        {formatPrice(index.price)}
-                      </div>
-
-                      <div className={`flex items-center space-x-1 text-xs ${
-                        isPositive ? 'text-success-text' : 'text-danger-text'
-                      }`}>
-                        {isPositive ? (
-                          <TrendingUp className="h-2 w-2" />
-                        ) : (
-                          <TrendingDown className="h-2 w-2" />
-                        )}
-                        <span className="font-medium">
-                          {isPositive ? '+' : ''}{index.change}
-                        </span>
-                        <span>
-                          ({isPositive ? '+' : ''}{index.changePercent.toFixed(2)}%)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <div 
+                  key={index.symbol} 
+                  className="flex items-center gap-3 px-3 py-1.5 whitespace-nowrap"
+                  style={{ 
+                    borderRight: i < marketData.length - 1 ? '1px solid var(--border-divider, var(--border-subtle))' : 'none'
+                  }}
+                >
+                  <span 
+                    className="text-xs font-medium"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    {index.symbol.replace('^', '')}
+                  </span>
+                  <span 
+                    className="text-xs font-semibold tabular-nums"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {formatPrice(index.price)}
+                  </span>
+                  <span 
+                    className="text-xs font-medium tabular-nums flex items-center gap-0.5"
+                    style={{ color: isPositive ? 'var(--success-text)' : 'var(--danger-text)' }}
+                  >
+                    {isPositive ? (
+                      <TrendingUp className="h-3 w-3" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3" />
+                    )}
+                    {isPositive ? '+' : ''}{index.changePercent.toFixed(2)}%
+                  </span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Portfolio Section - Financial Terminal Style */}
-        <div className="terminal-section">
-          <div className="terminal-header px-4 py-3">
+        {/* Main Layout: Portfolio (left) + Activity/News (right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Portfolio Section - Takes 2 columns */}
+          <div className="lg:col-span-2">
+            <div className="terminal-section">
+          <div className="terminal-header px-5 py-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-heading text-text-primary flex items-center">
-                <Briefcase className="h-5 w-5 mr-2" />
-                PORTFOLIO
+              <h2 
+                className="text-base font-semibold flex items-center gap-2"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <Briefcase className="h-4 w-4" style={{ color: 'var(--interactive-primary)' }} />
+                Portfolio
               </h2>
               <div className="flex items-center space-x-2">
                 {/* Add Position Autocomplete Search */}
@@ -305,28 +333,67 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Portfolio Summary - Financial Terminal Style */}
-          <div className="grid grid-cols-3 gap-0 border-b border-border-subtle">
-            <div className="px-4 py-2 border-r border-border-subtle relative">
-              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Total Value</div>
-              <div className="text-lg font-bold text-text-primary flex items-center">
+          {/* Portfolio Summary - Refined Stats Bar */}
+          <div 
+            className="grid grid-cols-3 gap-0"
+            style={{ 
+              borderBottom: '1px solid var(--border-divider, var(--border-subtle))',
+              backgroundColor: 'var(--surface-inset, var(--surface-tertiary))'
+            }}
+          >
+            <div 
+              className="px-5 py-3 relative"
+              style={{ borderRight: '1px solid var(--border-divider, var(--border-subtle))' }}
+            >
+              <div 
+                className="text-xs font-medium uppercase tracking-wider mb-1"
+                style={{ color: 'var(--text-subtle)' }}
+              >
+                Total Value
+              </div>
+              <div 
+                className="text-xl font-semibold tabular-nums flex items-center"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {formatCurrency(getTotalPortfolioValue())}
                 {isUpdating && hasPendingActions() && (
-                  <div className="ml-2 w-1 h-1 bg-blue-500 rounded-full animate-pulse"></div>
+                  <div 
+                    className="ml-2 w-1.5 h-1.5 rounded-full animate-pulse"
+                    style={{ backgroundColor: 'var(--interactive-primary)' }}
+                  />
                 )}
               </div>
             </div>
 
-            <div className="px-4 py-2 border-r border-border-subtle">
-              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Daily P&L</div>
-              <div className={`text-lg font-bold ${getTotalPortfolioChange() >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
+            <div 
+              className="px-5 py-3"
+              style={{ borderRight: '1px solid var(--border-divider, var(--border-subtle))' }}
+            >
+              <div 
+                className="text-xs font-medium uppercase tracking-wider mb-1"
+                style={{ color: 'var(--text-subtle)' }}
+              >
+                Daily P&L
+              </div>
+              <div 
+                className="text-xl font-semibold tabular-nums"
+                style={{ color: getTotalPortfolioChange() >= 0 ? 'var(--success-text)' : 'var(--danger-text)' }}
+              >
                 {formatCurrencyChange(getTotalPortfolioChange())}
               </div>
             </div>
 
-            <div className="px-4 py-2">
-              <div className="text-xs font-medium text-text-subtle uppercase tracking-wide">Positions</div>
-              <div className="text-lg font-bold text-text-primary">
+            <div className="px-5 py-3">
+              <div 
+                className="text-xs font-medium uppercase tracking-wider mb-1"
+                style={{ color: 'var(--text-subtle)' }}
+              >
+                Positions
+              </div>
+              <div 
+                className="text-xl font-semibold"
+                style={{ color: 'var(--text-primary)' }}
+              >
                 {portfolioStocks.length}
               </div>
             </div>
@@ -335,7 +402,14 @@ export default function Home() {
           {/* Portfolio Holdings - Financial Terminal Style */}
           <div>
             {/* Header Row */}
-            <div className="terminal-row bg-surface-secondary border-b border-border-subtle text-xs font-medium text-text-subtle uppercase tracking-wide">
+            <div 
+              className="terminal-row text-xs font-medium uppercase tracking-wider"
+              style={{ 
+                backgroundColor: 'var(--surface-primary)',
+                borderBottom: '1px solid var(--border-divider, var(--border-subtle))',
+                color: 'var(--text-subtle)'
+              }}
+            >
               <div className="flex items-center">Symbol</div>
               <div className="flex items-center">Shares</div>
               <div className="flex items-center">Avg Cost</div>
@@ -348,19 +422,35 @@ export default function Home() {
             </div>
             
             {portfolioLoading ? (
-              <div className="px-4 py-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                <p className="text-text-muted">Loading portfolio...</p>
+              <div className="px-6 py-12 text-center">
+                <div className="flex flex-col items-center">
+                  <div 
+                    className="h-8 w-8 rounded-full animate-spin mb-3"
+                    style={{ 
+                      borderWidth: '2px',
+                      borderStyle: 'solid',
+                      borderColor: 'var(--border-subtle)',
+                      borderTopColor: 'var(--interactive-primary)'
+                    }}
+                  />
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading portfolio...</p>
+                </div>
               </div>
             ) : portfolioError ? (
-              <div className="px-4 py-8 text-center">
-                <p className="text-red-500 mb-4">Error loading portfolio</p>
-                <p className="text-text-muted text-sm">{portfolioError}</p>
+              <div className="px-6 py-12 text-center">
+                <p className="mb-2" style={{ color: 'var(--danger-text)' }}>Error loading portfolio</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{portfolioError}</p>
               </div>
             ) : portfolioStocks.length === 0 ? (
-              <div className="px-4 py-8 text-center">
-                <p className="text-text-subtle mb-4">No positions in portfolio</p>
-                <p className="text-text-muted text-sm">Use the search bar above to add your first position</p>
+              <div className="px-6 py-12 text-center">
+                <div 
+                  className="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: 'var(--surface-inset, var(--surface-tertiary))' }}
+                >
+                  <Briefcase className="h-6 w-6" style={{ color: 'var(--text-muted)' }} />
+                </div>
+                <p className="font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>No positions yet</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Use the search bar above to add your first position</p>
               </div>
             ) : (
               <div>
@@ -370,12 +460,26 @@ export default function Home() {
                   const portfolioPercentage = getPortfolioPercentage(stock);
 
                   return (
-                    <div key={stock.symbol} className="terminal-row border-b border-border-subtle">
+                    <div 
+                      key={stock.symbol} 
+                      className="terminal-row"
+                      style={{ borderBottom: '1px solid var(--border-divider, var(--border-subtle))' }}
+                    >
                       {/* Symbol */}
                       <div className="flex items-center">
                         <div>
-                          <div className="font-semibold text-text-primary text-sm">{stock.symbol}</div>
-                          <div className="text-xs text-text-subtle truncate">{stock.name}</div>
+                          <div 
+                            className="font-semibold text-sm"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {stock.symbol}
+                          </div>
+                          <div 
+                            className="text-xs truncate max-w-[120px]"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            {stock.name}
+                          </div>
                         </div>
                       </div>
 
@@ -424,32 +528,50 @@ export default function Home() {
 
                       {/* Market Value */}
                       <div className="flex items-center">
-                        <div className="font-medium text-text-primary text-sm">{formatCurrency(totalValue)}</div>
+                        <div 
+                          className="font-medium text-sm tabular-nums"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {formatCurrency(totalValue)}
+                        </div>
                       </div>
 
                       {/* Portfolio Percentage */}
                       <div className="flex items-center">
-                        <div className="font-medium text-text-secondary text-sm">
+                        <div 
+                          className="text-sm tabular-nums px-2 py-0.5 rounded"
+                          style={{ 
+                            color: 'var(--text-secondary)',
+                            backgroundColor: 'var(--surface-inset, var(--surface-tertiary))'
+                          }}
+                        >
                           {portfolioPercentage.toFixed(1)}%
                         </div>
                       </div>
 
                       {/* Last Price */}
                       <div className="flex items-center">
-                        <div className="font-medium text-text-primary text-sm">{formatCurrency(stock.price)}</div>
+                        <div 
+                          className="font-medium text-sm tabular-nums"
+                          style={{ color: 'var(--text-primary)' }}
+                        >
+                          {formatCurrency(stock.price)}
+                        </div>
                       </div>
 
                       {/* Change */}
                       <div className="flex items-center">
                         <div>
-                          <div className={`font-medium text-sm ${
-                            isPositive ? 'text-success-text' : 'text-danger-text'
-                          }`}>
+                          <div 
+                            className="font-medium text-sm tabular-nums"
+                            style={{ color: isPositive ? 'var(--success-text)' : 'var(--danger-text)' }}
+                          >
                             {formatCurrencyChange(stock.change)}
                           </div>
-                          <div className={`text-xs ${
-                            isPositive ? 'text-success-text' : 'text-danger-text'
-                          }`}>
+                          <div 
+                            className="text-xs tabular-nums"
+                            style={{ color: isPositive ? 'var(--success-text)' : 'var(--danger-text)' }}
+                          >
                             {isPositive ? '+' : ''}{stock.changePercent.toFixed(2)}%
                           </div>
                         </div>
@@ -465,14 +587,16 @@ export default function Home() {
 
                             return (
                               <>
-                                <div className={`font-medium text-sm ${
-                                  isProfitable ? 'text-success-text' : 'text-danger-text'
-                                }`}>
+                                <div 
+                                  className="font-medium text-sm tabular-nums"
+                                  style={{ color: isProfitable ? 'var(--success-text)' : 'var(--danger-text)' }}
+                                >
                                   {formatCurrencyChange(profit)}
                                 </div>
-                                <div className={`text-xs ${
-                                  isProfitable ? 'text-success-text' : 'text-danger-text'
-                                }`}>
+                                <div 
+                                  className="text-xs tabular-nums"
+                                  style={{ color: isProfitable ? 'var(--success-text)' : 'var(--danger-text)' }}
+                                >
                                   {isProfitable ? '+' : ''}{profitPercentage.toFixed(2)}%
                                 </div>
                               </>
@@ -490,7 +614,8 @@ export default function Home() {
                             e.stopPropagation();
                             setOpenMenuSymbol((prev) => (prev === stock.symbol ? null : stock.symbol));
                           }}
-                          className="text-text-muted hover:text-text-primary p-1"
+                          className="p-1 rounded-md transition-colors"
+                          style={{ color: 'var(--text-muted)' }}
                           disabled={portfolioLoading || isUpdating}
                         >
                           <MoreVertical className="h-4 w-4" />
@@ -498,10 +623,22 @@ export default function Home() {
                         {openMenuSymbol === stock.symbol && (
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute right-0 top-6 z-10 w-32 rounded-md border border-border-subtle bg-background shadow-lg"
+                            className="absolute right-0 top-8 z-10 w-36 rounded-lg overflow-hidden"
+                            style={{ 
+                              backgroundColor: 'var(--surface-elevated, var(--surface-primary))',
+                              border: '1px solid var(--border-default)',
+                              boxShadow: 'var(--shadow-lg)'
+                            }}
                           >
                             <button
-                              className="w-full text-left px-3 py-2 text-sm text-danger-text hover:bg-background-subtle"
+                              className="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors"
+                              style={{ color: 'var(--danger-text)' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'var(--danger-background)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
                               onClick={() => {
                                 setOpenMenuSymbol(null);
                                 handleRemoveStock(stock.symbol);
@@ -520,6 +657,18 @@ export default function Home() {
             )}
           </div>
 
+            </div>
+          </div>
+
+          {/* Right Sidebar: Activity + News */}
+          <div className="lg:col-span-1 flex flex-col gap-4 lg:min-h-[500px]">
+            <div className="flex-1 min-h-0">
+              <ActivityFeed />
+            </div>
+            <div className="flex-1 min-h-0">
+              <NewsCarousel tickers={portfolioStocks.map(s => s.symbol)} />
+            </div>
+          </div>
         </div>
       </div>
       )}

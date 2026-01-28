@@ -41,8 +41,16 @@ export default function CommunityNavigation() {
 
   if (loading) {
     return (
-      <div className="w-full px-2 py-2 rounded-lg" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
-        <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading...</div>
+      <div className="w-full px-2 py-3 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--surface-tertiary)' }}>
+        <div 
+          className="h-4 w-4 rounded-full animate-spin"
+          style={{
+            borderWidth: '2px',
+            borderStyle: 'solid',
+            borderColor: 'var(--border-subtle)',
+            borderTopColor: 'var(--interactive-primary)',
+          }}
+        />
       </div>
     );
   }

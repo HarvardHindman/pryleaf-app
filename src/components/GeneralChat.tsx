@@ -55,15 +55,36 @@ export default function GeneralChat() {
   if (loading || channelLoading) {
     return (
       <div
-        className="h-full flex items-center justify-center"
+        className="h-full flex flex-col"
         style={{ backgroundColor: 'var(--surface-secondary)' }}
       >
-        <div className="text-center">
-          <div
-            className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
-            style={{ borderColor: 'var(--interactive-primary)' }}
-          ></div>
-          <p style={{ color: 'var(--text-muted)' }}>Loading chat...</p>
+        {/* Messages skeleton */}
+        <div className="flex-1 p-4 space-y-4 overflow-hidden">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex gap-3" style={{ opacity: 1 - (i * 0.15) }}>
+              <div 
+                className="w-8 h-8 rounded-full animate-pulse flex-shrink-0"
+                style={{ backgroundColor: 'var(--surface-tertiary)' }}
+              />
+              <div className="space-y-2 flex-1">
+                <div 
+                  className="h-3 w-24 rounded animate-pulse"
+                  style={{ backgroundColor: 'var(--surface-tertiary)' }}
+                />
+                <div 
+                  className="h-4 rounded animate-pulse"
+                  style={{ backgroundColor: 'var(--surface-tertiary)', width: `${60 + (i * 10)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Input skeleton */}
+        <div className="flex-shrink-0 p-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div 
+            className="h-10 w-full rounded-lg animate-pulse"
+            style={{ backgroundColor: 'var(--surface-tertiary)' }}
+          />
         </div>
       </div>
     );

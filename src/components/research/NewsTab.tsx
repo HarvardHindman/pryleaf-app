@@ -173,9 +173,17 @@ export default function NewsTab({ ticker, className = '' }: NewsTabProps) {
     return (
       <Card className={className}>
         <CardContent className="py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
-            <p style={{ color: 'var(--text-muted)' }}>Loading news...</p>
+          <div className="flex flex-col items-center">
+            <div 
+              className="h-8 w-8 rounded-full animate-spin mb-3"
+              style={{
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: 'var(--border-subtle)',
+                borderTopColor: 'var(--interactive-primary)',
+              }}
+            />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading news...</p>
           </div>
         </CardContent>
       </Card>
@@ -413,7 +421,15 @@ export default function NewsTab({ ticker, className = '' }: NewsTabProps) {
       {/* Loading More Indicator */}
       {loading && articles.length > 0 && (
         <div className="text-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 mx-auto" style={{ borderColor: 'var(--interactive-primary)' }}></div>
+          <div 
+            className="h-6 w-6 rounded-full animate-spin mx-auto"
+            style={{
+              borderWidth: '2px',
+              borderStyle: 'solid',
+              borderColor: 'var(--border-subtle)',
+              borderTopColor: 'var(--interactive-primary)',
+            }}
+          />
         </div>
       )}
     </div>

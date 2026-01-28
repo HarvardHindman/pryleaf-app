@@ -9,17 +9,16 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
-      {/* Animated Green Dotted Grid Background */}
-      <div className="absolute inset-0 z-0 opacity-30">
-        <div 
-          className="absolute inset-0 animate-grid-flow"
-          style={{
-            backgroundImage: `radial-gradient(circle, var(--interactive-primary) 1px, transparent 1px)`,
-            backgroundSize: '30px 30px',
-            animation: 'gridFlow 20s linear infinite'
-          }}
-        />
-      </div>
+      {/* Subtle gradient background - clean and professional */}
+      <div 
+        className="absolute inset-0 z-0"
+        style={{
+          background: `
+            radial-gradient(ellipse 80% 50% at 50% -20%, rgba(22, 163, 74, 0.08), transparent),
+            radial-gradient(ellipse 60% 40% at 100% 100%, rgba(22, 163, 74, 0.05), transparent)
+          `
+        }}
+      />
 
       {/* Navigation */}
       <nav className="relative z-10 px-6 py-6">
@@ -121,7 +120,7 @@ export default function LandingPage() {
                       color: 'white' 
                     }}
                   >
-                    Start Free — No Credit Card
+                    Create Your Community
                     <ArrowRight className="h-6 w-6" />
                   </button>
                 </Link>
@@ -646,17 +645,6 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* CSS for grid animation */}
-      <style jsx>{`
-        @keyframes gridFlow {
-          0% {
-            transform: translate(0, 0);
-          }
-          100% {
-            transform: translate(30px, 30px);
-          }
-        }
-      `}</style>
     </div>
   );
 }

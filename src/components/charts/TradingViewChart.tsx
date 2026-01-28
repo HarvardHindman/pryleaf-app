@@ -251,10 +251,18 @@ export default function TradingViewChart({
   return (
     <div className={`relative ${className}`}>
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+        <div className="absolute inset-0 flex items-center justify-center z-10" style={{ backgroundColor: 'var(--surface-secondary)', opacity: 0.9 }}>
           <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <span className="text-text-muted">Loading chart...</span>
+            <div 
+              className="h-6 w-6 rounded-full animate-spin"
+              style={{
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: 'var(--border-subtle)',
+                borderTopColor: 'var(--interactive-primary)',
+              }}
+            />
+            <span style={{ color: 'var(--text-muted)' }}>Loading chart...</span>
           </div>
         </div>
       )}

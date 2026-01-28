@@ -1,78 +1,90 @@
 .dark {
-  /* Modern Dark Theme - 2025 Edition */
-  /* Rich, sophisticated palette with vibrant accents */
+  /* Modern Dark Theme - 2025 Refined Edition */
+  /* Sophisticated, high-contrast palette with depth and dimension */
 
-  /* Base Colors - Deep, rich backgrounds */
-  --background: #09090b;
-  --foreground: #fafafa;
+  /* Base Colors - Rich, layered backgrounds */
+  --background: #0a0a0c;
+  --foreground: #f4f4f5;
 
-  /* Text Colors - Refined hierarchy with better readability */
-  --text-primary: #fafafa;         /* Main text, crisp white */
-  --text-secondary: #e4e4e7;       /* Secondary text, soft white */
-  --text-muted: #a1a1aa;           /* Muted text, zinc-400 */
-  --text-subtle: #71717a;          /* Subtle text, zinc-500 */
+  /* Text Colors - Clear hierarchy with excellent readability */
+  --text-primary: #f4f4f5;         /* Main text - slightly warmer white */
+  --text-secondary: #d4d4d8;       /* Secondary text - zinc-300 */
+  --text-muted: #a1a1aa;           /* Muted text - zinc-400 */
+  --text-subtle: #71717a;          /* Subtle text - zinc-500 */
 
-  /* Surface Colors - Layered zinc palette */
-  --surface-primary: #18181b;      /* Cards, elevated content - zinc-900 */
-  --surface-secondary: #09090b;    /* Main background - zinc-950 */
-  --surface-tertiary: #27272a;     /* Hover states, tertiary - zinc-800 */
-  --surface-elevated: #27272a;     /* Modals, popovers - zinc-800 */
-  --surface-sidebar: #1a1d28;      /* Sidebar with subtle blue tint */
+  /* Surface Colors - Refined layering with better separation */
+  --surface-primary: #141416;      /* Cards, elevated content - deeper */
+  --surface-secondary: #0a0a0c;    /* Main background - rich black */
+  --surface-tertiary: #1c1c1f;     /* Hover states, tertiary - clearer separation */
+  --surface-elevated: #1e1e21;     /* Modals, popovers - distinct elevation */
+  --surface-sidebar: #111114;      /* Sidebar - subtle distinction */
+  --surface-inset: #0d0d0f;        /* Inset/recessed areas */
 
-  /* Border Colors - Subtle zinc tones */
-  --border-subtle: #27272a;        /* Very subtle - zinc-800 */
-  --border-default: #3f3f46;       /* Default border - zinc-700 */
-  --border-strong: #52525b;        /* Emphasis border - zinc-600 */
+  /* Border Colors - Softer, more refined */
+  --border-subtle: rgba(255, 255, 255, 0.04);  /* Very subtle, almost invisible */
+  --border-default: rgba(255, 255, 255, 0.08); /* Default - soft glow effect */
+  --border-strong: rgba(255, 255, 255, 0.12);  /* Emphasis - still subtle */
+  --border-divider: rgba(255, 255, 255, 0.06); /* For horizontal dividers */
 
-  /* Interactive Colors - Brand Green (matches light theme) */
+  /* Interactive Colors - Brand Green with refined tones */
   --interactive-primary: #22c55e;  /* Primary actions - green-500 */
   --interactive-hover: #16a34a;    /* Hover state - green-600 */
   --interactive-active: #15803d;   /* Active state - green-700 */
   
   /* Interactive Color Variants for UI Elements */
-  --interactive-bg-subtle: #14532d;   /* Dark green background - green-950 */
-  --interactive-bg-muted: #166534;    /* Muted green background - green-800 */
-  --interactive-border: #15803d;      /* Green border - green-700 */
+  --interactive-bg-subtle: rgba(34, 197, 94, 0.08);   /* Subtle green tint */
+  --interactive-bg-muted: rgba(34, 197, 94, 0.15);    /* Muted green background */
+  --interactive-border: rgba(34, 197, 94, 0.25);      /* Green border - soft */
   --interactive-text-on-bg: #86efac;  /* Text on green backgrounds - green-300 */
 
-  /* Status Colors - Modern, vibrant palette */
-  --success-background: #052e16;    /* Emerald-950 background */
-  --success-text: #10b981;         /* Emerald-500 text */
-  --success-border: #064e3b;       /* Emerald-900 border */
+  /* Status Colors - Refined, modern palette */
+  --success-background: rgba(16, 185, 129, 0.1);  /* Emerald with transparency */
+  --success-text: #34d399;         /* Emerald-400 - brighter for dark mode */
+  --success-border: rgba(16, 185, 129, 0.2);
 
-  --warning-background: #451a03;    /* Amber-950 background */
-  --warning-text: #f59e0b;         /* Amber-500 text */
-  --warning-border: #78350f;       /* Amber-900 border */
+  --warning-background: rgba(245, 158, 11, 0.1);  /* Amber with transparency */
+  --warning-text: #fbbf24;         /* Amber-400 */
+  --warning-border: rgba(245, 158, 11, 0.2);
 
-  --danger-background: #450a0a;     /* Rose-950 background */
-  --danger-text: #fb7185;          /* Rose-400 text */
-  --danger-border: #881337;        /* Rose-900 border */
+  --danger-background: rgba(244, 63, 94, 0.1);    /* Rose with transparency */
+  --danger-text: #fb7185;          /* Rose-400 */
+  --danger-border: rgba(244, 63, 94, 0.2);
 
-  --info-background: #083344;       /* Cyan-950 background */
-  --info-text: #22d3ee;            /* Cyan-400 text */
-  --info-border: #164e63;          /* Cyan-900 border */
+  --info-background: rgba(34, 211, 238, 0.1);     /* Cyan with transparency */
+  --info-text: #22d3ee;            /* Cyan-400 */
+  --info-border: rgba(34, 211, 238, 0.2);
 
-  /* Shadows and Elevation - Deeper shadows for depth */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.6), 0 1px 2px -1px rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -2px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+  /* Shadows and Elevation - Layered for depth */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 24px 48px -8px rgba(0, 0, 0, 0.5), 0 12px 24px -8px rgba(0, 0, 0, 0.4);
+  
+  /* Inset shadows for depth */
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 
   /* Glow effects for interactive elements */
-  --glow-primary: 0 0 20px rgba(16, 185, 129, 0.25);
-  --glow-success: 0 0 20px rgba(16, 185, 129, 0.3);
-  --glow-danger: 0 0 20px rgba(251, 113, 133, 0.3);
+  --glow-primary: 0 0 20px rgba(34, 197, 94, 0.2), 0 0 40px rgba(34, 197, 94, 0.1);
+  --glow-success: 0 0 20px rgba(52, 211, 153, 0.25);
+  --glow-danger: 0 0 20px rgba(251, 113, 133, 0.25);
+  --glow-soft: 0 0 30px rgba(255, 255, 255, 0.03);
+
+  /* Card-specific styling */
+  --card-bg: linear-gradient(180deg, #16161a 0%, #131316 100%);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
 
   /* Legacy mappings for backward compatibility */
   --background: var(--surface-secondary);
   --foreground: var(--text-primary);
   --card: var(--surface-primary);
   --card-foreground: var(--text-primary);
-  --popover: var(--surface-primary);
+  --popover: var(--surface-elevated);
   --popover-foreground: var(--text-primary);
   --primary: var(--interactive-primary);
-  --primary-foreground: #09090b;
+  --primary-foreground: #0a0a0c;
   --secondary: var(--surface-tertiary);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-tertiary);

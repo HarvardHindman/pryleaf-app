@@ -75,77 +75,95 @@
 }
 
 :root {
-  --radius: 0.375rem;
+  --radius: 0.5rem;
 
-  /* Modern Semantic Color System - Light Theme */
+  /* Modern Semantic Color System - Light Theme 2025 */
+  /* Clean, airy design with depth and sophistication */
 
   /* Base Colors */
   --background: #fafafa;
-  --foreground: #1a1a1a;
+  --foreground: #18181b;
 
-  /* Text Colors - High contrast hierarchy */
-  --text-primary: #1a1a1a;        /* Main text, high contrast */
-  --text-secondary: #4a4a4a;      /* Secondary text, readable */
-  --text-muted: #6b7280;          /* Muted text, less prominent */
-  --text-subtle: #9ca3af;        /* Subtle text, least prominent */
+  /* Text Colors - Refined hierarchy */
+  --text-primary: #18181b;        /* Main text - zinc-900 */
+  --text-secondary: #3f3f46;      /* Secondary text - zinc-700 */
+  --text-muted: #71717a;          /* Muted text - zinc-500 */
+  --text-subtle: #a1a1aa;         /* Subtle text - zinc-400 */
 
-  /* Surface Colors - Subtle hierarchy with proper contrast */
-  --surface-primary: #ffffff;      /* Main background, cards */
-  --surface-secondary: #f9fafb;   /* Secondary backgrounds */
-  --surface-tertiary: #f3f4f6;    /* Tertiary, subtle differences */
-  --surface-elevated: #ffffff;    /* Elevated surfaces like modals */
-  --surface-sidebar: #eff2f8;     /* Sidebar with subtle blue tint */
+  /* Surface Colors - Subtle layering with warmth */
+  --surface-primary: #ffffff;      /* Cards, elevated content */
+  --surface-secondary: #fafafa;    /* Main background - zinc-50 */
+  --surface-tertiary: #f4f4f5;     /* Hover states - zinc-100 */
+  --surface-elevated: #ffffff;     /* Modals, popovers */
+  --surface-sidebar: #f8fafc;      /* Sidebar - slate-50 for subtle distinction */
+  --surface-inset: #f1f5f9;        /* Inset/recessed areas - slate-100 */
 
-  /* Border Colors - Subtle to prominent */
-  --border-subtle: #f3f4f6;       /* Very subtle, almost invisible */
-  --border-default: #e5e7eb;      /* Default border, balanced */
-  --border-strong: #d1d5db;       /* Stronger border for emphasis */
+  /* Border Colors - Softer, more refined */
+  --border-subtle: rgba(0, 0, 0, 0.04);   /* Very subtle, almost invisible */
+  --border-default: rgba(0, 0, 0, 0.08);  /* Default - soft definition */
+  --border-strong: rgba(0, 0, 0, 0.12);   /* Emphasis - still refined */
+  --border-divider: rgba(0, 0, 0, 0.06);  /* For horizontal dividers */
 
   /* Interactive Colors - Brand Green */
-  --interactive-primary: #16a34a;  /* Primary actions, links - green-600 */
+  --interactive-primary: #16a34a;  /* Primary actions - green-600 */
   --interactive-hover: #15803d;    /* Hover state - green-700 */
   --interactive-active: #166534;   /* Active/pressed state - green-800 */
   
   /* Interactive Color Variants for UI Elements */
-  --interactive-bg-subtle: #dcfce7;   /* Light green background - green-100 (lighter) */
-  --interactive-bg-muted: #bbf7d0;    /* Muted green background - green-200 */
-  --interactive-border: #86efac;      /* Green border - green-300 (lighter) */
-  --interactive-text-on-bg: #15803d;  /* Text on green backgrounds - green-700 (lighter) */
+  --interactive-bg-subtle: rgba(22, 163, 74, 0.06);   /* Very light green tint */
+  --interactive-bg-muted: rgba(22, 163, 74, 0.12);    /* Muted green background */
+  --interactive-border: rgba(22, 163, 74, 0.2);       /* Green border - soft */
+  --interactive-text-on-bg: #15803d;  /* Text on green backgrounds - green-700 */
 
-  /* Status Colors - Semantic meaning */
-  --success-background: #ecfdf5;    /* Success backgrounds */
-  --success-text: #065f46;         /* Success text */
-  --success-border: #a7f3d0;       /* Success borders */
+  /* Status Colors - Refined, accessible palette */
+  --success-background: rgba(16, 185, 129, 0.08);  /* Emerald with transparency */
+  --success-text: #059669;         /* Emerald-600 */
+  --success-border: rgba(16, 185, 129, 0.2);
 
-  --warning-background: #fffbeb;    /* Warning backgrounds */
-  --warning-text: #92400e;         /* Warning text */
-  --warning-border: #fcd34d;       /* Warning borders */
+  --warning-background: rgba(245, 158, 11, 0.08);  /* Amber with transparency */
+  --warning-text: #d97706;         /* Amber-600 */
+  --warning-border: rgba(245, 158, 11, 0.2);
 
-  --danger-background: #fef2f2;     /* Danger backgrounds */
-  --danger-text: #991b1b;          /* Danger text */
-  --danger-border: #fca5a5;        /* Danger borders */
+  --danger-background: rgba(239, 68, 68, 0.08);    /* Red with transparency */
+  --danger-text: #dc2626;          /* Red-600 */
+  --danger-border: rgba(239, 68, 68, 0.2);
 
-  --info-background: #eff6ff;       /* Info backgrounds */
-  --info-text: #1e40af;            /* Info text */
-  --info-border: #93c5fd;          /* Info borders */
+  --info-background: rgba(59, 130, 246, 0.08);     /* Blue with transparency */
+  --info-text: #2563eb;            /* Blue-600 */
+  --info-border: rgba(59, 130, 246, 0.2);
 
-  /* Shadows and Elevation - Subtle depth */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  /* Shadows and Elevation - Refined depth */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.06), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  
+  /* Inset shadows for depth */
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  /* Glow effects for interactive elements */
+  --glow-primary: 0 0 20px rgba(22, 163, 74, 0.15), 0 0 40px rgba(22, 163, 74, 0.08);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.2);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.2);
+  --glow-soft: 0 0 30px rgba(0, 0, 0, 0.03);
+
+  /* Card-specific styling */
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.03);
 
   /* Legacy mappings for backward compatibility */
   --background: var(--surface-secondary);
   --foreground: var(--text-primary);
   --card: var(--surface-primary);
   --card-foreground: var(--text-primary);
-  --popover: var(--surface-primary);
+  --popover: var(--surface-elevated);
   --popover-foreground: var(--text-primary);
   --primary: var(--interactive-primary);
-  --primary-foreground: var(--surface-primary);
-  --secondary: var(--surface-secondary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--surface-tertiary);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-tertiary);
   --muted-foreground: var(--text-muted);
@@ -155,11 +173,4 @@
   --border: var(--border-default);
   --input: var(--surface-primary);
   --ring: var(--interactive-primary);
-
-  /* Additional semantic mappings */
-  --ring: var(--interactive-primary);
-  --input: var(--surface-primary);
-  --destructive: var(--danger-text);
-  --accent-foreground: var(--text-primary);
-  --accent: var(--surface-tertiary);
 }

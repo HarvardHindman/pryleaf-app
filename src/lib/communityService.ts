@@ -108,9 +108,14 @@ export interface CommunityContent {
 export async function hasAccessToResource(
   userId: string,
   communityId: string,
-  requiredTierLevel: number
+  requiredTierLevel: number = 0
 ): Promise<boolean> {
   const supabase = await createSupabaseServerClient();
+
+  // Ensure we never compare against non-numeric values
+  const normalizedTierLevel = Number.isFinite(requiredTierLevel)
+    ? requiredTierLevel
+    : 0;
 
   // Check if user is community owner
   const { data: community } = await supabase
@@ -140,8 +145,8 @@ export async function hasAccessToResource(
   }
 
   // Check if user's tier level is sufficient
-  const userTierLevel = (membership.tier as any).tier_level;
-  return userTierLevel >= requiredTierLevel;
+  const userTierLevel = (membership.tier as any).tier_level ?? -1;
+  return userTierLevel >= normalizedTierLevel;
 }
 
 /**

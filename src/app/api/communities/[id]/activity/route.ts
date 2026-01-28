@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { isCommunityOwner } from '@/lib/communityService';
+import { makeCacheKey, withCache } from '@/lib/apiCache';
 
 /**
  * GET /api/communities/[id]/activity
@@ -31,78 +32,85 @@ export async function GET(
       );
     }
 
-    const activities: any[] = [];
-    const now = new Date();
+    const cacheKey = makeCacheKey(['activity', id, user.id]);
 
-    // Get recent member joins (last 30 days)
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activities = await withCache(cacheKey, 30_000, async () => {
+      const items: any[] = [];
+      const now = new Date();
 
-    const { data: recentMembers } = await supabase
-      .from('community_memberships')
-      .select(`
+      // Get recent member joins (last 30 days)
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: recentMembers } = await supabase
+        .from('community_memberships')
+        .select(`
         id,
         created_at,
         user_id,
         tier:community_tiers(name)
       `)
-      .eq('community_id', id)
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(10);
+        .eq('community_id', id)
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-    // Add member join activities
-    if (recentMembers) {
-      for (const member of recentMembers) {
-        // Get user profile
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', member.user_id)
-          .single();
+      // Add member join activities
+      if (recentMembers) {
+        for (const member of recentMembers) {
+          // Get user profile
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('display_name, username')
+            .eq('id', member.user_id)
+            .single();
 
-        const memberName = profile?.full_name || profile?.email?.split('@')[0] || 'A member';
-        const tierName = (member.tier as any)?.name || 'Free';
-        
-        activities.push({
-          type: 'member_joined',
-          title: memberName,
-          description: `joined the ${tierName} tier`,
-          timestamp: member.created_at,
-          timeAgo: getTimeAgo(member.created_at)
-        });
+          const memberName = profile?.display_name || profile?.username || 'A member';
+          const tierName = (member.tier as any)?.name || 'Free';
+
+          items.push({
+            type: 'member_joined',
+            title: memberName,
+            description: `joined the ${tierName} tier`,
+            timestamp: member.created_at,
+            timeAgo: getTimeAgo(member.created_at)
+          });
+        }
       }
-    }
 
-    // Get recent content posts
-    const { data: recentContent } = await supabase
-      .from('community_content')
-      .select('id, title, type, created_at')
-      .eq('community_id', id)
-      .gte('created_at', thirtyDaysAgo.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(10);
+      // Get recent content posts
+      const { data: recentContent } = await supabase
+        .from('community_content')
+        .select('id, title, content_type, created_at, is_published')
+        .eq('community_id', id)
+        .eq('is_published', true)
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-    // Add content activities
-    if (recentContent) {
-      for (const content of recentContent) {
-        activities.push({
-          type: 'content_posted',
-          title: 'New content posted',
-          description: content.title || `New ${content.type}`,
-          timestamp: content.created_at,
-          timeAgo: getTimeAgo(content.created_at)
-        });
+      // Add content activities
+      if (recentContent) {
+        for (const content of recentContent) {
+          items.push({
+            type: 'content_posted',
+            title: 'New content posted',
+            description: content.title || `New ${content.content_type}`,
+            timestamp: content.created_at,
+            timeAgo: getTimeAgo(content.created_at)
+          });
+        }
       }
-    }
 
-    // Sort all activities by timestamp
-    activities.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+      // Sort all activities by timestamp
+      items.sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      return items.slice(0, 20);
+    });
 
     return NextResponse.json({
-      activities: activities.slice(0, 20)
+      activities
     });
   } catch (error: any) {
     console.error('Error fetching activity:', error);
@@ -124,4 +132,385 @@ function getTimeAgo(timestamp: string): string {
   if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
   return then.toLocaleDateString();
 }
+
+
+
+        
+
+        activities.push({
+
+          type: 'member_joined',
+
+          title: memberName,
+
+          description: `joined the ${tierName} tier`,
+
+          timestamp: member.created_at,
+
+          timeAgo: getTimeAgo(member.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Get recent content posts
+
+    const { data: recentContent } = await supabase
+
+      .from('community_content')
+
+      .select('id, title, type, created_at')
+
+      .eq('community_id', id)
+
+      .gte('created_at', thirtyDaysAgo.toISOString())
+
+      .order('created_at', { ascending: false })
+
+      .limit(10);
+
+
+
+    // Add content activities
+
+    if (recentContent) {
+
+      for (const content of recentContent) {
+
+        activities.push({
+
+          type: 'content_posted',
+
+          title: 'New content posted',
+
+          description: content.title || `New ${content.type}`,
+
+          timestamp: content.created_at,
+
+          timeAgo: getTimeAgo(content.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Sort all activities by timestamp
+
+    activities.sort((a, b) => 
+
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+
+    );
+
+
+
+    return NextResponse.json({
+
+      activities: activities.slice(0, 20)
+
+    });
+
+  } catch (error: any) {
+
+    console.error('Error fetching activity:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to fetch activity' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+function getTimeAgo(timestamp: string): string {
+
+  const now = new Date();
+
+  const then = new Date(timestamp);
+
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+
+
+  if (seconds < 60) return 'Just now';
+
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+
+  return then.toLocaleDateString();
+
+}
+
+
+
+
+
+
+        
+
+        activities.push({
+
+          type: 'member_joined',
+
+          title: memberName,
+
+          description: `joined the ${tierName} tier`,
+
+          timestamp: member.created_at,
+
+          timeAgo: getTimeAgo(member.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Get recent content posts
+
+    const { data: recentContent } = await supabase
+
+      .from('community_content')
+
+      .select('id, title, type, created_at')
+
+      .eq('community_id', id)
+
+      .gte('created_at', thirtyDaysAgo.toISOString())
+
+      .order('created_at', { ascending: false })
+
+      .limit(10);
+
+
+
+    // Add content activities
+
+    if (recentContent) {
+
+      for (const content of recentContent) {
+
+        activities.push({
+
+          type: 'content_posted',
+
+          title: 'New content posted',
+
+          description: content.title || `New ${content.type}`,
+
+          timestamp: content.created_at,
+
+          timeAgo: getTimeAgo(content.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Sort all activities by timestamp
+
+    activities.sort((a, b) => 
+
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+
+    );
+
+
+
+    return NextResponse.json({
+
+      activities: activities.slice(0, 20)
+
+    });
+
+  } catch (error: any) {
+
+    console.error('Error fetching activity:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to fetch activity' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+function getTimeAgo(timestamp: string): string {
+
+  const now = new Date();
+
+  const then = new Date(timestamp);
+
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+
+
+  if (seconds < 60) return 'Just now';
+
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+
+  return then.toLocaleDateString();
+
+}
+
+
+
+
+
+
+        
+
+        activities.push({
+
+          type: 'member_joined',
+
+          title: memberName,
+
+          description: `joined the ${tierName} tier`,
+
+          timestamp: member.created_at,
+
+          timeAgo: getTimeAgo(member.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Get recent content posts
+
+    const { data: recentContent } = await supabase
+
+      .from('community_content')
+
+      .select('id, title, type, created_at')
+
+      .eq('community_id', id)
+
+      .gte('created_at', thirtyDaysAgo.toISOString())
+
+      .order('created_at', { ascending: false })
+
+      .limit(10);
+
+
+
+    // Add content activities
+
+    if (recentContent) {
+
+      for (const content of recentContent) {
+
+        activities.push({
+
+          type: 'content_posted',
+
+          title: 'New content posted',
+
+          description: content.title || `New ${content.type}`,
+
+          timestamp: content.created_at,
+
+          timeAgo: getTimeAgo(content.created_at)
+
+        });
+
+      }
+
+    }
+
+
+
+    // Sort all activities by timestamp
+
+    activities.sort((a, b) => 
+
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+
+    );
+
+
+
+    return NextResponse.json({
+
+      activities: activities.slice(0, 20)
+
+    });
+
+  } catch (error: any) {
+
+    console.error('Error fetching activity:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to fetch activity' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+function getTimeAgo(timestamp: string): string {
+
+  const now = new Date();
+
+  const then = new Date(timestamp);
+
+  const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+
+
+  if (seconds < 60) return 'Just now';
+
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+
+  return then.toLocaleDateString();
+
+}
+
+
+
 

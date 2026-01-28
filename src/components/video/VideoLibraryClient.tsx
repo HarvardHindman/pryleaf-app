@@ -247,8 +247,17 @@ export default function VideoLibraryClient({
       {/* Video Grid/List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--interactive-primary)' }}></div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div 
+              className="h-10 w-10 rounded-full animate-spin mb-3"
+              style={{
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: 'var(--border-subtle)',
+                borderTopColor: 'var(--interactive-primary)',
+              }}
+            />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading videos...</p>
           </div>
         ) : videos.length === 0 ? (
           <div className="text-center py-20">

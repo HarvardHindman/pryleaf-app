@@ -50,6 +50,9 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
   // Use cached ticker data
   const { data, loading, error } = useTickerData(ticker);
   
+  // Helper to get company name from data
+  const companyName = data?.name || '';
+  
   // Check if we have placeholder data
   const isPlaceholder = data && (data as any)._placeholder === true;
   
@@ -88,34 +91,17 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
     initializePage();
   }, [params]);
 
-  // Load chart data when ticker or period changes
+  // Load chart data ONCE when ticker changes - load full history
+  // Period changes are handled by the chart component using setVisibleRange
   useEffect(() => {
     if (ticker) {
       const loadChartData = async () => {
         setChartLoading(true);
         try {
-          console.log(`Loading chart data for ${ticker} with period ${chartPeriod}`);
+          console.log(`Loading full chart data for ${ticker}`);
           
-          // Determine interval and outputsize based on chart period
-          let interval: 'daily' | 'weekly' | 'monthly' | 'intraday' = 'daily';
-          let outputsize: 'compact' | 'full' = 'compact';
-          
-          if (chartPeriod === '1D' || chartPeriod === '5D') {
-            interval = 'intraday';
-            outputsize = 'compact';
-          } else if (chartPeriod === '1M' || chartPeriod === '3M') {
-            interval = 'daily';
-            outputsize = 'compact';
-          } else if (chartPeriod === '6M' || chartPeriod === '1Y') {
-            interval = 'daily';
-            outputsize = 'full';
-          } else if (chartPeriod === '5Y') {
-            interval = 'weekly';
-            outputsize = 'full';
-          }
-
-          // Call server-side API that handles ALL caching logic
-          const response = await fetch(`/api/ticker/${ticker}/time-series?interval=${interval}&outputsize=${outputsize}`);
+          // Always load full daily data - the chart will handle visible range
+          const response = await fetch(`/api/ticker/${ticker}/time-series?interval=daily&outputsize=full`);
           
           if (!response.ok) {
             throw new Error('Failed to fetch time series data');
@@ -128,7 +114,6 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
             hasData: !!timeSeriesData, 
             dataLength: timeSeriesData?.length, 
             cached: result._cached,
-            sampleData: timeSeriesData?.slice(0, 2)
           });
           
           if (timeSeriesData && timeSeriesData.length > 0) {
@@ -139,21 +124,15 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
               high: parseFloat(item.high),
               low: parseFloat(item.low),
               close: parseFloat(item.close),
+              volume: item.volume ? parseFloat(item.volume) : undefined,
             }));
             
-            console.log('Transformed chart data:', {
-              length: chartDataFormatted.length,
-              first: chartDataFormatted[0],
-              last: chartDataFormatted[chartDataFormatted.length - 1]
-            });
-            
             setChartData(chartDataFormatted);
-            console.log(`✅ Loaded ${chartDataFormatted.length} data points for ${ticker} (cached: ${result._cached})`);
+            console.log(`✅ Loaded ${chartDataFormatted.length} data points for ${ticker}`);
           } else {
             // Fallback to mock data if API fails
             console.warn('No data from API, using mock data');
-            const periodDays = chartPeriod === '1D' ? 1 : chartPeriod === '5D' ? 5 : chartPeriod === '1M' ? 30 : chartPeriod === '3M' ? 90 : chartPeriod === '6M' ? 180 : chartPeriod === '1Y' ? 365 : 1825;
-            const mockData = createMockChartData(ticker, periodDays);
+            const mockData = createMockChartData(ticker, 365 * 5); // 5 years of mock data
             setChartData(mockData);
           }
           
@@ -161,8 +140,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
         } catch (error) {
           console.error('Error loading chart data:', error);
           // Fallback to mock data on error
-          const periodDays = chartPeriod === '1D' ? 1 : chartPeriod === '5D' ? 5 : chartPeriod === '1M' ? 30 : chartPeriod === '3M' ? 90 : chartPeriod === '6M' ? 180 : chartPeriod === '1Y' ? 365 : 1825;
-          const mockData = createMockChartData(ticker, periodDays);
+          const mockData = createMockChartData(ticker, 365 * 5);
           setChartData(mockData);
           setChartLoading(false);
         }
@@ -170,7 +148,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
       loadChartData();
     }
-  }, [ticker, chartPeriod]);
+  }, [ticker]); // Only depend on ticker - period changes don't reload data
 
   const toggleMetricChart = (metricId: string) => {
     setExpandedMetrics(prev => {
@@ -186,10 +164,53 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--interactive-primary)' }}></div>
-          <p style={{ color: 'var(--text-muted)' }}>Loading {ticker} data...</p>
+      <div className="flex flex-col h-full overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+        {/* Header skeleton */}
+        <div className="flex-shrink-0 border-b" style={{ backgroundColor: 'var(--surface-primary)', borderColor: 'var(--border-default)' }}>
+          <div className="max-w-[1800px] mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-16 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+                  <div>
+                    <div className="h-6 w-40 rounded animate-pulse mb-2" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+                    <div className="h-4 w-24 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-32 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+                <div className="h-6 w-20 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+              </div>
+            </div>
+            {/* Tab skeleton */}
+            <div className="flex gap-4 mt-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-8 w-20 rounded animate-pulse" style={{ backgroundColor: 'var(--surface-tertiary)' }} />
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Content area loading */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div 
+              className="h-8 w-8 rounded-full animate-spin mb-3"
+              style={{
+                borderWidth: '2px',
+                borderStyle: 'solid',
+                borderColor: 'var(--border-subtle)',
+                borderTopColor: 'var(--interactive-primary)',
+              }}
+            />
+            {ticker && (
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Loading {ticker} data...
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -197,7 +218,7 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--surface-secondary)' }}>
+      <div className="h-full flex items-center justify-center p-6" style={{ backgroundColor: 'var(--surface-secondary)' }}>
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle style={{ color: 'var(--danger-text)' }}>Error Loading Data</CardTitle>
@@ -307,15 +328,15 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
         <div className="h-full max-w-[1800px] mx-auto px-6 py-4 flex gap-6">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <>
+            <div className="flex flex-col lg:flex-row gap-6 w-full h-full">
               {/* Left Side - Company Info & Statistics (Scrollable) */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin pr-2 space-y-6 pb-16">
+              <div className="w-full lg:w-1/2 overflow-y-auto scrollbar-thin pr-2 space-y-6 pb-16 order-2 lg:order-1">
                 <CompanyOverview data={data} />
                 <CompanyStatistics data={data} />
               </div>
 
-              {/* Right Side - Chart (Fixed height, no scroll) */}
-              <div className="w-1/2 flex-shrink-0 overflow-hidden h-full">
+              {/* Right Side - Chart */}
+              <div className="w-full lg:w-1/2 flex-shrink-0 h-auto lg:h-full order-1 lg:order-2">
                 <SymbolChart
                   ticker={ticker}
                   chartData={chartData}
@@ -323,10 +344,11 @@ export default function SymbolPage({ params }: { params: Promise<{ ticker: strin
                   chartPeriod={chartPeriod}
                   chartLoading={chartLoading}
                   onChartTypeChange={setChartType}
-                  onChartPeriodChange={setChartPeriod}
+                  onChartPeriodChange={() => {}} // Period is now handled internally by chart
+                  companyName={companyName}
                 />
               </div>
-            </>
+            </div>
           )}
 
           {/* Financials Tab */}

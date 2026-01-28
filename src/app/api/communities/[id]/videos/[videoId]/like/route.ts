@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sql } from '@supabase/supabase-js';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 
 /**
@@ -41,7 +42,7 @@ export async function POST(
       await supabase
         .from('community_content')
         .update({
-          likes: supabase.sql`GREATEST(likes - 1, 0)`, // Prevent negative
+          likes: sql`GREATEST(likes - 1, 0)`, // Prevent negative
         })
         .eq('id', videoId);
 
@@ -60,7 +61,7 @@ export async function POST(
       await supabase
         .from('community_content')
         .update({
-          likes: supabase.sql`likes + 1`,
+          likes: sql`likes + 1`,
         })
         .eq('id', videoId);
 
@@ -74,4 +75,235 @@ export async function POST(
     );
   }
 }
+
+
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`GREATEST(likes - 1, 0)`, // Prevent negative
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: false });
+
+    } else {
+
+      // Like - add like
+
+      await supabase
+
+        .from('content_likes')
+
+        .insert({
+
+          content_id: videoId,
+
+          user_id: user.id,
+
+          content_type: 'video',
+
+        });
+
+
+
+      // Increment like count
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`likes + 1`,
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: true });
+
+    }
+
+  } catch (error: any) {
+
+    console.error('Error toggling like:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to toggle like' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+
+
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`GREATEST(likes - 1, 0)`, // Prevent negative
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: false });
+
+    } else {
+
+      // Like - add like
+
+      await supabase
+
+        .from('content_likes')
+
+        .insert({
+
+          content_id: videoId,
+
+          user_id: user.id,
+
+          content_type: 'video',
+
+        });
+
+
+
+      // Increment like count
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`likes + 1`,
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: true });
+
+    }
+
+  } catch (error: any) {
+
+    console.error('Error toggling like:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to toggle like' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+
+
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`GREATEST(likes - 1, 0)`, // Prevent negative
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: false });
+
+    } else {
+
+      // Like - add like
+
+      await supabase
+
+        .from('content_likes')
+
+        .insert({
+
+          content_id: videoId,
+
+          user_id: user.id,
+
+          content_type: 'video',
+
+        });
+
+
+
+      // Increment like count
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          likes: supabase.sql`likes + 1`,
+
+        })
+
+        .eq('id', videoId);
+
+
+
+      return NextResponse.json({ liked: true });
+
+    }
+
+  } catch (error: any) {
+
+    console.error('Error toggling like:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to toggle like' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
 

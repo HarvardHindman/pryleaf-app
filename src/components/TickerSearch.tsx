@@ -131,9 +131,17 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
         {showResults && (
           <Card className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto scrollbar-hide z-50 shadow-xl bg-[var(--surface-primary)] border border-[var(--border-default)] rounded-lg">
             {isLoading ? (
-              <div className="p-4 text-center text-[var(--text-muted)]">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--border-focus)] mx-auto mb-2"></div>
-                Searching...
+              <div className="p-4 text-center">
+                <div 
+                  className="h-4 w-4 rounded-full animate-spin mx-auto mb-2"
+                  style={{
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    borderColor: 'var(--border-subtle)',
+                    borderTopColor: 'var(--interactive-primary)',
+                  }}
+                />
+                <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Searching...</span>
               </div>
             ) : results.length > 0 ? (
               <div className="py-1">
