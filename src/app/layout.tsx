@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { StreamChatProvider } from "@/contexts/StreamChatContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { CommunityCacheProvider } from "@/contexts/CommunityCacheContext";
 import { TickerCacheProvider } from "@/contexts/TickerCacheContext";
@@ -27,11 +26,6 @@ export const metadata: Metadata = {
   description: "Build a thriving creator community with premium content, exclusive insights, and powerful monetization tools. Connect with top creators and investors.",
   keywords: "creator platform, community, monetization, premium content, subscriptions, investment community, financial creators",
   authors: [{ name: "Pryleaf" }],
-  icons: {
-    icon: '/pryleaf.PNG',
-    shortcut: '/pryleaf.PNG',
-    apple: '/pryleaf.PNG',
-  },
 };
 
 export default function RootLayout({
@@ -41,6 +35,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('theme') || 'light';
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(theme);
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
@@ -48,11 +55,9 @@ export default function RootLayout({
           <AuthProvider>
             <CommunityCacheProvider>
               <TickerCacheProvider>
-                <StreamChatProvider>
-                  <AppShell>
-                    {children}
-                  </AppShell>
-                </StreamChatProvider>
+                <AppShell>
+                  {children}
+                </AppShell>
               </TickerCacheProvider>
             </CommunityCacheProvider>
           </AuthProvider>

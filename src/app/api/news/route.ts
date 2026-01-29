@@ -1,96 +1,91 @@
 /**
- * News API Route - GET endpoint with caching
- * Fetches news articles from cache with filtering options
+ * News API Route - Uses Massive News API with built-in sentiment analysis
+ * Simplified with in-memory caching only
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { newsCache, NewsFilters } from '@/cache';
+import { getMassiveClient } from '@/lib/massiveClient';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-
-// Simple in-memory rate limiter - only refresh once per hour
-let lastRefreshTime = 0;
-const REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
  * GET /api/news
  * Query parameters:
  * - ticker: Filter by ticker symbol (e.g., "AAPL")
- * - topic: Filter by topic (e.g., "technology", "earnings")
- * - limit: Number of articles (default: 50, max: 200)
- * - offset: Pagination offset (default: 0)
- * - sentimentMin: Min sentiment score (default: -1.0)
- * - sentimentMax: Max sentiment score (default: 1.0)
- * - hoursAgo: Only articles from last N hours (default: 168 = 7 days)
+ * - limit: Number of articles (default: 50, max: 1000)
+ * - order: Sort order - 'asc' or 'desc' (default: 'desc')
+ * - published_utc: Filter by date (YYYY-MM-DD)
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
     // Parse query parameters
-    const filters: NewsFilters = {
-      ticker: searchParams.get('ticker') || undefined,
-      topic: searchParams.get('topic') || undefined,
-      limit: parseInt(searchParams.get('limit') || '50'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      sentimentMin: parseFloat(searchParams.get('sentimentMin') || '-1.0'),
-      sentimentMax: parseFloat(searchParams.get('sentimentMax') || '1.0'),
-      hoursAgo: parseInt(searchParams.get('hoursAgo') || '168')
-    };
+    const ticker = searchParams.get('ticker') || undefined;
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 1000);
+    const order = (searchParams.get('order') || 'desc') as 'asc' | 'desc';
+    const published_utc = searchParams.get('published_utc') || undefined;
 
-    // Validate limits
-    if (filters.limit && filters.limit > 200) {
-      filters.limit = 200;
-    }
+    console.log('📰 GET /api/news - Params:', { ticker, limit, order, published_utc });
 
-    console.log('📰 GET /api/news - Filters:', filters);
+    const massiveClient = getMassiveClient();
 
-    // Check cache stats to see if we need to refresh
-    const stats = await newsService.getCacheStats();
-    const cacheIsEmpty = stats.total_articles === 0;
-    const cacheIsStale = stats.articles_last_24h === 0 && stats.total_articles > 0;
-    const now = Date.now();
-    const timeSinceLastRefresh = now - lastRefreshTime;
-    const canRefresh = timeSinceLastRefresh >= REFRESH_INTERVAL_MS;
-    
-    // Auto-refresh if cache is empty or stale AND we haven't refreshed recently
-    if ((cacheIsEmpty || cacheIsStale) && canRefresh) {
-      console.log('🔄 Cache is stale or empty, refreshing... (last refresh: ' + 
-        Math.round(timeSinceLastRefresh / 60000) + ' mins ago)');
-      
-      lastRefreshTime = now; // Mark refresh as in progress to prevent concurrent refreshes
-      
-      try {
-        const refreshResult = await newsService.refreshNewsCache({
-          topics: ['technology', 'earnings', 'financial_markets', 'economy_fiscal'],
-          limit: 100
-        });
+    // Fetch news from Massive (with automatic caching)
+    const articles = await massiveClient.getNews({
+      ticker,
+      limit,
+      order,
+      published_utc,
+    });
+
+    // Transform articles to include sentiment data in a more accessible format
+    const transformedArticles = articles.map(article => {
+      // Find sentiment for requested ticker if specified
+      const tickerSentiment = ticker && article.insights
+        ? article.insights.find(insight => insight.ticker === ticker.toUpperCase())
+        : null;
+
+      return {
+        id: article.id,
+        title: article.title,
+        author: article.author,
+        description: article.description,
+        url: article.article_url,
+        image_url: article.image_url,
+        published_utc: article.published_utc,
+        tickers: article.tickers,
+        keywords: article.keywords,
         
-        console.log('✅ Auto-refresh completed:', {
-          inserted: refreshResult.articlesInserted,
-          updated: refreshResult.articlesUpdated
-        });
-      } catch (refreshError) {
-        console.error('⚠️ Auto-refresh failed (continuing with cached data):', refreshError);
-        // Continue anyway - return whatever is in cache
-      }
-    } else if (!canRefresh) {
-      console.log('⏳ Skipping refresh - last refresh was ' + 
-        Math.round(timeSinceLastRefresh / 60000) + ' mins ago (min: 60 mins)');
-    }
-
-    // Fetch from cache
-    const articles = await newsCache.getNews(filters);
+        // Publisher info
+        publisher: {
+          name: article.publisher.name,
+          homepage_url: article.publisher.homepage_url,
+          logo_url: article.publisher.logo_url,
+          favicon_url: article.publisher.favicon_url,
+        },
+        
+        // Sentiment analysis
+        sentiment: tickerSentiment ? {
+          ticker: tickerSentiment.ticker,
+          sentiment: tickerSentiment.sentiment,
+          sentiment_reasoning: tickerSentiment.sentiment_reasoning,
+        } : null,
+        
+        // All insights (for multi-ticker articles)
+        insights: article.insights,
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: articles,
+      data: transformedArticles,
       metadata: {
-        count: articles.length,
-        filters: filters,
-        cached: true,
-        cache_stats: await newsService.getCacheStats() // Get updated stats
+        count: transformedArticles.length,
+        ticker,
+        limit,
+        source: 'massive',
+        cached: true, // Massive client includes caching
       }
     });
   } catch (error: any) {
@@ -101,31 +96,6 @@ export async function GET(request: NextRequest) {
         success: false,
         error: error.message || 'Failed to fetch news',
         data: []
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/news/stats
- * Get cache statistics and health dashboard
- */
-export async function HEAD(request: NextRequest) {
-  try {
-    const dashboard = await newsService.getHealthDashboard();
-    
-    return NextResponse.json({
-      success: true,
-      data: dashboard
-    });
-  } catch (error: any) {
-    console.error('❌ Error fetching news stats:', error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Failed to fetch news stats'
       },
       { status: 500 }
     );

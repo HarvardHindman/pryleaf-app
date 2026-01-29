@@ -1,51 +1,74 @@
 # 📊 Pryleaf Caching System Documentation
 
-**Last Updated:** November 21, 2025  
-**Status:** ✅ Fully Configured & Active
+**Last Updated:** January 29, 2026  
+**Status:** ✅ Active - Simplified Architecture
 
 ---
 
 ## 🎯 Overview
 
-Your Pryleaf app now has comprehensive caching systems for both stock market data AND news articles:
+**MAJOR UPDATE:** Pryleaf has migrated from Alpha Vantage to Massive API with a simplified caching architecture.
 
-### **Stock Market Data Caching**
-- ✅ Minimizes API calls to Alpha Vantage (saves your 25/day limit)
-- ✅ Provides fast response times for users
-- ✅ Automatically refreshes data every hour
-- ✅ Tracks API usage and cache health
-- ✅ Scales efficiently as your user base grows
+### **New Simplified Caching**
+- ✅ In-memory caching only (no database tables)
+- ✅ 5-10 minute TTL for most data
+- ✅ Unlimited API calls (no rate limiting needed)
+- ✅ Faster, simpler, more maintainable
+- ✅ No cron jobs or background refresh systems
 
-### **News & Sentiment Caching** ⭐ NEW
-- ✅ Caches news articles with sentiment analysis
-- ✅ Hourly refresh with 200+ articles per refresh
-- ✅ Filter by ticker, topic, sentiment, and time range
-- ✅ Tracks trending tickers and topics
-- ✅ Automatic cleanup of old articles (30-day retention)
+### **What Changed**
+- ❌ Removed database caching tables
+- ❌ Removed cron job refresh systems
+- ❌ Removed API usage tracking (no limits!)
+- ❌ Removed bulk quote refresh logic
+- ✅ Added Massive API integration
+- ✅ Added simple in-memory LRU cache
 
 ---
 
 ## 🏗️ Architecture
 
-### **Tier 1: In-Memory Cache (5 minutes)**
-- **Location:** `/api/prices/route.ts`
-- **TTL:** 5 minutes
-- **Scope:** Per-server instance
-- **Use Case:** Ultra-fast repeated requests
-
-### **Tier 2: Database Cache (10-60 minutes)**
-- **Location:** `stock_quotes` table in Supabase
-- **TTL:** 10-60 minutes (configurable per data type)
-- **Scope:** Global (shared across all users)
-- **Use Case:** Primary caching layer
-
-### **Tier 3: Alpha Vantage API**
-- **Use:** Only when cache misses or data is stale
-- **Rate Limit:** 25 requests/day (tracked in `api_usage_tracking`)
+### **Single-Tier: In-Memory Cache**
+- **Location:** `src/lib/massiveClient.ts`
+- **TTL:** 
+  - Quotes/Snapshots: 5 minutes
+  - Ticker Details: 60 minutes
+  - Aggregates: 30 minutes
+  - News: 10 minutes
+- **Scope:** Per-server instance (simple and fast)
+- **Implementation:** LRU cache with automatic expiration
+- **Backend:** Massive API (unlimited calls)
 
 ---
 
-## 📁 Database Tables
+## 📁 Caching Implementation
+
+The caching is now handled entirely in-memory by the `MassiveClient` class:
+
+```typescript
+import { getMassiveClient } from '@/lib/massiveClient';
+
+const client = getMassiveClient();
+
+// Automatically cached
+const snapshot = await client.getSnapshot('AAPL');
+const news = await client.getNews({ ticker: 'AAPL' });
+```
+
+**Cache Statistics:**
+```typescript
+const stats = client.getCacheStats();
+console.log(`Cache size: ${stats.size} entries`);
+```
+
+**Clear Cache:**
+```typescript
+client.clearCache();
+```
+
+---
+
+## 📁 Old Database Tables (REMOVED)
 
 ### **1. `stock_quotes`** - Primary Quote Cache
 ```sql

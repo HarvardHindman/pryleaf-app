@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Home, 
   BarChart3, 
@@ -114,8 +115,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Logo Section */}
           <div className="flex-shrink-0 px-3 py-4">
             <div className="flex flex-col items-center">
-              <Link href="/landing" className="flex flex-col items-center group">
-                <span className="text-lg font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
+              <Link href="/landing" className="flex flex-col items-center group gap-2">
+                <Image 
+                  src="/prylogo.png" 
+                  alt="Pryleaf" 
+                  width={48}
+                  height={48}
+                  className="group-hover:opacity-80 transition-opacity"
+                />
+                <span 
+                  className="text-xs font-bold group-hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--interactive-primary)' }}
+                >
                   Pryleaf
                 </span>
               </Link>
@@ -199,8 +210,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Mobile logo section */}
             <div className="flex-shrink-0 px-6 py-6">
               <div className="flex flex-col items-center">
-                <Link href="/landing" className="group">
-                  <span className="text-2xl font-bold group-hover:opacity-80 transition-opacity" style={{ color: 'var(--interactive-primary)' }}>
+                <Link href="/landing" className="flex flex-col items-center group gap-2">
+                  <Image 
+                    src="/prylogo.png" 
+                    alt="Pryleaf" 
+                    width={64}
+                    height={64}
+                    className="group-hover:opacity-80 transition-opacity"
+                  />
+                  <span 
+                    className="text-sm font-bold group-hover:opacity-80 transition-opacity"
+                    style={{ color: 'var(--interactive-primary)' }}
+                  >
                     Pryleaf
                   </span>
                 </Link>

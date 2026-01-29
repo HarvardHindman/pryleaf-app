@@ -1,5 +1,13 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 🚨 Recent Update: Migrated to Massive API
+
+**Date:** January 29, 2026
+
+Pryleaf has migrated from Alpha Vantage to **Massive (formerly Polygon.io)** for stock market data. This provides unlimited API calls, real-time data, and a simplified architecture.
+
+**See:** `md/MIGRATION_TO_MASSIVE.md` for setup instructions and `md/MASSIVE_INTEGRATION.md` for API documentation.
+
 ## Getting Started
 
 First, run the development server:

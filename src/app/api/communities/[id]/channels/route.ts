@@ -108,8 +108,7 @@ export async function POST(
       throw error;
     }
 
-    // TODO: Create corresponding Stream Chat channel
-    // This would use streamChatService.createChannel()
+    // Chat channels will be created when new chat system is implemented
 
     return NextResponse.json({ channel });
   } catch (error: any) {

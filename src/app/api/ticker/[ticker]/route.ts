@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { StockCacheService, CompanyOverview, Quote } from '@/cache';
+import { getMassiveClient } from '@/lib/massiveClient';
 
 /**
- * Generate placeholder ticker data when cache is empty
+ * Generate placeholder ticker data when data is unavailable
  */
 function generatePlaceholderTickerData(ticker: string) {
   return {
@@ -25,7 +25,7 @@ function generatePlaceholderTickerData(ticker: string) {
     earningsDate: null,
     exDividendDate: null,
     targetPrice: null,
-    description: 'Data not currently available. This ticker has not been cached yet.',
+    description: 'Data not currently available.',
     sector: 'N/A',
     industry: 'N/A',
     website: '',
@@ -35,13 +35,13 @@ function generatePlaceholderTickerData(ticker: string) {
     headquarters: 'N/A',
     lastUpdated: new Date().toISOString(),
     _placeholder: true,
-    _message: 'Data not cached. Real-time API fetching is currently disabled.'
+    _message: 'Unable to fetch data from Massive API.'
   };
 }
 
 /**
- * Ticker API Route - Uses Alpha Vantage with Supabase caching
- * Replaces Yahoo Finance with cached Alpha Vantage data
+ * Ticker API Route - Uses Massive API with in-memory caching
+ * Gets comprehensive ticker data in a single efficient call
  */
 export async function GET(
   request: NextRequest,
@@ -51,141 +51,137 @@ export async function GET(
     const { ticker: tickerParam } = await params;
     const ticker = tickerParam.toUpperCase();
 
-    console.log(`[Ticker API] Fetching data for ${ticker}`);
+    console.log(`[Ticker API] Fetching data for ${ticker} from Massive`);
 
-    // Fetch overview first, then quote to avoid bursting Alpha Vantage on cold loads
-    let overview: CompanyOverview | null = null;
-    try {
-      overview = await StockCacheService.getCompanyOverview(ticker);
-    } catch (err) {
-      console.warn(`[Ticker API] Overview fetch failed for ${ticker}:`, err);
-    }
+    const massiveClient = getMassiveClient();
 
-    // Longer stagger to reduce concurrent upstream pressure when the cache is cold
-    // Alpha Vantage free tier: 5 calls/min, so we need ~12s between calls to be safe
-    // But that's too slow for UX, so we use 800ms and accept occasional rate limits
-    if (!overview) {
-      await new Promise((r) => setTimeout(r, 800));
-    }
+    // Fetch both snapshot and details in parallel - more efficient than Alpha Vantage!
+    const [snapshot, details] = await Promise.all([
+      massiveClient.getSnapshot(ticker).catch(() => null),
+      massiveClient.getTickerDetails(ticker).catch(() => null),
+    ]);
 
-    let quote: Quote | null = null;
-    try {
-      quote = await StockCacheService.getQuote(ticker);
-    } catch (err) {
-      console.warn(`[Ticker API] Quote fetch failed for ${ticker}:`, err);
-    }
-
-    // If no data at all (not even cached), return placeholder data
-    if (!overview && !quote) {
-      console.warn(`[Ticker API] No cached data found for ${ticker} - returning placeholder`);
-      const placeholderData = generatePlaceholderTickerData(ticker);
-      return NextResponse.json(placeholderData);
+    // If no data available, return placeholder
+    if (!snapshot && !details) {
+      console.warn(`[Ticker API] No data available for ${ticker}`);
+      return NextResponse.json(generatePlaceholderTickerData(ticker));
     }
 
     console.log(`[Ticker API] Successfully retrieved data for ${ticker}`);
 
-    // Helper to parse numeric values safely
-    const parseNum = (value: string | undefined): number | null => {
-      if (!value || value === 'None' || value === 'N/A') return null;
-      const num = parseFloat(value);
+    // Helper to safely parse numbers
+    const parseNum = (value: any): number | null => {
+      if (value === undefined || value === null) return null;
+      const num = typeof value === 'string' ? parseFloat(value) : value;
       return Number.isFinite(num) ? num : null;
     };
-    const safeMul = (a: number | null, b: number | null): number | null =>
-      a !== null && b !== null && Number.isFinite(a) && Number.isFinite(b) ? a * b : null;
 
-    // Calculate current price from available data
-    const currentPrice = quote && quote.price !== 'N/A'
-      ? parseFloat(quote.price)
-      : (overview && parseFloat(overview.MarketCapitalization) > 0 && parseFloat(overview.SharesOutstanding) > 0)
-        ? parseFloat(overview.MarketCapitalization) / parseFloat(overview.SharesOutstanding)
-        : null;
+    // Calculate market cap from shares outstanding and current price
+    const currentPrice = snapshot?.day?.c ?? null;
+    const sharesOutstanding = parseNum(details?.weighted_shares_outstanding);
+    const marketCap = details?.market_cap ?? 
+      (currentPrice && sharesOutstanding ? currentPrice * sharesOutstanding : null);
 
-    const dailyChange = quote && quote.change !== 'N/A' ? parseFloat(quote.change) : null;
-    const dailyChangePercent = quote && quote.changePercent && quote.changePercent !== 'N/A'
-      ? parseFloat(quote.changePercent.replace('%', ''))
-      : null;
+    // Build address string
+    const address = details?.address 
+      ? [
+          details.address.address1,
+          details.address.city,
+          details.address.state,
+          details.address.postal_code
+        ].filter(Boolean).join(', ')
+      : 'N/A';
 
-    const sharesOutstanding = parseNum(overview?.SharesOutstanding);
-    const overviewCap = parseNum(overview?.MarketCapitalization);
-    const marketCapFromPrice = safeMul(sharesOutstanding, currentPrice);
-    // Prefer live price * shares if available; otherwise fall back to overview cap
-    const marketCap = marketCapFromPrice ?? overviewCap;
-
-    // Consolidate all data into a clean response matching the TickerData interface
+    // Consolidate all data into a clean response
     const consolidatedData = {
       // Basic identifiers
       symbol: ticker,
-      name: overview?.Name || `${ticker} Inc.`,
+      name: details?.name || `${ticker} Inc.`,
       
-      // Price data
+      // Price data from snapshot
       price: currentPrice,
-      change: dailyChange,
-      changePercent: dailyChangePercent,
-      open: quote && quote.open !== 'N/A' ? parseFloat(quote.open) : null,
-      high: quote && quote.high !== 'N/A' ? parseFloat(quote.high) : null,
-      low: quote && quote.low !== 'N/A' ? parseFloat(quote.low) : null,
-      previousClose: quote && quote.previousClose !== 'N/A' ? parseFloat(quote.previousClose) : null,
-      volume: quote && quote.volume !== 'N/A' ? parseInt(quote.volume) : null,
-      avgVolume: null, // Not available in Alpha Vantage overview
+      change: snapshot?.todaysChange ?? null,
+      changePercent: snapshot?.todaysChangePerc ?? null,
+      open: snapshot?.day?.o ?? null,
+      high: snapshot?.day?.h ?? null,
+      low: snapshot?.day?.l ?? null,
+      previousClose: snapshot?.prevDay?.c ?? null,
+      volume: parseNum(snapshot?.day?.v),
+      avgVolume: null, // Not directly available
+      
+      // Bid/Ask from live quote
+      bid: snapshot?.lastQuote?.p ?? null,
+      ask: snapshot?.lastQuote?.P ?? null,
 
-      // Key Statistics
+      // Key Statistics from details
       marketCap,
-      peRatio: parseNum(overview?.PERatio),
-      eps: parseNum(overview?.EPS),
-      dividendYield: parseNum(overview?.DividendYield),
-      week52High: parseNum(overview?.["52WeekHigh"]),
-      week52Low: parseNum(overview?.["52WeekLow"]),
-      targetPrice: parseNum(overview?.AnalystTargetPrice),
+      peRatio: null, // Not in basic Massive data - would need fundamentals API
+      eps: null, // Not in basic Massive data
+      dividendYield: null, // Not in basic Massive data
+      week52High: null, // Could calculate from historical data if needed
+      week52Low: null, // Could calculate from historical data if needed
+      targetPrice: null, // Not available in Massive
 
       // Company Profile
-      description: overview?.Description || 'No description available.',
-      sector: overview?.Sector || 'N/A',
-      industry: overview?.Industry || 'N/A',
-      website: '', // Not in Alpha Vantage overview
-      employees: overview ? parseNum(overview.Employees as unknown as string) : null, // likely unavailable
-      ceo: 'N/A', // Not in Alpha Vantage overview
-      founded: 'N/A', // Not in Alpha Vantage overview
-      headquarters: overview?.Address || 'N/A',
-      earningsDate: overview?.LatestQuarter || 'N/A',
-      exDividendDate: overview?.ExDividendDate || 'N/A',
-      currency: overview?.Currency || 'USD',
-      exchange: overview?.Exchange || 'NASDAQ',
+      description: details?.description || 'No description available.',
+      sector: details?.sic_description || 'N/A',
+      industry: details?.sic_description || 'N/A',
+      website: details?.homepage_url || '',
+      employees: parseNum(details?.total_employees),
+      ceo: 'N/A', // Not in Massive ticker details
+      founded: 'N/A', // Not in Massive ticker details
+      headquarters: address,
+      earningsDate: 'N/A', // Not in basic Massive data
+      exDividendDate: 'N/A', // Not in basic Massive data
+      currency: details?.currency_name?.toUpperCase() || 'USD',
+      exchange: details?.primary_exchange || 'UNKNOWN',
 
-      // Additional financial data
-      totalRevenue: parseNum(overview?.RevenueTTM),
-      grossMargins: overview && parseNum(overview.GrossProfitTTM) && parseNum(overview.RevenueTTM) 
-        ? parseNum(overview.GrossProfitTTM)! / parseNum(overview.RevenueTTM)! : null,
-      operatingMargins: parseNum(overview?.OperatingMarginTTM),
-      profitMargins: parseNum(overview?.ProfitMargin),
-      ebitdaMargins: overview && parseNum(overview.EBITDA) && parseNum(overview.RevenueTTM)
-        ? parseNum(overview.EBITDA)! / parseNum(overview.RevenueTTM)! : null,
+      // Additional company info
+      ticker_type: details?.type,
+      active: details?.active ?? true,
+      cik: details?.cik,
+      composite_figi: details?.composite_figi,
+      share_class_figi: details?.share_class_figi,
+      list_date: details?.list_date,
+      locale: details?.locale,
+      market: details?.market,
+      
+      // Branding
+      logo_url: details?.branding?.logo_url,
+      icon_url: details?.branding?.icon_url,
 
-      // Extended company statistics
+      // Additional financial data - would need fundamentals API for these
+      totalRevenue: null,
+      grossMargins: null,
+      operatingMargins: null,
+      profitMargins: null,
+      ebitdaMargins: null,
       sharesOutstanding,
-      enterpriseValue: marketCap ?? null,
-      bookValue: parseNum(overview?.BookValue),
-      priceToBook: parseNum(overview?.PriceToBookRatio),
-      evToRevenue: parseNum(overview?.EVToRevenue),
-      evToEbitda: parseNum(overview?.EVToEBITDA),
-      pegRatio: parseNum(overview?.PEGRatio),
-      forwardPE: parseNum(overview?.ForwardPE),
+      enterpriseValue: marketCap,
+      bookValue: null,
+      priceToBook: null,
+      evToRevenue: null,
+      evToEbitda: null,
+      pegRatio: null,
+      forwardPE: null,
+      returnOnAssets: null,
+      returnOnEquity: null,
+      quarterlyRevenueGrowthYOY: null,
+      quarterlyEarningsGrowthYOY: null,
+      ebitda: null,
+      dividendPerShare: null,
       
-      // Returns
-      returnOnAssets: parseNum(overview?.ReturnOnAssetsTTM),
-      returnOnEquity: parseNum(overview?.ReturnOnEquityTTM),
+      // SIC code for industry classification
+      sic_code: details?.sic_code,
       
-      // Growth metrics
-      quarterlyRevenueGrowthYOY: parseNum(overview?.QuarterlyRevenueGrowthYOY),
-      quarterlyEarningsGrowthYOY: parseNum(overview?.QuarterlyEarningsGrowthYOY),
-      
-      // Financial health
-      ebitda: parseNum(overview?.EBITDA),
-      
-      // Dividends
-      dividendPerShare: parseNum(overview?.DividendPerShare),
+      // Phone number
+      phone: details?.phone_number,
       
       // Last updated
       lastUpdated: new Date().toISOString(),
+      
+      // Timestamp of data
+      updated: snapshot?.updated ?? Date.now(),
     };
 
     return NextResponse.json(consolidatedData);

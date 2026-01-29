@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { joinCommunity, getUserTierLevel } from '@/lib/communityService';
-import { grantCommunityChannelAccess, revokeCommunityChannelAccess } from '@/lib/streamChatService';
 
 /**
  * POST /api/communities/[id]/join
@@ -59,13 +58,7 @@ export async function POST(
     if (tier.price_monthly === 0) {
       const membership = await joinCommunity(user.id, id, tierId);
 
-      // Grant Stream Chat channel access
-      try {
-        await grantCommunityChannelAccess(user.id, id, tier.tier_level);
-      } catch (error) {
-        console.error('Error granting channel access:', error);
-        // Don't fail the whole operation if channel access fails
-      }
+      // Chat channel access will be granted when new chat system is implemented
 
       return NextResponse.json({
         membership,
@@ -160,20 +153,15 @@ export async function DELETE(
         .eq('id', membership.id);
 
       if (error) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 500 }
-        );
-      }
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 }
+      );
+    }
 
-      // Revoke Stream Chat channel access
-      try {
-        await revokeCommunityChannelAccess(user.id, id);
-      } catch (error) {
-        console.error('Error revoking channel access:', error);
-      }
+    // Chat channel access revocation will be implemented when new chat system is added
 
-      return NextResponse.json({
+    return NextResponse.json({
         message: 'Successfully left community'
       });
     }

@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { useEffect } from 'react';
 import { ArrowRight, Users, DollarSign, BarChart3, Lock, Zap, MessageSquare, TrendingUp, Shield, Star, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LandingPage() {
   const { user } = useAuth();
+
+  // Force light mode for landing page
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }, []);
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>
@@ -23,7 +31,14 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="relative z-10 px-6 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/landing" className="flex items-center gap-2 group">
+          <Link href="/landing" className="flex items-center gap-3 group">
+            <Image 
+              src="/prylogo.png" 
+              alt="Pryleaf" 
+              width={40}
+              height={40}
+              className="group-hover:opacity-80 transition-opacity"
+            />
             <span 
               className="text-2xl font-bold transition-opacity group-hover:opacity-80" 
               style={{ color: 'var(--interactive-primary)' }}

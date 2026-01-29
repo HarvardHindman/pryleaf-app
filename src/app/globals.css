@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "stream-chat-react/dist/css/v2/index.css";
 
 /* Import our organized style files */
 @import "../styles/light-theme.css";

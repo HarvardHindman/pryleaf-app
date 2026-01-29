@@ -1,10 +1,11 @@
 /**
  * Chart Data Service
  * Handles fetching and processing market data for TradingView charts
+ * Now using Massive API for real-time data
  */
 
-import { AlphaVantageSupabase } from './alphaVantageSupabase';
-import { ChartData, convertAlphaVantageToTradingView, createMockChartData } from '@/components/charts/TradingViewChart';
+import { getMassiveClient } from './massiveClient';
+import { ChartData, createMockChartData } from '@/components/charts/TradingViewChart';
 
 export interface ChartDataOptions {
   symbol: string;
@@ -15,7 +16,7 @@ export interface ChartDataOptions {
 
 export class ChartDataService {
   /**
-   * Get chart data for a symbol
+   * Get chart data for a symbol using Massive API
    */
   static async getChartData(options: ChartDataOptions): Promise<ChartData[]> {
     const { symbol, interval = 'daily', period = 30, useMockData = false } = options;
@@ -26,12 +27,40 @@ export class ChartDataService {
         return createMockChartData(symbol, period);
       }
 
-      // Try to get real data from Alpha Vantage
-      const timeSeriesData = await AlphaVantageSupabase.getTimeSeries(symbol, interval);
+      const massiveClient = getMassiveClient();
       
-      if (timeSeriesData && timeSeriesData.length > 0) {
-        console.log(`Got real Alpha Vantage data for ${symbol}: ${timeSeriesData.length} data points`);
-        return convertAlphaVantageToTradingView(timeSeriesData);
+      // Calculate date range
+      const to = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - period);
+      
+      const fromStr = from.toISOString().split('T')[0];
+      const toStr = to.toISOString().split('T')[0];
+
+      // Map interval to Massive timespan
+      const timespan = interval === 'weekly' ? 'week' : interval === 'monthly' ? 'month' : 'day';
+
+      // Get aggregates from Massive
+      const aggregates = await massiveClient.getAggregates(
+        symbol,
+        1,
+        timespan,
+        fromStr,
+        toStr
+      );
+      
+      if (aggregates && aggregates.length > 0) {
+        console.log(`Got Massive data for ${symbol}: ${aggregates.length} data points`);
+        
+        // Convert to ChartData format
+        return aggregates.map(agg => ({
+          time: Math.floor(agg.t / 1000), // Convert milliseconds to seconds
+          open: agg.o,
+          high: agg.h,
+          low: agg.l,
+          close: agg.c,
+          volume: agg.v,
+        }));
       }
 
       // Fallback to mock data if no real data available
@@ -169,12 +198,14 @@ export class ChartDataService {
    */
   static async getRealTimeQuote(symbol: string): Promise<{ price: number; change: number; changePercent: number } | null> {
     try {
-      const quote = await AlphaVantageSupabase.getQuote(symbol);
-      if (quote) {
+      const massiveClient = getMassiveClient();
+      const snapshot = await massiveClient.getSnapshot(symbol);
+      
+      if (snapshot && snapshot.day) {
         return {
-          price: parseFloat(quote.price),
-          change: parseFloat(quote.change),
-          changePercent: parseFloat(quote.changePercent.replace('%', ''))
+          price: snapshot.day.c,
+          change: snapshot.todaysChange,
+          changePercent: snapshot.todaysChangePerc
         };
       }
       return null;
@@ -189,7 +220,8 @@ export class ChartDataService {
    */
   static async getCompanyOverview(symbol: string) {
     try {
-      return await AlphaVantageSupabase.getCompanyOverview(symbol);
+      const massiveClient = getMassiveClient();
+      return await massiveClient.getTickerDetails(symbol);
     } catch (error) {
       console.error(`Error fetching company overview for ${symbol}:`, error);
       return null;

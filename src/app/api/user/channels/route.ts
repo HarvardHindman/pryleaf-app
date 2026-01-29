@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { getUserMemberships } from '@/lib/communityService';
-import { getUserCommunityChannels } from '@/lib/streamChatService';
 
 /**
  * GET /api/user/channels
@@ -22,13 +21,9 @@ export async function GET(request: NextRequest) {
     // Get user's memberships
     const memberships = await getUserMemberships(user.id);
 
-    // Get Stream Chat channels
-    const channelsByCommunity = await getUserCommunityChannels(user.id);
-
-    // Combine with community data
+    // For now, return communities without chat channels
+    // Chat channels will be added when new chat system is implemented
     const communitiesWithChannels = memberships.map((membership: any) => {
-      const channels = channelsByCommunity[membership.community_id] || [];
-      
       return {
         community: membership.community,
         tier: membership.tier,
@@ -36,7 +31,7 @@ export async function GET(request: NextRequest) {
           status: membership.status,
           tier_level: membership.tier.tier_level,
         },
-        channels,
+        channels: [], // Empty until new chat system is implemented
       };
     });
 

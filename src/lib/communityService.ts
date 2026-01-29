@@ -1,5 +1,4 @@
 import { createSupabaseServerClient } from './supabaseServer';
-import { createDefaultCommunityChannels } from './streamChatService';
 
 export interface Community {
   id: string;
@@ -396,30 +395,8 @@ export async function createCommunity(
     throw new Error('Failed to create default tier');
   }
 
-  // Create default Stream Chat channels
-  try {
-    const streamChannels = await createDefaultCommunityChannels(community.id, userId);
-    
-    // Store channel references in database
-    for (const channelInfo of streamChannels) {
-      await supabase
-        .from('community_channels')
-        .insert({
-          community_id: community.id,
-          stream_channel_id: channelInfo.channelId,
-          name: channelInfo.name,
-          minimum_tier_level: channelInfo.minimumTierLevel,
-          channel_type: 'text',
-          is_announcement_only: channelInfo.name === 'announcements',
-          is_active: true,
-          sort_order: channelInfo.name === 'announcements' ? 0 : 1,
-        });
-    }
-  } catch (error) {
-    console.error('Error creating Stream Chat channels:', error);
-    // Don't rollback community creation if Stream Chat fails
-    // Community can still function without real-time chat
-  }
+  // Chat channels will be created when new chat system is implemented
+  // For now, communities are created without chat channels
 
   return community;
 }

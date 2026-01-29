@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
-import { grantCommunityChannelAccess } from '@/lib/streamChatService';
 
 /**
  * GET /api/invite/[code]
@@ -255,13 +254,7 @@ export async function POST(
     // Increment invite use count
     await supabase.rpc('increment_invite_use_count', { p_invite_id: invite_id });
 
-    // Grant Stream Chat channel access
-    try {
-      await grantCommunityChannelAccess(user.id, community_id, tier.tier_level);
-    } catch (error) {
-      console.error('Error granting channel access:', error);
-      // Don't fail the whole operation if channel access fails
-    }
+    // Chat channel access will be granted when new chat system is implemented
 
     return NextResponse.json({
       success: true,
