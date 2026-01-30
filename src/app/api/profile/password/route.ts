@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Password updated successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Password API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

@@ -9,11 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function LandingPage() {
   const { user } = useAuth();
 
-  // Force light mode for landing page
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-  }, []);
+  // Landing page respects user's theme preference
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: 'var(--surface-secondary)' }}>

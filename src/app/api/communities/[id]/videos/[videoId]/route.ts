@@ -54,7 +54,7 @@ export async function GET(
     }
 
     return NextResponse.json({ video });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching video:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch video' },
@@ -96,7 +96,7 @@ export async function PATCH(
     const video = await updateVideo(videoId, body);
 
     return NextResponse.json({ video });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating video:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update video' },
@@ -137,7 +137,7 @@ export async function DELETE(
     await deleteVideo(videoId);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting video:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete video' },

@@ -62,7 +62,7 @@ export default function SettingsPage() {
                       className="text-sm"
                       style={{ color: 'var(--clr-primary-a40)' }}
                     >
-                      Switch between light and dark mode
+                      Choose light, dark, or system preference
                     </p>
                   </div>
                   <ThemeToggle />

@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
         cached: true, // Massive client includes caching
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Error in GET /api/news:', error);
     
     return NextResponse.json(

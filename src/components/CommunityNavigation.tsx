@@ -180,6 +180,12 @@ export default function CommunityNavigation() {
 
           {/* Footer Actions */}
           <div className="p-2 border-t bg-gray-50 dark:bg-gray-900 dark:border-gray-800 space-y-1">
+            <Link href="/invite" onClick={() => setIsOpen(false)}>
+              <button className="w-full px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 rounded-md transition-colors flex items-center gap-2">
+                <Link2 className="h-3 w-3" />
+                Join via Invite
+              </button>
+            </Link>
             <Link href="/community/create" onClick={() => setIsOpen(false)}>
               <button 
                 className="w-full px-3 py-2 text-xs font-medium rounded-md transition-colors flex items-center gap-2 hover:opacity-80"
@@ -187,12 +193,6 @@ export default function CommunityNavigation() {
               >
                 <Plus className="h-3 w-3" />
                 Create Community
-              </button>
-            </Link>
-            <Link href="/invite" onClick={() => setIsOpen(false)}>
-              <button className="w-full px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 rounded-md transition-colors flex items-center gap-2">
-                <Link2 className="h-3 w-3" />
-                Join via Invite
               </button>
             </Link>
           </div>

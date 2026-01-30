@@ -32,7 +32,7 @@ export async function GET(
       tiers,
       membershipStatus
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch community' },
@@ -109,7 +109,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ community });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update community' },
@@ -163,7 +163,7 @@ export async function DELETE(
     return NextResponse.json({
       message: 'Community archived successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete community' },

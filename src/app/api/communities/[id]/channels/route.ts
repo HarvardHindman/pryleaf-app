@@ -34,7 +34,7 @@ export async function GET(
     }
 
     return NextResponse.json({ channels: channels || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching channels:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch channels' },
@@ -111,7 +111,7 @@ export async function POST(
     // Chat channels will be created when new chat system is implemented
 
     return NextResponse.json({ channel });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating channel:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create channel' },
@@ -173,7 +173,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ channel });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating channel:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update channel' },

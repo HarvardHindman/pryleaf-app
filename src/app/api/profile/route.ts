@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         created_at: user.created_at,
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Profile API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
@@ -199,7 +199,7 @@ export async function PUT(request: NextRequest) {
       profile,
       message: 'Profile updated successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Profile update API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

@@ -52,7 +52,7 @@ export async function GET(
     }
 
     return NextResponse.json({ posts: posts || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch posts' },
@@ -133,7 +133,7 @@ export async function POST(
     }
 
     return NextResponse.json({ post });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating post:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create post' },
@@ -262,148 +262,7 @@ export async function POST(
 
     return NextResponse.json({ post });
 
-  } catch (error: any) {
-
-    console.error('Error creating post:', error);
-
-    return NextResponse.json(
-
-      { error: error.message || 'Failed to create post' },
-
-      { status: 500 }
-
-    );
-
-  }
-
-}
-
-
-
-
-
-
-
-
-
-
-      return NextResponse.json(
-
-        { error: 'Unauthorized' },
-
-        { status: 401 }
-
-      );
-
-    }
-
-
-
-    // Check if user is owner
-
-    const isOwner = await isCommunityOwner(user.id, id);
-
-    if (!isOwner) {
-
-      return NextResponse.json(
-
-        { error: 'Only the community owner can create posts' },
-
-        { status: 403 }
-
-      );
-
-    }
-
-
-
-    const body = await request.json();
-
-    const {
-
-      title,
-
-      description,
-
-      content_type = 'article',
-
-      content_url,
-
-      thumbnail_url,
-
-      minimum_tier_level = 0,
-
-      is_published = true,
-
-      tags = []
-
-    } = body;
-
-
-
-    if (!title) {
-
-      return NextResponse.json(
-
-        { error: 'Post must have a title' },
-
-        { status: 400 }
-
-      );
-
-    }
-
-
-
-    // Create post using correct schema fields
-
-    const { data: post, error } = await supabase
-
-      .from('community_content')
-
-      .insert({
-
-        community_id: id,
-
-        creator_id: user.id,
-
-        content_type, // 'article' for posts, 'video' for videos
-
-        title,
-
-        description,
-
-        content_url: content_url || '', // Required field in schema
-
-        thumbnail_url,
-
-        minimum_tier_level,
-
-        is_published,
-
-        published_at: is_published ? new Date().toISOString() : null,
-
-        tags
-
-      })
-
-      .select()
-
-      .single();
-
-
-
-    if (error) {
-
-      throw error;
-
-    }
-
-
-
-    return NextResponse.json({ post });
-
-  } catch (error: any) {
+  } catch (error) {
 
     console.error('Error creating post:', error);
 
@@ -544,7 +403,148 @@ export async function POST(
 
     return NextResponse.json({ post });
 
-  } catch (error: any) {
+  } catch (error) {
+
+    console.error('Error creating post:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to create post' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+      return NextResponse.json(
+
+        { error: 'Unauthorized' },
+
+        { status: 401 }
+
+      );
+
+    }
+
+
+
+    // Check if user is owner
+
+    const isOwner = await isCommunityOwner(user.id, id);
+
+    if (!isOwner) {
+
+      return NextResponse.json(
+
+        { error: 'Only the community owner can create posts' },
+
+        { status: 403 }
+
+      );
+
+    }
+
+
+
+    const body = await request.json();
+
+    const {
+
+      title,
+
+      description,
+
+      content_type = 'article',
+
+      content_url,
+
+      thumbnail_url,
+
+      minimum_tier_level = 0,
+
+      is_published = true,
+
+      tags = []
+
+    } = body;
+
+
+
+    if (!title) {
+
+      return NextResponse.json(
+
+        { error: 'Post must have a title' },
+
+        { status: 400 }
+
+      );
+
+    }
+
+
+
+    // Create post using correct schema fields
+
+    const { data: post, error } = await supabase
+
+      .from('community_content')
+
+      .insert({
+
+        community_id: id,
+
+        creator_id: user.id,
+
+        content_type, // 'article' for posts, 'video' for videos
+
+        title,
+
+        description,
+
+        content_url: content_url || '', // Required field in schema
+
+        thumbnail_url,
+
+        minimum_tier_level,
+
+        is_published,
+
+        published_at: is_published ? new Date().toISOString() : null,
+
+        tags
+
+      })
+
+      .select()
+
+      .single();
+
+
+
+    if (error) {
+
+      throw error;
+
+    }
+
+
+
+    return NextResponse.json({ post });
+
+  } catch (error) {
 
     console.error('Error creating post:', error);
 

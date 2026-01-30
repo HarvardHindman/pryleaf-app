@@ -101,7 +101,7 @@ export async function POST(
       sessionId: session.id
     });
     */
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error joining community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to join community' },
@@ -192,7 +192,7 @@ export async function DELETE(
       message: 'Subscription cancelled. Access until period end.',
       expiresAt: membership.current_period_end
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error leaving community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to leave community' },

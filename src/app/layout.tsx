@@ -34,16 +34,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                const theme = localStorage.getItem('theme') || 'light';
-                document.documentElement.classList.remove('light', 'dark');
-                document.documentElement.classList.add(theme);
-              } catch (e) {}
+              (function() {
+                try {
+                  const themeMode = localStorage.getItem('themeMode') || 'system';
+                  let actualTheme = 'light';
+                  
+                  if (themeMode === 'system') {
+                    actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  } else {
+                    actualTheme = themeMode;
+                  }
+                  
+                  document.documentElement.className = actualTheme;
+                } catch (e) {
+                  document.documentElement.className = 'light';
+                }
+              })();
             `,
           }}
         />

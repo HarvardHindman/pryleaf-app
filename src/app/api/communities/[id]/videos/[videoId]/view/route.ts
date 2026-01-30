@@ -72,7 +72,7 @@ export async function POST(
       .eq('id', videoId);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error tracking view:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to track view' },
@@ -147,92 +147,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
-
-    console.error('Error tracking view:', error);
-
-    return NextResponse.json(
-
-      { error: error.message || 'Failed to track view' },
-
-      { status: 500 }
-
-    );
-
-  }
-
-}
-
-
-
-
-
-
-        .eq('id', existingView.id);
-
-    } else {
-
-      // Create new view record
-
-      await supabase
-
-        .from('content_views')
-
-        .insert({
-
-          content_id: videoId,
-
-          user_id: user.id,
-
-          community_id: id,
-
-          watch_duration: watchDuration || 0,
-
-          completion_percentage: completionPercentage || 0,
-
-          view_count: 1,
-
-        });
-
-
-
-      // Increment unique view count
-
-      await supabase
-
-        .from('community_content')
-
-        .update({
-
-          unique_views: supabase.sql`unique_views + 1`,
-
-        })
-
-        .eq('id', videoId);
-
-    }
-
-
-
-    // Always increment total view count
-
-    await supabase
-
-      .from('community_content')
-
-      .update({
-
-        views: supabase.sql`views + 1`,
-
-      })
-
-      .eq('id', videoId);
-
-
-
-    return NextResponse.json({ success: true });
-
-  } catch (error: any) {
+  } catch (error) {
 
     console.error('Error tracking view:', error);
 
@@ -317,7 +232,92 @@ export async function POST(
 
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
+  } catch (error) {
+
+    console.error('Error tracking view:', error);
+
+    return NextResponse.json(
+
+      { error: error.message || 'Failed to track view' },
+
+      { status: 500 }
+
+    );
+
+  }
+
+}
+
+
+
+
+
+
+        .eq('id', existingView.id);
+
+    } else {
+
+      // Create new view record
+
+      await supabase
+
+        .from('content_views')
+
+        .insert({
+
+          content_id: videoId,
+
+          user_id: user.id,
+
+          community_id: id,
+
+          watch_duration: watchDuration || 0,
+
+          completion_percentage: completionPercentage || 0,
+
+          view_count: 1,
+
+        });
+
+
+
+      // Increment unique view count
+
+      await supabase
+
+        .from('community_content')
+
+        .update({
+
+          unique_views: supabase.sql`unique_views + 1`,
+
+        })
+
+        .eq('id', videoId);
+
+    }
+
+
+
+    // Always increment total view count
+
+    await supabase
+
+      .from('community_content')
+
+      .update({
+
+        views: supabase.sql`views + 1`,
+
+      })
+
+      .eq('id', videoId);
+
+
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
 
     console.error('Error tracking view:', error);
 

@@ -108,7 +108,7 @@ export async function POST(
       banner_url: urlData.publicUrl,
       message: 'Banner uploaded successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Banner API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

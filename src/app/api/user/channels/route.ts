@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       communities: communitiesWithChannels
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching user channels:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch channels' },

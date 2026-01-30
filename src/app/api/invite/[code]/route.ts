@@ -110,7 +110,7 @@ export async function GET(
       tier: invite.tier,
       userStatus
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch invite details' },
@@ -265,7 +265,7 @@ export async function POST(
         tier: membership.tier
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error accepting invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to accept invite' },

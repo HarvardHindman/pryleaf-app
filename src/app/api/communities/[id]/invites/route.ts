@@ -49,7 +49,7 @@ export async function GET(
     }
 
     return NextResponse.json({ invites: invites || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching invites:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch invites' },
@@ -145,7 +145,7 @@ export async function POST(
     }
 
     return NextResponse.json({ invite: createdInvite }, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create invite' },

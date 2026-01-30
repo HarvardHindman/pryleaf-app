@@ -83,6 +83,7 @@ export interface CommunityCacheContextType {
   getCommunityById: (communityId: string) => Community | undefined;
   isUserOwner: (communityId: string) => boolean;
   getUserMembershipForCommunity: (communityId: string) => CommunityWithChannels | undefined;
+  hasCommunities: () => boolean;
   
   // Selection state
   selectedCommunityId: string | null;
@@ -413,6 +414,11 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     }
   }, [user, invalidateCache]);
 
+  // Helper to check if user has any communities (owned or joined)
+  const hasCommunities = useCallback(() => {
+    return ownedCommunities.length > 0 || userMemberships.length > 0;
+  }, [ownedCommunities, userMemberships]);
+
   const value: CommunityCacheContextType = {
     allCommunities,
     ownedCommunities,
@@ -428,6 +434,7 @@ export function CommunityCacheProvider({ children }: { children: React.ReactNode
     getCommunityById,
     isUserOwner,
     getUserMembershipForCommunity,
+    hasCommunities,
     selectedCommunityId,
     setSelectedCommunityId,
     communityStatsCache,

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const memberships = await getUserMemberships(user.id);
 
     return NextResponse.json({ memberships });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching user memberships:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch memberships' },

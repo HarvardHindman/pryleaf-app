@@ -1,7 +1,7 @@
 /**
  * Massive API Client (formerly Polygon.io)
  * Provides access to real-time stock data, company information, and news
- * with built-in in-memory caching
+ * with built-in in-memory caching and mock data fallback for development
  */
 
 // ============================================================================
@@ -137,6 +137,245 @@ export interface MassiveNewsArticle {
 }
 
 // ============================================================================
+// Mock Data Generators (for development/fallback)
+// ============================================================================
+
+function randomPrice(base: number = 100, variance: number = 20): number {
+  return parseFloat((base + (Math.random() - 0.5) * variance).toFixed(2));
+}
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomChange(): { change: number; changePerc: number } {
+  const changePerc = parseFloat(((Math.random() - 0.5) * 10).toFixed(2));
+  const change = parseFloat((changePerc * 2).toFixed(2));
+  return { change, changePerc };
+}
+
+class MockDataGenerator {
+  static generateQuote(ticker: string): MassiveQuote {
+    const price = randomPrice(150, 50);
+    return {
+      ticker: ticker.toUpperCase(),
+      price,
+      bid: price - 0.05,
+      ask: price + 0.05,
+      bidSize: randomInt(100, 500),
+      askSize: randomInt(100, 500),
+      timestamp: Date.now(),
+      volume: randomInt(1000000, 50000000),
+    };
+  }
+
+  static generateSnapshot(ticker: string): MassiveSnapshot {
+    const { change, changePerc } = randomChange();
+    const prevClose = randomPrice(150, 50);
+    const open = prevClose + change * 0.3;
+    const close = prevClose + change;
+    const high = Math.max(open, close) + Math.abs(change) * 0.5;
+    const low = Math.min(open, close) - Math.abs(change) * 0.5;
+    const volume = randomInt(5000000, 100000000);
+
+    return {
+      ticker: ticker.toUpperCase(),
+      todaysChange: change,
+      todaysChangePerc: changePerc,
+      updated: Date.now(),
+      day: {
+        o: parseFloat(open.toFixed(2)),
+        h: parseFloat(high.toFixed(2)),
+        l: parseFloat(low.toFixed(2)),
+        c: parseFloat(close.toFixed(2)),
+        v: volume,
+        vw: parseFloat(((open + close) / 2).toFixed(2)),
+      },
+      prevDay: {
+        o: parseFloat((prevClose - 2).toFixed(2)),
+        h: parseFloat((prevClose + 1).toFixed(2)),
+        l: parseFloat((prevClose - 1).toFixed(2)),
+        c: parseFloat(prevClose.toFixed(2)),
+        v: randomInt(4000000, 80000000),
+        vw: parseFloat(prevClose.toFixed(2)),
+      },
+      min: {
+        av: volume,
+        c: parseFloat(close.toFixed(2)),
+        h: parseFloat(high.toFixed(2)),
+        l: parseFloat(low.toFixed(2)),
+        o: parseFloat(open.toFixed(2)),
+        v: randomInt(100000, 1000000),
+        vw: parseFloat(((open + close) / 2).toFixed(2)),
+      },
+      lastQuote: {
+        p: parseFloat((close - 0.05).toFixed(2)),
+        P: parseFloat((close + 0.05).toFixed(2)),
+        s: randomInt(100, 500),
+        S: randomInt(100, 500),
+        t: Date.now(),
+      },
+      lastTrade: {
+        p: parseFloat(close.toFixed(2)),
+        s: randomInt(10, 100),
+        t: Date.now(),
+        x: 1,
+      },
+    };
+  }
+
+  static generateTickerDetails(ticker: string): MassiveTickerDetails {
+    const companies = [
+      { name: 'Technology Corp', sector: 'Technology', sic: 'Software & Services' },
+      { name: 'Financial Services Inc', sector: 'Financial', sic: 'Banking & Investment Services' },
+      { name: 'Healthcare Solutions', sector: 'Healthcare', sic: 'Medical Devices & Services' },
+      { name: 'Energy Group', sector: 'Energy', sic: 'Oil & Gas Production' },
+      { name: 'Consumer Products Co', sector: 'Consumer', sic: 'Retail & Consumer Goods' },
+    ];
+    
+    const company = companies[randomInt(0, companies.length - 1)];
+    const price = randomPrice(150, 50);
+    const shares = randomInt(100000000, 10000000000);
+    
+    return {
+      ticker: ticker.toUpperCase(),
+      name: `${ticker.toUpperCase()} ${company.name}`,
+      market: 'stocks',
+      locale: 'us',
+      primary_exchange: ['NASDAQ', 'NYSE', 'AMEX'][randomInt(0, 2)],
+      type: 'CS',
+      active: true,
+      currency_name: 'usd',
+      cik: String(randomInt(1000000, 9999999)),
+      composite_figi: `BBG${randomInt(100000000, 999999999)}`,
+      share_class_figi: `BBG${randomInt(100000000, 999999999)}1`,
+      market_cap: parseFloat((price * shares).toFixed(0)),
+      phone_number: `+1-${randomInt(200, 999)}-${randomInt(100, 999)}-${randomInt(1000, 9999)}`,
+      address: {
+        address1: `${randomInt(1, 9999)} Main Street`,
+        city: ['New York', 'San Francisco', 'Boston', 'Austin', 'Seattle'][randomInt(0, 4)],
+        state: ['NY', 'CA', 'MA', 'TX', 'WA'][randomInt(0, 4)],
+        postal_code: String(randomInt(10000, 99999)),
+      },
+      description: `${ticker.toUpperCase()} is a leading company in the ${company.sector.toLowerCase()} sector, providing innovative solutions and services to customers worldwide. The company focuses on delivering value through technology, innovation, and customer satisfaction.`,
+      sic_code: String(randomInt(1000, 9999)),
+      sic_description: company.sic,
+      ticker_root: ticker.toUpperCase(),
+      homepage_url: `https://www.${ticker.toLowerCase()}.com`,
+      total_employees: randomInt(500, 150000),
+      list_date: `${randomInt(1990, 2020)}-${String(randomInt(1, 12)).padStart(2, '0')}-${String(randomInt(1, 28)).padStart(2, '0')}`,
+      branding: {
+        logo_url: `https://api.polygon.io/v1/reference/company-branding/${ticker.toLowerCase()}/logo`,
+        icon_url: `https://api.polygon.io/v1/reference/company-branding/${ticker.toLowerCase()}/icon`,
+      },
+      share_class_shares_outstanding: shares,
+      weighted_shares_outstanding: shares,
+      round_lot: 100,
+    };
+  }
+
+  static generateAggregates(
+    ticker: string,
+    count: number = 30
+  ): MassiveAggregate[] {
+    const aggregates: MassiveAggregate[] = [];
+    let basePrice = randomPrice(150, 50);
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    for (let i = count - 1; i >= 0; i--) {
+      const dayChange = (Math.random() - 0.5) * 10;
+      const open = basePrice;
+      const close = basePrice + dayChange;
+      const high = Math.max(open, close) + Math.abs(dayChange) * 0.5;
+      const low = Math.min(open, close) - Math.abs(dayChange) * 0.5;
+
+      aggregates.push({
+        o: parseFloat(open.toFixed(2)),
+        h: parseFloat(high.toFixed(2)),
+        l: parseFloat(low.toFixed(2)),
+        c: parseFloat(close.toFixed(2)),
+        v: randomInt(5000000, 100000000),
+        vw: parseFloat(((open + close) / 2).toFixed(2)),
+        t: now - i * oneDayMs,
+        n: randomInt(10000, 50000),
+        otc: false,
+      });
+
+      basePrice = close;
+    }
+
+    return aggregates;
+  }
+
+  static generateNews(ticker?: string, limit: number = 10): MassiveNewsArticle[] {
+    const publishers = [
+      { name: 'Bloomberg', url: 'https://www.bloomberg.com', logo: 'https://logo.clearbit.com/bloomberg.com' },
+      { name: 'Reuters', url: 'https://www.reuters.com', logo: 'https://logo.clearbit.com/reuters.com' },
+      { name: 'CNBC', url: 'https://www.cnbc.com', logo: 'https://logo.clearbit.com/cnbc.com' },
+      { name: 'Financial Times', url: 'https://www.ft.com', logo: 'https://logo.clearbit.com/ft.com' },
+      { name: 'Wall Street Journal', url: 'https://www.wsj.com', logo: 'https://logo.clearbit.com/wsj.com' },
+    ];
+
+    const headlines = [
+      'Reports Strong Quarterly Earnings',
+      'Announces New Product Launch',
+      'Shares Rise on Positive Outlook',
+      'CEO Discusses Future Strategy',
+      'Expands into New Markets',
+      'Beats Analyst Expectations',
+      'Faces Regulatory Challenges',
+      'Partners with Industry Leader',
+      'Stock Price Reaches New High',
+      'Investors Await Key Announcement',
+    ];
+
+    const sentiments: Array<'positive' | 'neutral' | 'negative'> = ['positive', 'neutral', 'negative'];
+
+    const articles: MassiveNewsArticle[] = [];
+    const now = Date.now();
+    const oneHourMs = 60 * 60 * 1000;
+
+    for (let i = 0; i < limit; i++) {
+      const publisher = publishers[randomInt(0, publishers.length - 1)];
+      const headline = headlines[randomInt(0, headlines.length - 1)];
+      const sentiment = sentiments[randomInt(0, 2)];
+      const targetTicker = ticker?.toUpperCase() || ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN'][randomInt(0, 4)];
+      
+      const publishedTime = new Date(now - i * oneHourMs * 2);
+
+      articles.push({
+        id: `mock-${randomInt(100000, 999999)}`,
+        publisher: {
+          name: publisher.name,
+          homepage_url: publisher.url,
+          logo_url: publisher.logo,
+          favicon_url: `${publisher.logo}/favicon.ico`,
+        },
+        title: `${targetTicker} ${headline}`,
+        author: ['John Smith', 'Jane Doe', 'Michael Johnson', 'Sarah Williams'][randomInt(0, 3)],
+        published_utc: publishedTime.toISOString(),
+        article_url: `${publisher.url}/article/${randomInt(1000, 9999)}`,
+        tickers: [targetTicker],
+        amp_url: `${publisher.url}/amp/article/${randomInt(1000, 9999)}`,
+        image_url: `https://picsum.photos/800/600?random=${i}`,
+        description: `${targetTicker} ${headline.toLowerCase()} as the company continues to show strong performance in the market. Analysts are closely watching the stock's movement.`,
+        keywords: ['stocks', 'market', 'earnings', targetTicker.toLowerCase()],
+        insights: [
+          {
+            ticker: targetTicker,
+            sentiment,
+            sentiment_reasoning: `The article discusses ${targetTicker}'s recent ${sentiment === 'positive' ? 'positive developments' : sentiment === 'negative' ? 'challenges' : 'news'} in the market.`,
+          },
+        ],
+      });
+    }
+
+    return articles;
+  }
+}
+
+// ============================================================================
 // Cache Implementation
 // ============================================================================
 
@@ -204,13 +443,21 @@ export class MassiveClient {
   private apiKey: string;
   private baseUrl: string = 'https://api.polygon.io';
   private cache: InMemoryCache;
+  private useMockData: boolean;
 
   constructor(apiKey?: string, cacheTTLMinutes: number = 5) {
     this.apiKey = apiKey || process.env.MASSIVE_API_KEY || '';
     this.cache = new InMemoryCache(cacheTTLMinutes);
+    
+    // Enable mock data if explicitly set or if API key is missing
+    this.useMockData = process.env.USE_MOCK_DATA === 'true' || !this.apiKey;
 
     if (!this.apiKey) {
-      console.warn('⚠️  MASSIVE_API_KEY not provided. API calls will fail.');
+      console.warn('⚠️  MASSIVE_API_KEY not provided. Using mock data.');
+    }
+
+    if (this.useMockData) {
+      console.log('🎭 Mock data mode enabled - all API calls will return realistic mock data');
     }
 
     // Run cleanup every 10 minutes
@@ -232,7 +479,12 @@ export class MassiveClient {
     return url.toString();
   }
 
-  private async fetch<T>(url: string, cacheKey?: string, cacheTTL?: number): Promise<T> {
+  private async fetch<T>(
+    url: string, 
+    cacheKey?: string, 
+    cacheTTL?: number,
+    mockDataFallback?: () => T
+  ): Promise<T> {
     // Check cache first if cacheKey provided
     if (cacheKey) {
       const cached = this.cache.get<T>(cacheKey);
@@ -240,6 +492,19 @@ export class MassiveClient {
         console.log(`[Massive] Cache hit: ${cacheKey}`);
         return cached;
       }
+    }
+
+    // Return mock data if mock mode is enabled
+    if (this.useMockData && mockDataFallback) {
+      console.log(`[Massive] Mock data: ${cacheKey || 'unknown'}`);
+      const mockData = mockDataFallback();
+      
+      // Cache mock data too
+      if (cacheKey) {
+        this.cache.set(cacheKey, mockData, cacheTTL);
+      }
+      
+      return mockData;
     }
 
     try {
@@ -267,6 +532,20 @@ export class MassiveClient {
       return data;
     } catch (error) {
       console.error('[Massive] API call failed:', error);
+      
+      // Use mock data as fallback if available
+      if (mockDataFallback) {
+        console.log(`[Massive] Using mock data fallback for: ${cacheKey || 'unknown'}`);
+        const mockData = mockDataFallback();
+        
+        // Cache the fallback data briefly (1 minute)
+        if (cacheKey) {
+          this.cache.set(cacheKey, mockData, 1);
+        }
+        
+        return mockData;
+      }
+      
       throw error;
     }
   }
@@ -290,7 +569,22 @@ export class MassiveClient {
         S: number;    // ask size
         t: number;    // timestamp
       };
-    }>(url, cacheKey, 5);
+    }>(
+      url, 
+      cacheKey, 
+      5,
+      () => ({
+        status: 'OK',
+        results: {
+          T: normalizedTicker,
+          p: MockDataGenerator.generateQuote(normalizedTicker).bid,
+          P: MockDataGenerator.generateQuote(normalizedTicker).ask,
+          s: MockDataGenerator.generateQuote(normalizedTicker).bidSize,
+          S: MockDataGenerator.generateQuote(normalizedTicker).askSize,
+          t: Date.now(),
+        }
+      })
+    );
 
     const r = response.results;
     
@@ -318,7 +612,15 @@ export class MassiveClient {
     const response = await this.fetch<{
       status: string;
       ticker: MassiveSnapshot;
-    }>(url, cacheKey, 5);
+    }>(
+      url, 
+      cacheKey, 
+      5,
+      () => ({
+        status: 'OK',
+        ticker: MockDataGenerator.generateSnapshot(normalizedTicker)
+      })
+    );
 
     return response.ticker;
   }
@@ -336,7 +638,15 @@ export class MassiveClient {
     const response = await this.fetch<{
       status: string;
       results: MassiveTickerDetails;
-    }>(url, cacheKey, 60); // Cache for 60 minutes (changes infrequently)
+    }>(
+      url, 
+      cacheKey, 
+      60, // Cache for 60 minutes (changes infrequently)
+      () => ({
+        status: 'OK',
+        results: MockDataGenerator.generateTickerDetails(normalizedTicker)
+      })
+    );
 
     return response.results;
   }
@@ -373,7 +683,20 @@ export class MassiveClient {
       ticker: string;
       results: MassiveAggregate[];
       resultsCount: number;
-    }>(url, cacheKey, 30); // Cache for 30 minutes
+    }>(
+      url, 
+      cacheKey, 
+      30, // Cache for 30 minutes
+      () => {
+        const mockAggregates = MockDataGenerator.generateAggregates(normalizedTicker, options?.limit || 30);
+        return {
+          status: 'OK',
+          ticker: normalizedTicker,
+          results: mockAggregates,
+          resultsCount: mockAggregates.length
+        };
+      }
+    );
 
     return response.results || [];
   }
@@ -410,7 +733,19 @@ export class MassiveClient {
       status: string;
       results: MassiveNewsArticle[];
       count: number;
-    }>(url, cacheKey, 10); // Cache for 10 minutes
+    }>(
+      url, 
+      cacheKey, 
+      10, // Cache for 10 minutes
+      () => {
+        const mockNews = MockDataGenerator.generateNews(options?.ticker, options?.limit || 10);
+        return {
+          status: 'OK',
+          results: mockNews,
+          count: mockNews.length
+        };
+      }
+    );
 
     return response.results || [];
   }
@@ -433,7 +768,20 @@ export class MassiveClient {
       status: string;
       tickers: MassiveSnapshot[];
       count: number;
-    }>(url, cacheKey, 5);
+    }>(
+      url, 
+      cacheKey, 
+      5,
+      () => {
+        const mockTickers = tickers || ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN'];
+        const snapshots = mockTickers.map(t => MockDataGenerator.generateSnapshot(t));
+        return {
+          status: 'OK',
+          tickers: snapshots,
+          count: snapshots.length
+        };
+      }
+    );
 
     return response.tickers || [];
   }

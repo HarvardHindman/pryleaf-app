@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 
 // Price updates are now handled by the optimistic portfolio hook
 import Link from 'next/link';
@@ -15,6 +16,8 @@ import { formatCurrency } from '@/lib/formatters';
 import TickerSearch from '@/components/TickerSearch';
 import NewsCarousel from '@/components/NewsCarousel';
 import ActivityFeed from '@/components/ActivityFeed';
+import { useCommunityCache } from '@/contexts/CommunityCacheContext';
+import CommunityCTABanner from '@/components/dashboard/CommunityCTABanner';
 
 interface PortfolioStock {
   symbol: string;
@@ -28,8 +31,9 @@ interface PortfolioStock {
 }
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, onboardingCompleted, onboardingDismissedAt } = useAuth();
   const router = useRouter();
+  const { hasCommunities } = useCommunityCache();
   const { 
     portfolioStocks, 
     portfolio, 
@@ -48,6 +52,7 @@ export default function Home() {
   const [shareInputs, setShareInputs] = useState<Record<string, string>>({});
   const [costInputs, setCostInputs] = useState<Record<string, string>>({});
   const [openMenuSymbol, setOpenMenuSymbol] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Sync input fields with latest portfolio data
   useEffect(() => {
@@ -74,6 +79,17 @@ export default function Home() {
       router.push('/landing');
     }
   }, [user, router]);
+
+  // Show onboarding modal for first-time users
+  useEffect(() => {
+    if (user && !onboardingCompleted && !hasCommunities()) {
+      // Small delay to ensure smooth transition after login
+      const timer = setTimeout(() => {
+        setShowOnboarding(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, onboardingCompleted, hasCommunities]);
 
 
   // Note: Real-time price updates would be handled by the portfolio service
@@ -189,6 +205,12 @@ export default function Home() {
 
   return (
     <>
+      {/* Onboarding Modal */}
+      <OnboardingModal 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
+
       {!user ? (
         // Welcome section for non-authenticated users
         <div className="container mx-auto px-6 py-12">
@@ -249,6 +271,23 @@ export default function Home() {
             Track your investments and market performance
           </p>
         </div>
+
+        {/* Community CTA Banner - Show if user has no communities and hasn't dismissed recently */}
+        {!hasCommunities() && (() => {
+          // Check if dismissal was within last 7 days
+          if (onboardingDismissedAt) {
+            const dismissalDate = new Date(onboardingDismissedAt);
+            const daysSinceDismissal = (Date.now() - dismissalDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSinceDismissal < 7) {
+              return null; // Don't show banner if dismissed within 7 days
+            }
+          }
+          return (
+            <div className="mb-6">
+              <CommunityCTABanner />
+            </div>
+          );
+        })()}
 
         {/* Market Overview - Terminal Strip Style */}
         <div className="mb-4">

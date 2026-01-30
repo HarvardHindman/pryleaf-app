@@ -380,7 +380,7 @@ export class NewsService {
         totalArticles: result.total,
         apiCallsMade: 1
       };
-    } catch (error: any) {
+    } catch (error) {
       const duration = Math.floor((Date.now() - startTime) / 1000);
       console.error('❌ News refresh failed:', error);
 

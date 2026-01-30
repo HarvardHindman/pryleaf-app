@@ -6,8 +6,8 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Mail, Lock, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface AuthFormProps {
   mode?: "login" | "register";
@@ -54,202 +54,237 @@ export default function AuthForm({ mode: initialMode = "login" }: AuthFormProps)
     }
   };
 
+  const handleOAuthPlaceholder = (provider: string) => {
+    alert(`${provider} authentication coming soon!`);
+  };
+
   return (
     <div 
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex items-center justify-center p-4"
       style={{ backgroundColor: 'var(--surface-secondary)' }}
     >
-      {/* Navigation */}
-      <nav className="px-6 py-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/landing" className="flex items-center gap-2 group">
-            <span 
-              className="text-2xl font-bold transition-opacity group-hover:opacity-80" 
-              style={{ color: 'var(--interactive-primary)' }}
-            >
-              Pryleaf
-            </span>
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Link href="/landing">
+            <Image 
+              src="/prylogo.png" 
+              alt="Pryleaf" 
+              width={60}
+              height={60}
+              className="hover:opacity-80 transition-opacity cursor-pointer"
+            />
           </Link>
-          
-          <div className="flex items-center gap-3">
-            {mode === "register" ? (
-              <>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Already have an account?
-                </span>
-                <Link href="/login">
-                  <button 
-                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
-                    style={{ color: 'var(--interactive-primary)' }}
-                  >
-                    Log In
-                  </button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  New to Pryleaf?
-                </span>
-                <Link href="/register">
-                  <button 
-                    className="px-6 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105 shadow-lg"
-                    style={{ 
-                      backgroundColor: 'var(--interactive-primary)', 
-                      color: 'white' 
-                    }}
-                  >
-                    Sign Up
-                  </button>
-                </Link>
-              </>
-            )}
+        </div>
+
+        {/* Title */}
+        <h1 
+          className="text-3xl font-bold text-center mb-10"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Log in or sign up
+        </h1>
+
+        {/* OAuth Buttons */}
+        <div className="space-y-3 mb-6">
+          {/* Google */}
+          <button
+            onClick={() => handleOAuthPlaceholder("Google")}
+            className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)'
+            }}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          {/* Apple */}
+          <button
+            onClick={() => handleOAuthPlaceholder("Apple")}
+            className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)'
+            }}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+            </svg>
+            Continue with Apple
+          </button>
+
+          {/* Facebook */}
+          <button
+            onClick={() => handleOAuthPlaceholder("Facebook")}
+            className="w-full flex items-center justify-center gap-3 px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-default)'
+            }}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#1877F2">
+              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+            </svg>
+            Continue with Facebook
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div 
+              className="w-full border-t"
+              style={{ borderColor: 'var(--border-default)' }}
+            ></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span 
+              className="px-4"
+              style={{ 
+                backgroundColor: 'var(--surface-secondary)',
+                color: 'var(--text-muted)'
+              }}
+            >
+              or
+            </span>
           </div>
         </div>
-      </nav>
 
-      <div className="flex-1 flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <User 
-              className="h-12 w-12" 
-              style={{ color: 'var(--clr-info-a20)' }}
+        {/* Email/Password Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg"
+              style={{
+                backgroundColor: 'var(--surface-tertiary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+              required
             />
           </div>
-          <CardTitle className="text-2xl font-bold">
-            {mode === "login" ? "Welcome Back" : "Create Account"}
-          </CardTitle>
-          <p style={{ color: 'var(--clr-primary-a40)' }}>
-            {mode === "login" 
-              ? "Sign in to your Pryleaf account" 
-              : "Join Pryleaf to start chatting and tracking investments"
-            }
-          </p>
-        </CardHeader>
-        
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label 
-                className="text-sm font-medium"
-                style={{ color: 'var(--clr-primary-a50)' }}
-              >
-                Email
-              </label>
-              <div className="relative">
-                <Mail 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
-                  style={{ color: 'var(--clr-primary-a30)' }}
-                />
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label 
-                className="text-sm font-medium"
-                style={{ color: 'var(--clr-primary-a50)' }}
-              >
-                Password
-              </label>
-              <div className="relative">
-                <Lock 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" 
-                  style={{ color: 'var(--clr-primary-a30)' }}
-                />
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-            
-            {error && (
-              <div 
-                className="border px-4 py-3 rounded-md text-sm"
-                style={{
-                  backgroundColor: 'var(--clr-danger-a0)',
-                  borderColor: 'var(--clr-danger-a10)',
-                  color: 'var(--clr-danger-a20)'
-                }}
-              >
-                {error}
-              </div>
-            )}
-            
-            {success && (
-              <div 
-                className="border px-4 py-3 rounded-md text-sm"
-                style={{
-                  backgroundColor: 'var(--clr-success-a0)',
-                  borderColor: 'var(--clr-success-a10)',
-                  color: 'var(--clr-success-a20)'
-                }}
-              >
-                {success}
-              </div>
-            )}
-            
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {mode === "login" ? "Signing in..." : "Creating account..."}
-                </>
-              ) : (
-                mode === "login" ? "Sign In" : "Create Account"
-              )}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center">
-            <p 
-              className="text-sm"
-              style={{ color: 'var(--clr-primary-a40)' }}
-            >
-              {mode === "login" ? (
-                <>
-                  Don't have an account?{" "}
-                  <a 
-                    href="/register" 
-                    className="font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: 'var(--clr-info-a20)' }}
-                  >
-                    Sign up
-                  </a>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <a 
-                    href="/login" 
-                    className="font-medium hover:opacity-80 transition-opacity"
-                    style={{ color: 'var(--clr-info-a20)' }}
-                  >
-                    Sign in
-                  </a>
-                </>
-              )}
-            </p>
+
+          <div>
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg"
+              style={{
+                backgroundColor: 'var(--surface-tertiary)',
+                borderColor: 'var(--border-default)',
+                color: 'var(--text-primary)'
+              }}
+              required
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          {error && (
+            <div 
+              className="px-4 py-3 border rounded-lg text-sm"
+              style={{
+                backgroundColor: 'var(--danger-background)',
+                borderColor: 'var(--danger-border)',
+                color: 'var(--danger-text)'
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div 
+              className="px-4 py-3 border rounded-lg text-sm"
+              style={{
+                backgroundColor: 'var(--success-background)',
+                borderColor: 'var(--success-border)',
+                color: 'var(--success-text)'
+              }}
+            >
+              {success}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 font-medium rounded-lg transition-colors disabled:opacity-50"
+            style={{
+              backgroundColor: 'var(--interactive-primary)',
+              color: 'white'
+            }}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {mode === "login" ? "Signing in..." : "Creating account..."}
+              </>
+            ) : (
+              "Continue"
+            )}
+          </Button>
+        </form>
+
+        {/* Help Link */}
+        <div className="mt-6 text-center">
+          <Link 
+            href="/reset-password"
+            className="text-sm transition-colors underline"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            Need help signing in?
+          </Link>
+        </div>
+
+        {/* Terms */}
+        <div 
+          className="mt-8 text-center text-xs px-4"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          By signing up, you are creating a Pryleaf account and agree to Pryleaf's{" "}
+          <Link 
+            href="/terms" 
+            className="underline transition-opacity hover:opacity-80"
+          >
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link 
+            href="/privacy" 
+            className="underline transition-opacity hover:opacity-80"
+          >
+            Privacy Policy
+          </Link>
+        </div>
+
+        {/* Toggle Mode Link */}
+        <div className="mt-6 text-center">
+          <Link
+            href={mode === "login" ? "/register" : "/login"}
+            className="text-sm transition-opacity hover:opacity-80"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            {mode === "login" 
+              ? "Don't have an account? Sign up" 
+              : "Already have an account? Log in"
+            }
+          </Link>
+        </div>
       </div>
     </div>
   );

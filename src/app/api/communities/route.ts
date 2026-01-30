@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ communities: communities || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching communities:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch communities' },
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       { community },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating community:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create community' },

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       avatar_url: urlData.publicUrl,
       message: 'Avatar uploaded successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Avatar API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
@@ -146,7 +146,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       message: 'Avatar removed successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Avatar delete API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

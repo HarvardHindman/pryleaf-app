@@ -55,7 +55,7 @@ export async function GET(
     }
 
     return NextResponse.json({ invite });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch invite' },
@@ -120,7 +120,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ invite });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to update invite' },
@@ -174,7 +174,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ message: 'Invite deactivated successfully' });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error deleting invite:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to delete invite' },

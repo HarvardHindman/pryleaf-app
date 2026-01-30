@@ -108,7 +108,7 @@ export async function POST(
       avatar_url: urlData.publicUrl,
       message: 'Avatar uploaded successfully'
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Avatar API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

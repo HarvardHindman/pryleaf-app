@@ -77,7 +77,7 @@ export async function GET(
       user: userData,
       isOwnProfile,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Profile fetch API error:', error);
     return NextResponse.json(
       { error: error.message || 'Internal server error' },

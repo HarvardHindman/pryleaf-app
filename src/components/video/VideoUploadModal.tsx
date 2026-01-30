@@ -142,7 +142,7 @@ export default function VideoUploadModal({
         handleClose();
       }, 1000);
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Upload error:', error);
       setErrorMessage(error.message || 'Upload failed. Please try again.');
       setUploadStatus('error');
