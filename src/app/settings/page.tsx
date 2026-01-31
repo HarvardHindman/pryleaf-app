@@ -5,22 +5,6 @@ export default function SettingsPage() {
   return (
     <div className="h-full p-6">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 
-              className="text-3xl font-bold mb-2"
-              style={{ color: 'var(--clr-primary-a50)' }}
-            >
-              Settings
-            </h1>
-            <p 
-              className="text-lg"
-              style={{ color: 'var(--clr-primary-a40)' }}
-            >
-              Customize your Pryleaf experience
-            </p>
-          </div>
-
           {/* Settings Sections */}
           <div className="space-y-8">
             {/* Appearance Section */}

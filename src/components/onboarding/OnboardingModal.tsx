@@ -17,16 +17,22 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
 
   if (!isOpen) return null;
 
-  const handleJoinViaInvite = async () => {
-    await completeOnboarding();
-    onClose();
+  const handleJoinViaInvite = () => {
+    // Navigate first, then close modal after a brief delay
     router.push('/invite');
+    setTimeout(() => {
+      onClose();
+      completeOnboarding();
+    }, 100);
   };
 
-  const handleCreateCommunity = async () => {
-    await completeOnboarding();
-    onClose();
+  const handleCreateCommunity = () => {
+    // Navigate first, then close modal after a brief delay
     router.push('/community/create');
+    setTimeout(() => {
+      onClose();
+      completeOnboarding();
+    }, 100);
   };
 
   const handleSkip = async () => {
@@ -40,8 +46,8 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.75)' }}
     >
       <div 
         className="relative w-full max-w-2xl rounded-2xl shadow-2xl"
@@ -50,18 +56,20 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
           border: '1px solid var(--border-default)'
         }}
       >
-        {/* Close button */}
-        <button
-          onClick={handleSkip}
-          className="absolute top-4 right-4 p-2 rounded-lg transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
-          aria-label="Close"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Progress indicator */}
+        {/* Header with close button and progress */}
         <div className="px-8 pt-6">
+          <div className="flex items-center justify-end mb-4">
+            <button
+              onClick={handleSkip}
+              className="p-2 rounded-lg transition-colors hover:opacity-80"
+              style={{ color: 'var(--text-muted)' }}
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {/* Progress indicator */}
           <div className="flex items-center gap-2">
             <div 
               className="h-1.5 flex-1 rounded-full transition-all"
@@ -142,7 +150,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {/* Join via Invite Card */}
                 <div 
-                  className="p-6 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer"
+                  className="p-6 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer flex flex-col"
                   style={{ 
                     backgroundColor: 'var(--surface-secondary)',
                     borderColor: 'var(--border-default)'
@@ -165,15 +173,15 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
                     Join via Invite
                   </h3>
                   <p 
-                    className="text-sm mb-4"
+                    className="text-sm mb-4 flex-grow"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     Have an invite code? Join an existing community and start connecting with members
                   </p>
                   <button
-                    className="w-full px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
                     style={{ 
-                      backgroundColor: 'var(--interactive-primary)',
+                      backgroundColor: '#000000',
                       color: 'white'
                     }}
                   >
@@ -183,7 +191,7 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
 
                 {/* Create Community Card */}
                 <div 
-                  className="p-6 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer"
+                  className="p-6 rounded-xl border-2 transition-all hover:scale-105 cursor-pointer flex flex-col"
                   style={{ 
                     backgroundColor: 'var(--surface-secondary)',
                     borderColor: 'var(--border-default)'
@@ -206,17 +214,16 @@ export default function OnboardingModal({ isOpen, onClose }: OnboardingModalProp
                     Create Your Own
                   </h3>
                   <p 
-                    className="text-sm mb-4"
+                    className="text-sm mb-4 flex-grow"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     Build your own community, share insights, and grow your following
                   </p>
                   <button
-                    className="w-full px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center"
                     style={{ 
-                      backgroundColor: 'var(--surface-primary)',
-                      color: 'var(--text-primary)',
-                      border: '1px solid var(--border-default)'
+                      backgroundColor: '#000000',
+                      color: 'white'
                     }}
                   >
                     Start Creating

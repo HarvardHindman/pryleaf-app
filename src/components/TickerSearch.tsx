@@ -109,27 +109,33 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto" ref={searchRef}>
+    <div className="w-full" ref={searchRef}>
       <form onSubmit={handleSubmit} className="relative w-full">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-muted)] h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" style={{ color: 'var(--text-muted)' }} />
           <Input
             type="text"
-            placeholder="Search stocks (e.g., AAPL, TSLA, GOOGL)..."
+            placeholder="Search stocks"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => query && setShowResults(true)}
-            className="pl-10 pr-16 py-3 text-sm w-full bg-[var(--surface-secondary)] border-[var(--border-default)] hover:border-[var(--border-subtle)] focus:border-[var(--border-focus)] focus:ring-1 focus:ring-[var(--border-focus)] rounded-lg transition-all duration-200 placeholder:text-[var(--text-muted)]"
+            className="pl-9 pr-3 py-2 text-sm w-full rounded-lg transition-all duration-200"
+            style={{
+              backgroundColor: 'var(--surface-tertiary)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-primary)'
+            }}
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-[var(--surface-tertiary)] border border-[var(--border-subtle)] rounded-md px-2 py-1 select-none pointer-events-none">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Enter</span>
-          </div>
         </div>
 
         {/* Search Results Dropdown */}
         {showResults && (
-          <Card className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto scrollbar-hide z-50 shadow-xl bg-[var(--surface-primary)] border border-[var(--border-default)] rounded-lg">
+          <Card className="absolute top-full left-0 right-0 mt-2 max-h-96 overflow-y-auto scrollbar-hide z-50 shadow-2xl rounded-lg"
+            style={{
+              backgroundColor: 'var(--surface-primary)',
+              border: '1px solid var(--border-default)'
+            }}>
             {isLoading ? (
               <div className="p-4 text-center">
                 <div 
@@ -148,21 +154,35 @@ export default function TickerSearch({ onSelectTicker }: TickerSearchProps) {
                 {results.map((result, index) => (
                   <div
                     key={`${result.symbol || 'unknown'}-${result.exchange || 'unknown'}-${index}`}
-                    className={`px-4 py-3 cursor-pointer hover:bg-[var(--surface-secondary)] transition-colors ${
-                      index === selectedIndex ? 'bg-[var(--surface-secondary)] border-l-2 border-[var(--border-focus)]' : ''
+                    className={`px-3 py-2.5 cursor-pointer transition-colors ${
+                      index === selectedIndex ? 'border-l-2' : ''
                     }`}
+                    style={{
+                      backgroundColor: index === selectedIndex ? 'var(--surface-tertiary)' : 'transparent',
+                      borderColor: index === selectedIndex ? 'var(--interactive-primary)' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (index !== selectedIndex) {
+                        e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (index !== selectedIndex) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
                     onClick={() => navigateToTicker(result.symbol)}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold text-[var(--text-primary)]">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                           {result.symbol}
                         </div>
-                        <div className="text-sm text-[var(--text-secondary)] truncate">
+                        <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                           {result.name}
                         </div>
                       </div>
-                      <div className="text-xs text-[var(--text-muted)] bg-[var(--surface-tertiary)] px-2 py-1 rounded">
+                      <div className="text-[10px] px-1.5 py-0.5 rounded flex-shrink-0" style={{ color: 'var(--text-muted)', backgroundColor: 'var(--surface-tertiary)' }}>
                         {result.exchange}
                       </div>
                     </div>

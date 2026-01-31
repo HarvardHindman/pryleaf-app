@@ -1,28 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
   Home, 
   BarChart3, 
-  Settings, 
-  User, 
-  ChevronDown,
   Menu,
   X,
-  LogOut,
   MessageSquare,
-  Globe,
   Building2,
-  Play
+  Play,
+  Zap
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCommunityCache } from '@/contexts/CommunityCacheContext';
-import CommunityNavigation from '@/components/CommunityNavigation';
+import UserMenu from '@/components/UserMenu';
+import OnboardingModal from '@/components/onboarding/OnboardingModal';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -30,31 +26,15 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showTestOnboarding, setShowTestOnboarding] = useState(false);
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { 
-    ownedCommunities, 
     isUserOwner, 
     getCommunityById, 
     selectedCommunityId, 
     setSelectedCommunityId 
   } = useCommunityCache();
-  const userMenuRef = useRef<HTMLDivElement>(null);
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Get current path for navigation highlighting
   const currentPath = usePathname();
@@ -66,7 +46,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   // Use URL community or selected community
   const communityId = urlCommunityId && urlCommunityId !== 'create' ? urlCommunityId : selectedCommunityId;
-  const isOnCommunityDetail = communityId && communityId !== 'create';
   
   // Get current community name for sidebar display
   const currentCommunity = communityId ? getCommunityById(communityId) : null;
@@ -87,334 +66,232 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Check if user is owner using cache
   const isOwner = communityId ? isUserOwner(communityId) : false;
 
-  // Community-specific tabs - Simplified!
-  // Only show community tabs if a community is selected
+  // Community-specific tabs - Only show if a community is selected
   const communityTabs = communityId ? [
     ...(isOwner ? [{ name: 'Community', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
     { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
     { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
   ] : [];
-  const headerNav = [
-    { name: 'News', href: '/news', icon: Globe },
-    { name: 'Tools', href: '/tools', icon: Settings },
-  ];
 
-  return (
+  const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
     <div
-      className="h-screen flex overflow-hidden"
-      style={{ backgroundColor: 'var(--surface-secondary)' }}
+      className={`flex flex-col h-full ${mobile ? '' : 'border-r'}`}
+      style={{
+        backgroundColor: 'var(--surface-sidebar)',
+        borderColor: 'var(--border-default)'
+      }}
     >
-      {/* Sidebar */}
-      <div className="hidden md:flex md:w-28 md:flex-col">
-        <div
-          className="flex flex-col h-full"
-          style={{
-            backgroundColor: 'var(--surface-sidebar)'
-          }}
-        >
-          {/* Logo Section */}
-          <div className="flex-shrink-0 px-3 py-4">
-            <div className="flex flex-col items-center">
-              <Link href="/landing" className="flex flex-col items-center group gap-2">
-                <Image 
-                  src="/prylogo.png" 
-                  alt="Pryleaf" 
-                  width={48}
-                  height={48}
-                  className="group-hover:opacity-80 transition-opacity"
-                />
-                <span 
-                  className="text-xs font-bold group-hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--interactive-primary)' }}
-                >
-                  Pryleaf
-                </span>
-              </Link>
-            </div>
-          </div>
+      {/* Logo Section - Horizontal */}
+      <div className="flex-shrink-0 px-4 pt-4 pb-2">
+        <Link href="/landing" className="flex items-center gap-3 group">
+          <Image 
+            src="/prylogo.png" 
+            alt="Pryleaf" 
+            width={32}
+            height={32}
+            className="group-hover:opacity-80 transition-opacity flex-shrink-0"
+          />
+          <span 
+            className="text-lg font-bold group-hover:opacity-80 transition-opacity"
+            style={{ color: 'var(--interactive-primary)' }}
+          >
+            Pryleaf
+          </span>
+        </Link>
+      </div>
 
-          {/* Main Navigation - Investment Tools */}
-          <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto scrollbar-hide">
-            {navigation.map((item) => (
+      {/* Search Bar */}
+      <div className="flex-shrink-0 px-4 pt-2 pb-4">
+        <TickerSearch />
+      </div>
+
+      {/* Main Navigation */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {navigation.map((item) => (
+          <Link
+            key={item.name}
+            href={item.href}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all"
+            style={{
+              backgroundColor: item.current ? 'var(--surface-tertiary)' : 'transparent',
+              border: item.current ? '1px solid var(--border-default)' : '1px solid transparent',
+              color: 'var(--text-primary)'
+            }}
+            onClick={mobile ? () => setSidebarOpen(false) : undefined}
+            onMouseEnter={(e) => {
+              if (!item.current) {
+                e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!item.current) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }
+            }}
+          >
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            <span className="text-sm font-medium">{item.name}</span>
+          </Link>
+        ))}
+
+        {/* Community Tabs */}
+        {user && communityTabs.length > 0 && (
+          <>
+            <div 
+              className="mx-4 my-3 border-t"
+              style={{ borderColor: 'var(--border-default)' }}
+            />
+            {communityTabs.map((tab) => (
               <Link
-                key={item.name}
-                href={item.href}
-                className="flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium hover:shadow-sm active:scale-95"
+                key={tab.name}
+                href={tab.href}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all"
                 style={{
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-muted)',
-                  border: '1px solid transparent'
+                  backgroundColor: tab.current ? 'var(--surface-tertiary)' : 'transparent',
+                  border: tab.current ? '1px solid var(--border-default)' : '1px solid transparent',
+                  color: 'var(--text-primary)'
                 }}
+                onClick={mobile ? () => setSidebarOpen(false) : undefined}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                  e.currentTarget.style.borderColor = 'var(--border-default)';
+                  if (!tab.current) {
+                    e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                  e.currentTarget.style.borderColor = 'transparent';
+                  if (!tab.current) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }
                 }}
               >
-                <item.icon className="h-5 w-5 mb-1 flex-shrink-0" />
-                <span className="text-center leading-tight">{item.name}</span>
+                <tab.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="text-sm font-medium">{tab.name}</span>
               </Link>
             ))}
+          </>
+        )}
 
-            {/* Community Tabs */}
-            {user && communityTabs.length > 0 && (
-              <>
-                {communityTabs.map((tab) => (
-                  <Link
-                    key={tab.name}
-                    href={tab.href}
-                    className="flex flex-col items-center justify-center px-2 py-2 rounded-lg transition-all duration-200 text-xs font-medium hover:shadow-sm active:scale-95"
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-muted)',
-                      border: '1px solid transparent'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                      e.currentTarget.style.borderColor = 'var(--border-default)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = 'var(--text-muted)';
-                      e.currentTarget.style.borderColor = 'transparent';
-                    }}
-                  >
-                    <tab.icon className="h-5 w-5 mb-1 flex-shrink-0" />
-                    <span className="text-center leading-tight">{tab.name}</span>
-                  </Link>
-                ))}
-              </>
-            )}
-          </nav>
-
-          {/* Community Switcher - Bottom Section */}
-          {user && (
-            <div className="flex-shrink-0 px-2 py-2">
-              <CommunityNavigation />
-            </div>
-          )}
+        {/* Test Buttons - Small at bottom */}
+        <div className="mt-auto pt-4">
+          <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+            Test
+          </div>
+          <button
+            onClick={() => setShowTestOnboarding(true)}
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md transition-all text-left"
+            style={{
+              backgroundColor: 'transparent',
+              border: '1px solid transparent',
+              color: 'var(--text-muted)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--surface-tertiary)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = 'var(--text-muted)';
+            }}
+          >
+            <Zap className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="text-xs">Onboarding</span>
+          </button>
         </div>
+      </nav>
+
+      {/* Bottom Section - User Menu */}
+      {user && (
+        <div className="flex-shrink-0">
+          <UserMenu />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      {/* Test Onboarding Modal */}
+      <OnboardingModal 
+        isOpen={showTestOnboarding} 
+        onClose={() => setShowTestOnboarding(false)} 
+      />
+
+      <div
+        className="h-screen flex overflow-hidden"
+        style={{ backgroundColor: 'var(--surface-secondary)' }}
+      >
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex md:w-64 md:flex-col">
+        <SidebarContent />
       </div>
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
-          <div className="relative flex-1 flex flex-col max-w-xs w-full" style={{ backgroundColor: 'var(--surface-sidebar)' }}>
-            {/* Mobile logo section */}
-            <div className="flex-shrink-0 px-6 py-6">
-              <div className="flex flex-col items-center">
-                <Link href="/landing" className="flex flex-col items-center group gap-2">
-                  <Image 
-                    src="/prylogo.png" 
-                    alt="Pryleaf" 
-                    width={64}
-                    height={64}
-                    className="group-hover:opacity-80 transition-opacity"
-                  />
-                  <span 
-                    className="text-sm font-bold group-hover:opacity-80 transition-opacity"
-                    style={{ color: 'var(--interactive-primary)' }}
-                  >
-                    Pryleaf
-                  </span>
-                </Link>
-              </div>
-            </div>
-            
-            {/* Mobile navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all text-gray-600 hover:bg-gray-50 hover:text-gray-900 active:scale-95"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
-              
-              {/* Mobile Communities Section */}
-              {user && (
-                <div className="pt-4 mt-4 border-t border-gray-200">
-                  {/* Community Banner for Mobile */}
-                  <div 
-                    className="mx-3 mb-3 px-3 py-2 rounded-lg border"
-                    style={{ 
-                      backgroundColor: 'var(--surface-tertiary)',
-                      borderColor: 'var(--border-default)'
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div 
-                        className="text-xs font-semibold truncate flex-1"
-                        style={{ color: 'var(--text-primary)' }}
-                        title={communityDisplayName}
-                      >
-                        {communityDisplayName}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-2">
-                    <CommunityNavigation />
-                  </div>
-                </div>
-              )}
-            </nav>
-
-            {/* Mobile bottom section */}
-            <div className="flex-shrink-0 p-4 space-y-2">
-              <Link
-                href="/settings"
-                className="group flex items-center px-3 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setSidebarOpen(false)} 
+          />
+          <div 
+            className="relative flex flex-col max-w-xs w-full h-full"
+            style={{ backgroundColor: 'var(--surface-sidebar)' }}
+          >
+            {/* Close button */}
+            <div className="absolute top-4 right-4">
+              <button
                 onClick={() => setSidebarOpen(false)}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--text-muted)' }}
               >
-                <Settings className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
-                Settings
-              </Link>
-              <button className="group flex items-center w-full px-3 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900">
-                <User className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-500" />
-                <span className="flex-1 text-left">Account</span>
+                <X className="h-6 w-6" />
               </button>
             </div>
+            
+            <SidebarContent mobile />
           </div>
         </div>
       )}
 
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        {/* Top header with nav, search, and settings/account */}
+        {/* Minimal top bar - only mobile menu button */}
         <header
-          className="px-6 py-4"
-          style={{ backgroundColor: 'var(--surface-secondary)' }}
+          className="md:hidden px-6 py-4 border-b"
+          style={{ 
+            backgroundColor: 'var(--surface-primary)',
+            borderColor: 'var(--border-default)'
+          }}
         >
-          <div className="flex items-center justify-between">
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-white"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              {sidebarOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-
-            {/* Header nav (Markets, Analytics, Watchlist) */}
-            <nav className="flex items-center space-x-2 mr-4">
-              {headerNav.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center px-2 py-1 text-xs text-gray-600 transition-colors hover-interactive"
-                  title={item.name}
-                  style={{
-                    ['--hover-color' as any]: 'var(--interactive-primary)'
-                  } as React.CSSProperties}
-                >
-                  <item.icon className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">{item.name}</span>
-                </Link>
-              ))}
-            </nav>
-
-            {/* Search bar - seamless design */}
-            <div className="flex-1 max-w-lg">
-              <TickerSearch />
-            </div>
-
-            {/* Settings & Account icons */}
-            <div className="flex items-center space-x-2 ml-4">
-              <Link 
-                href="/settings" 
-                className="p-2 rounded-full text-gray-400 transition-colors group" 
-                title="Settings"
-              >
-                <Settings className="h-5 w-5 group-hover:opacity-80" style={{ ['--hover-color' as any]: 'var(--interactive-primary)' } as React.CSSProperties} />
-              </Link>
-              
-              {user ? (
-                <div className="relative" ref={userMenuRef}>
-                  <button 
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center space-x-2 p-2 rounded-full text-gray-400 transition-colors group"
-                    title="Account"
-                  >
-                    <User className="h-5 w-5" />
-                    <span className="hidden sm:inline text-sm">{user.email?.split('@')[0]}</span>
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-[var(--surface-primary)] rounded-md shadow-lg border border-[var(--border-default)] z-50">
-                      <div className="py-1">
-                        <div className="px-4 py-2 text-sm text-[var(--text-primary)] border-b border-[var(--border-subtle)]">
-                          {user.email}
-                        </div>
-                        <Link
-                          href="/profile"
-                          className="block px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
-                        >
-                          Profile
-                        </Link>
-                        <button
-                          onClick={signOut}
-                          className="block w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-secondary)]"
-                        >
-                          <LogOut className="inline h-4 w-4 mr-2" />
-                          Sign out
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    href="/login"
-                    className="px-3 py-1 text-sm text-[var(--text-secondary)] hover:text-[var(--interactive-primary)] transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="px-3 py-1 text-sm bg-[var(--interactive-primary)] text-[var(--surface-primary)] rounded-md hover:bg-[var(--interactive-hover)] transition-colors"
-                  >
-                    Sign up
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
+          <button
+            className="p-2 rounded-md transition-colors"
+            style={{ color: 'var(--text-primary)' }}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </header>
 
         {/* Page content */}
         <main
-          className={`flex-1 scrollbar-hidden ${pathname?.startsWith('/symbol/') ? 'overflow-hidden' : 'overflow-y-auto'}`}
+          className={`flex-1 ${pathname?.startsWith('/symbol/') ? 'overflow-hidden' : 'overflow-y-auto'}`}
           style={{
             backgroundColor: 'var(--surface-secondary)',
-            scrollbarWidth: 'none', /* Firefox */
-            msOverflowStyle: 'none' /* Internet Explorer 10+ */
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
           }}
         >
           {children}
-          {/* Hide scrollbars for WebKit browsers */}
           <style jsx>{`
             main::-webkit-scrollbar {
-              display: none; /* Safari and Chrome */
+              display: none;
             }
           `}</style>
         </main>
       </div>
     </div>
+    </>
   );
 }

@@ -257,21 +257,6 @@ export default function Home() {
       ) : (
         // Existing dashboard content for authenticated users
         <div className="p-6">
-        <div className="mb-8">
-          <h1 
-            className="text-2xl font-semibold mb-1"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            Dashboard
-          </h1>
-          <p 
-            className="text-sm"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Track your investments and market performance
-          </p>
-        </div>
-
         {/* Community CTA Banner - Show if user has no communities and hasn't dismissed recently */}
         {!hasCommunities() && (() => {
           // Check if dismissal was within last 7 days
