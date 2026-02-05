@@ -95,15 +95,6 @@ export default function Home() {
   // Note: Real-time price updates would be handled by the portfolio service
   // For now, we use static prices from the portfolio data
 
-  const marketData = [
-    { symbol: '^IXIC', name: 'NASDAQ Composite', price: 22631.477, change: 160.75, changePercent: 0.72 },
-    { symbol: '^RUT', name: 'Russell 2000', price: 2448.769, change: -18.93, changePercent: -0.77 },
-    { symbol: '^FTSE', name: 'FTSE 100', price: 9216.67, change: -11.44, changePercent: -0.12 },
-    { symbol: '^N225', name: 'Nikkei 225', price: 45045.81, change: -257.62, changePercent: -0.57 },
-    { symbol: '^GSPTSE', name: 'S&P/TSX 60 Index', price: 1761.78, change: 18.35, changePercent: 1.05 },
-    { symbol: '^GSPC', name: 'S&P 500', price: 6664.36, change: 32.40, changePercent: 0.49 },
-    { symbol: '^DJI', name: 'Dow Jones Industrial Average', price: 46315.27, change: 0, changePercent: 0 },
-  ];
 
   // Portfolio functions
   const handleAddStock = async (symbolArg?: string) => {
@@ -256,7 +247,7 @@ export default function Home() {
         </div>
       ) : (
         // Existing dashboard content for authenticated users
-        <div className="p-6">
+        <div className="px-6 pt-2 pb-6">
         {/* Community CTA Banner - Show if user has no communities and hasn't dismissed recently */}
         {!hasCommunities() && (() => {
           // Check if dismissal was within last 7 days
@@ -273,62 +264,6 @@ export default function Home() {
             </div>
           );
         })()}
-
-        {/* Market Overview - Terminal Strip Style */}
-        <div className="mb-4">
-          <div 
-            className="flex items-center gap-1 overflow-x-auto scrollbar-hide py-2 px-1"
-            style={{ 
-              backgroundColor: 'var(--surface-primary)',
-              borderRadius: '0.5rem',
-              border: '1px solid var(--border-subtle)'
-            }}
-          >
-            {marketData.map((index, i) => {
-              const isPositive = index.change >= 0;
-              const formatPrice = (price: number) => {
-                return new Intl.NumberFormat('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                }).format(price);
-              };
-
-              return (
-                <div 
-                  key={index.symbol} 
-                  className="flex items-center gap-3 px-3 py-1.5 whitespace-nowrap"
-                  style={{ 
-                    borderRight: i < marketData.length - 1 ? '1px solid var(--border-divider, var(--border-subtle))' : 'none'
-                  }}
-                >
-                  <span 
-                    className="text-xs font-medium"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    {index.symbol.replace('^', '')}
-                  </span>
-                  <span 
-                    className="text-xs font-semibold tabular-nums"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {formatPrice(index.price)}
-                  </span>
-                  <span 
-                    className="text-xs font-medium tabular-nums flex items-center gap-0.5"
-                    style={{ color: isPositive ? 'var(--success-text)' : 'var(--danger-text)' }}
-                  >
-                    {isPositive ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    {isPositive ? '+' : ''}{index.changePercent.toFixed(2)}%
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Main Layout: Portfolio (left) + Activity/News (right) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

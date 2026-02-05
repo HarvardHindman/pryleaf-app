@@ -12,7 +12,13 @@ import {
   MessageSquare,
   Building2,
   Play,
-  Zap
+  Zap,
+  Users,
+  TrendingUp,
+  Award,
+  UserPlus,
+  Palette,
+  DollarSign
 } from 'lucide-react';
 import TickerSearch from '@/components/TickerSearch';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,17 +66,63 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home, current: currentPath === '/' },
+    { name: 'Chat', href: '/chat', icon: MessageSquare, current: currentPath === '/chat' },
     { name: 'Research', href: '/research', icon: Building2, current: currentPath === '/research' },
   ];
 
   // Check if user is owner using cache
   const isOwner = communityId ? isUserOwner(communityId) : false;
 
-  // Community-specific tabs - Only show if a community is selected
-  const communityTabs = communityId ? [
-    ...(isOwner ? [{ name: 'Community', href: `/community/${communityId}/dashboard`, icon: BarChart3, current: urlCommunityId === communityId && communitySubPath === 'dashboard' }] : []),
-    { name: 'Videos', href: `/community/${communityId}/videos`, icon: Play, current: urlCommunityId === communityId && communitySubPath === 'videos' },
-    { name: 'Chat', href: `/chat`, icon: MessageSquare, current: currentPath === '/chat' },
+  // Community tabs - Only show for owners
+  const communityTabs = communityId && isOwner ? [
+    { 
+      name: 'Dashboard', 
+      href: `/community/${communityId}/dashboard`, 
+      icon: BarChart3, 
+      current: urlCommunityId === communityId && (communitySubPath === 'dashboard' || !communitySubPath)
+    },
+    { 
+      name: 'Library', 
+      href: `/community/${communityId}/dashboard/content`, 
+      icon: Play, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/content'
+    },
+    { 
+      name: 'Members', 
+      href: `/community/${communityId}/dashboard/members`, 
+      icon: Users, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/members'
+    },
+    { 
+      name: 'Tiers', 
+      href: `/community/${communityId}/dashboard/tiers`, 
+      icon: Award, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/tiers'
+    },
+    { 
+      name: 'Earnings', 
+      href: `/community/${communityId}/dashboard/earnings`, 
+      icon: DollarSign, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/earnings'
+    },
+    { 
+      name: 'Analytics', 
+      href: `/community/${communityId}/dashboard/analytics`, 
+      icon: TrendingUp, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/analytics'
+    },
+    { 
+      name: 'Invites', 
+      href: `/community/${communityId}/dashboard/invites`, 
+      icon: UserPlus, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/invites'
+    },
+    { 
+      name: 'Appearance', 
+      href: `/community/${communityId}/dashboard/appearance`, 
+      icon: Palette, 
+      current: urlCommunityId === communityId && communitySubPath === 'dashboard/appearance'
+    },
   ] : [];
 
   const SidebarContent = ({ mobile = false }: { mobile?: boolean }) => (
